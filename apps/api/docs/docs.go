@@ -624,7 +624,7 @@ const docTemplate = `{
                 "tags": [
                     "users"
                 ],
-                "summary": "List all users",
+                "summary": "List all users (system user only)",
                 "responses": {
                     "200": {
                         "description": "data: []User, total: int",
@@ -635,6 +635,15 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "authentication required",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "forbidden",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -750,7 +759,7 @@ const docTemplate = `{
                 "tags": [
                     "users"
                 ],
-                "summary": "Get a user by ID",
+                "summary": "Get a user by ID (system user only)",
                 "parameters": [
                     {
                         "type": "integer",
@@ -779,6 +788,15 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "authentication required",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "forbidden",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -1119,11 +1137,6 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 100,
                     "minLength": 2
-                },
-                "password": {
-                    "type": "string",
-                    "maxLength": 72,
-                    "minLength": 8
                 }
             }
         }

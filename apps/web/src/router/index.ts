@@ -71,6 +71,12 @@ const router = createRouter({
           name: 'settings',
           component: () => import('../views/SettingsView.vue'),
         },
+        {
+          path: 'users',
+          name: 'users',
+          component: () => import('../views/UsersView.vue'),
+          meta: { requiresSystemUser: true },
+        },
       ],
     },
 
@@ -116,6 +122,11 @@ router.beforeEach(async (to) => {
 
   if (to.meta['requiresAuth'] && !authStore.isAuthenticated) {
     return { name: 'login' }
+  }
+
+  // System-user-only routes: redirect non-admins to home
+  if (to.meta['requiresSystemUser'] && !authStore.user?.is_system_user) {
+    return { name: 'home' }
   }
 
   // Redirect already-authenticated users away from login/register

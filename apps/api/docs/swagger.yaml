@@ -79,10 +79,6 @@ definitions:
         maxLength: 100
         minLength: 2
         type: string
-      password:
-        maxLength: 72
-        minLength: 8
-        type: string
     required:
     - email
     - name
@@ -492,6 +488,12 @@ paths:
             additionalProperties:
               type: string
             type: object
+        "403":
+          description: forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
         "500":
           description: error message
           schema:
@@ -500,7 +502,7 @@ paths:
             type: object
       security:
       - CookieAuth: []
-      summary: List all users
+      summary: List all users (system user only)
       tags:
       - users
     post:
@@ -636,6 +638,12 @@ paths:
             additionalProperties:
               type: string
             type: object
+        "403":
+          description: forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
         "404":
           description: user not found
           schema:
@@ -650,7 +658,7 @@ paths:
             type: object
       security:
       - CookieAuth: []
-      summary: Get a user by ID
+      summary: Get a user by ID (system user only)
       tags:
       - users
     put:

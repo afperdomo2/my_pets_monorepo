@@ -41,16 +41,23 @@ func canModifyUser(c *gin.Context, targetID int) bool {
 }
 
 // GetUsers handles GET /api/v1/users
+// Only system users may list all users.
 //
-//	@Summary	List all users
+//	@Summary	List all users (system user only)
 //	@Tags		users
 //	@Produce	json
 //	@Security	CookieAuth
 //	@Success	200	{object}	map[string]interface{}	"data: []User, total: int"
 //	@Failure	401	{object}	map[string]string		"authentication required"
+//	@Failure	403	{object}	map[string]string		"forbidden"
 //	@Failure	500	{object}	map[string]string		"error message"
 //	@Router		/api/v1/users [get]
 func (h *Handler) GetUsers(c *gin.Context) {
+	isSystemUser, _ := c.Get("isSystemUser")
+	if isSystemUser != true {
+		c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
+		return
+	}
 	users, err := h.repo.GetAll(c.Request.Context())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch users"})
@@ -60,8 +67,9 @@ func (h *Handler) GetUsers(c *gin.Context) {
 }
 
 // GetUser handles GET /api/v1/users/:id
+// Only system users may retrieve a user by ID.
 //
-//	@Summary	Get a user by ID
+//	@Summary	Get a user by ID (system user only)
 //	@Tags		users
 //	@Produce	json
 //	@Security	CookieAuth
@@ -69,10 +77,16 @@ func (h *Handler) GetUsers(c *gin.Context) {
 //	@Success	200	{object}	map[string]interface{}	"data: User"
 //	@Failure	400	{object}	map[string]string		"invalid id"
 //	@Failure	401	{object}	map[string]string		"authentication required"
+//	@Failure	403	{object}	map[string]string		"forbidden"
 //	@Failure	404	{object}	map[string]string		"user not found"
 //	@Failure	500	{object}	map[string]string		"error message"
 //	@Router		/api/v1/users/{id} [get]
 func (h *Handler) GetUser(c *gin.Context) {
+	isSystemUser, _ := c.Get("isSystemUser")
+	if isSystemUser != true {
+		c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
+		return
+	}
 	id, ok := parseID(c)
 	if !ok {
 		return
@@ -189,6 +203,7 @@ func (h *Handler) UpdateUser(c *gin.Context) {
 
 // DeleteUser handles DELETE /api/v1/users/:id
 // Only the user themselves or a system user may delete a user.
+// System users cannot be deleted.
 //
 //	@Summary	Delete a user
 //	@Tags		users
@@ -211,7 +226,23 @@ func (h *Handler) DeleteUser(c *gin.Context) {
 		c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
 		return
 	}
-	err := h.repo.Delete(c.Request.Context(), id)
+
+	// Prevent deletion of system users
+	target, err := h.repo.GetByID(c.Request.Context(), id)
+	if errors.Is(err, ErrNotFound) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+		return
+	}
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete user"})
+		return
+	}
+	if target.IsSystemUser {
+		c.JSON(http.StatusForbidden, gin.H{"error": "system users cannot be deleted"})
+		return
+	}
+
+	err = h.repo.Delete(c.Request.Context(), id)
 	if errors.Is(err, ErrNotFound) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
 		return

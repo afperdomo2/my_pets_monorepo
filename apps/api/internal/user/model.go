@@ -21,9 +21,8 @@ type CreateUserPayload struct {
 // UpdateUserPayload is the shape accepted from HTTP clients on user update.
 // Password is optional: if omitted the existing hash is kept unchanged.
 type UpdateUserPayload struct {
-	Name     string `json:"name"     binding:"required,min=2,max=100"`
-	Email    string `json:"email"    binding:"required,email"`
-	Password string `json:"password" binding:"omitempty,min=8,max=72"`
+	Name  string `json:"name"  binding:"required,min=2,max=100"`
+	Email string `json:"email" binding:"required,email"`
 }
 
 // GoogleUserInfo contains the profile data returned by Google's userinfo endpoint.

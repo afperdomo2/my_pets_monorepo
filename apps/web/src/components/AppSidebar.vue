@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
@@ -10,6 +11,20 @@ async function handleLogout() {
   await authStore.logout()
   router.push('/login')
 }
+
+const userInitials = computed(() => {
+  const name = authStore.user?.name ?? ''
+  return name
+    .split(' ')
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join('')
+    .toUpperCase()
+})
+
+const userRole = computed(() =>
+  authStore.user?.is_system_user ? 'Administrador' : 'Usuario',
+)
 
 const navItems = [
   {
@@ -35,6 +50,15 @@ const navItems = [
     name: 'reports',
     label: 'Reportes',
     icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>`,
+  },
+]
+
+const adminNavItems = [
+  {
+    to: '/users',
+    name: 'users',
+    label: 'Usuarios',
+    icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
   },
 ]
 
@@ -88,6 +112,22 @@ function isActive(itemName: string): boolean {
       </RouterLink>
     </nav>
 
+    <!-- Admin section (system users only) -->
+    <nav v-if="authStore.user?.is_system_user" class="sidebar-nav">
+      <p class="nav-section-label">Administración</p>
+      <RouterLink
+        v-for="item in adminNavItems"
+        :key="item.name"
+        :to="item.to"
+        class="nav-item"
+        :class="{ 'nav-item--active': isActive(item.name) }"
+      >
+        <span class="nav-icon" v-html="item.icon" />
+        <span class="nav-label">{{ item.label }}</span>
+        <span v-if="isActive(item.name)" class="nav-active-dot" />
+      </RouterLink>
+    </nav>
+
     <!-- Spacer -->
     <div class="sidebar-spacer" />
 
@@ -109,10 +149,10 @@ function isActive(itemName: string): boolean {
 
       <!-- User profile -->
       <div class="sidebar-user">
-        <div class="user-avatar">JD</div>
+        <div class="user-avatar">{{ userInitials }}</div>
         <div class="user-info">
-          <span class="user-name">Juan Doe</span>
-          <span class="user-role">Administrador</span>
+          <span class="user-name">{{ authStore.user?.name ?? '—' }}</span>
+          <span class="user-role">{{ userRole }}</span>
         </div>
         <button class="user-logout" title="Cerrar sesión" @click="handleLogout">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">

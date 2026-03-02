@@ -146,28 +146,13 @@ func (r *postgresRepo) Create(ctx context.Context, payload CreateUserPayload, is
 }
 
 func (r *postgresRepo) Update(ctx context.Context, id int, payload UpdateUserPayload) (User, error) {
-	var row *sql.Row
-	if payload.Password != "" {
-		hash, err := bcrypt.GenerateFromPassword([]byte(payload.Password), bcrypt.DefaultCost)
-		if err != nil {
-			return User{}, err
-		}
-		row = r.db.QueryRowContext(ctx,
-			`UPDATE users
-			 SET name=$1, email=$2, password=$3, updated_at=$4
-			 WHERE id=$5
-			 RETURNING `+userColumns,
-			payload.Name, payload.Email, string(hash), time.Now(), id,
-		)
-	} else {
-		row = r.db.QueryRowContext(ctx,
-			`UPDATE users
-			 SET name=$1, email=$2, updated_at=$3
-			 WHERE id=$4
-			 RETURNING `+userColumns,
-			payload.Name, payload.Email, time.Now(), id,
-		)
-	}
+	row := r.db.QueryRowContext(ctx,
+		`UPDATE users
+		 SET name=$1, email=$2, updated_at=$3
+		 WHERE id=$4
+		 RETURNING `+userColumns,
+		payload.Name, payload.Email, time.Now(), id,
+	)
 	u, err := scanUser(row)
 	if errors.Is(err, sql.ErrNoRows) {
 		return u, ErrNotFound

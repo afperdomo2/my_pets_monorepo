@@ -8,10 +8,15 @@ export interface User {
   updated_at: string
 }
 
-export interface UserPayload {
+export interface CreateUserPayload {
   name: string
   email: string
-  password?: string
+  password: string
+}
+
+export interface UpdateUserPayload {
+  name: string
+  email: string
 }
 
 export interface LoginPayload {

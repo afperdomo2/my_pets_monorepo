@@ -1,4 +1,4 @@
-import type { User, UserPayload } from '@/types/user'
+import type { User } from '@/types/user'
 
 const BASE_URL = '/api/v1'
 
@@ -19,7 +19,9 @@ export interface SetupStatusResponse {
   needs_setup: boolean
 }
 
-export interface SetupPayload extends UserPayload {
+export interface SetupPayload {
+  name: string
+  email: string
   password: string
 }
 
