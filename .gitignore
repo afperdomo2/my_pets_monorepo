@@ -1,0 +1,34 @@
+# Go
+apps/api/tmp/
+apps/api/bin/
+bin/
+*.exe
+*.out
+
+# Node
+node_modules/
+apps/web/node_modules/
+packages/*/node_modules/
+
+# Build outputs
+apps/web/dist/
+apps/web/.vite/
+.turbo/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+.dockerignore

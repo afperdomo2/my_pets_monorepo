@@ -1,0 +1,35 @@
+services:
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile.dev
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./apps/api:/app
+      - go-cache:/root/.cache/go-build
+      - go-mod:/go/pkg/mod
+    environment:
+      - PORT=8080
+      - GIN_MODE=debug
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./apps/web:/app
+      - web-node-modules:/app/node_modules
+    environment:
+      - VITE_API_URL=http://localhost:8080
+    depends_on:
+      - api
+    restart: unless-stopped
+
+volumes:
+  go-cache:
+  go-mod:
+  web-node-modules:
