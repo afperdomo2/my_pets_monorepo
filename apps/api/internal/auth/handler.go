@@ -1,0 +1,194 @@
+package auth
+
+import (
+	"errors"
+	"net/http"
+	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/my-pets/api/internal/config"
+	"github.com/my-pets/api/internal/user"
+	"golang.org/x/crypto/bcrypt"
+)
+
+// Handler holds auth handler dependencies.
+type Handler struct {
+	cfg      *config.Config
+	userRepo user.Repository
+}
+
+// NewHandler creates a new auth Handler.
+func NewHandler(cfg *config.Config, userRepo user.Repository) *Handler {
+	return &Handler{cfg: cfg, userRepo: userRepo}
+}
+
+// LoginPayload is the request body for local login.
+type LoginPayload struct {
+	Email    string `json:"email"    binding:"required,email"`
+	Password string `json:"password" binding:"required"`
+}
+
+// setAuthCookies writes the access and refresh tokens as HttpOnly cookies.
+func setAuthCookies(c *gin.Context, access, refresh string, secure bool) {
+	sameSite := http.SameSiteLaxMode
+
+	http.SetCookie(c.Writer, &http.Cookie{
+		Name:     "access_token",
+		Value:    access,
+		Path:     "/",
+		MaxAge:   int(accessTokenTTL.Seconds()),
+		HttpOnly: true,
+		Secure:   secure,
+		SameSite: sameSite,
+	})
+	http.SetCookie(c.Writer, &http.Cookie{
+		Name:     "refresh_token",
+		Value:    refresh,
+		Path:     "/api/v1/auth/refresh",
+		MaxAge:   int(refreshTokenTTL.Seconds()),
+		HttpOnly: true,
+		Secure:   secure,
+		SameSite: sameSite,
+	})
+}
+
+// clearAuthCookies removes both auth cookies by setting MaxAge to -1.
+func clearAuthCookies(c *gin.Context) {
+	for _, name := range []string{"access_token", "refresh_token"} {
+		http.SetCookie(c.Writer, &http.Cookie{
+			Name:     name,
+			Value:    "",
+			Path:     "/",
+			MaxAge:   -1,
+			HttpOnly: true,
+		})
+	}
+}
+
+// Login handles POST /api/v1/auth/login
+//
+//	@Summary	Login with email and password
+//	@Tags		auth
+//	@Accept		json
+//	@Produce	json
+//	@Param		credentials	body		LoginPayload			true	"Login credentials"
+//	@Success	200			{object}	map[string]interface{}	"data: User"
+//	@Failure	400			{object}	map[string]string		"validation error"
+//	@Failure	401			{object}	map[string]string		"invalid credentials"
+//	@Router		/api/v1/auth/login [post]
+func (h *Handler) Login(c *gin.Context) {
+	var payload LoginPayload
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx := c.Request.Context()
+
+	// Fetch the stored hash — returns ErrNotFound or ErrWrongProvider if needed.
+	hash, err := h.userRepo.GetPasswordByEmail(ctx, payload.Email)
+	if errors.Is(err, user.ErrNotFound) || errors.Is(err, user.ErrWrongProvider) {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
+		return
+	}
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "login failed"})
+		return
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(payload.Password)); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
+		return
+	}
+
+	u, err := h.userRepo.GetByEmail(ctx, payload.Email)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "login failed"})
+		return
+	}
+
+	h.issueTokensAndRespond(c, u)
+}
+
+// Logout handles POST /api/v1/auth/logout
+//
+//	@Summary	Logout — clears auth cookies
+//	@Tags		auth
+//	@Produce	json
+//	@Success	200	{object}	map[string]string	"message: logged out"
+//	@Router		/api/v1/auth/logout [post]
+func (h *Handler) Logout(c *gin.Context) {
+	clearAuthCookies(c)
+	c.JSON(http.StatusOK, gin.H{"message": "logged out"})
+}
+
+// Refresh handles POST /api/v1/auth/refresh
+//
+//	@Summary	Refresh access token using the refresh cookie
+//	@Tags		auth
+//	@Produce	json
+//	@Success	200	{object}	map[string]interface{}	"data: User"
+//	@Failure	401	{object}	map[string]string		"invalid or expired refresh token"
+//	@Router		/api/v1/auth/refresh [post]
+func (h *Handler) Refresh(c *gin.Context) {
+	cookie, err := c.Cookie("refresh_token")
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "no refresh token"})
+		return
+	}
+
+	claims, err := ValidateClaims(h.cfg, cookie)
+	if err != nil {
+		clearAuthCookies(c)
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid or expired refresh token"})
+		return
+	}
+
+	u, err := h.userRepo.GetByID(c.Request.Context(), int(claims.UserID))
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "user not found"})
+		return
+	}
+
+	h.issueTokensAndRespond(c, u)
+}
+
+// Me handles GET /api/v1/auth/me
+//
+//	@Summary	Get the currently authenticated user
+//	@Tags		auth
+//	@Produce	json
+//	@Success	200	{object}	map[string]interface{}	"data: User"
+//	@Failure	401	{object}	map[string]string		"unauthorized"
+//	@Router		/api/v1/auth/me [get]
+func (h *Handler) Me(c *gin.Context) {
+	userID, _ := c.Get("userID")
+	u, err := h.userRepo.GetByID(c.Request.Context(), int(userID.(uint)))
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "user not found"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": u})
+}
+
+// issueTokensAndRespond generates both tokens, sets cookies, and returns the user.
+func (h *Handler) issueTokensAndRespond(c *gin.Context, u user.User) {
+	access, err := GenerateAccessToken(h.cfg, u)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate token"})
+		return
+	}
+	refresh, err := GenerateRefreshToken(h.cfg, u)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate token"})
+		return
+	}
+
+	secure := h.cfg.GinMode == "release"
+	setAuthCookies(c, access, refresh, secure)
+
+	c.JSON(http.StatusOK, gin.H{
+		"data":       u,
+		"expires_in": int(time.Now().Add(accessTokenTTL).Unix()),
+	})
+}

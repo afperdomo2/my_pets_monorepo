@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/my-pets/api/internal/auth"
 	"github.com/my-pets/api/internal/config"
 	"github.com/my-pets/api/internal/health"
 	"github.com/my-pets/api/internal/middleware"
@@ -46,18 +47,31 @@ func Run(cfg *config.Config, db *sql.DB) {
 	// Swagger UI
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
-	// Versioned API group
+	// Shared repositories
+	userRepo := user.NewPostgresRepo(db)
+
+	// Versioned API root group
 	v1 := r.Group("/api/v1")
 
-	// Pet domain
-	petRepo := pet.NewPostgresRepo(db)
-	petHandler := pet.NewHandler(petRepo)
-	pet.RegisterRoutes(v1, petHandler)
+	// ── Public auth routes (no JWT) ─────────────────────────────────────────
+	authHandler := auth.RegisterRoutes(v1, cfg, userRepo)
 
-	// User domain
-	userRepo := user.NewPostgresRepo(db)
-	userHandler := user.NewHandler(userRepo)
-	user.RegisterRoutes(v1, userHandler)
+	// ── Protected routes (JWT required) ─────────────────────────────────────
+	protected := v1.Group("")
+	protected.Use(middleware.JWT(cfg))
+	{
+		// Auth endpoints that need the caller to be authenticated
+		auth.RegisterProtectedRoutes(protected, authHandler)
+
+		// Pet domain
+		petRepo := pet.NewPostgresRepo(db)
+		petHandler := pet.NewHandler(petRepo)
+		pet.RegisterRoutes(protected, petHandler)
+
+		// User domain
+		userHandler := user.NewHandler(userRepo)
+		user.RegisterRoutes(protected, userHandler)
+	}
 
 	log.Printf("Server running on :%s", cfg.Port)
 	if err := r.Run(":" + cfg.Port); err != nil && err != http.ErrServerClosed {

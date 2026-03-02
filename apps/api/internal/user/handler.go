@@ -28,6 +28,17 @@ func parseID(c *gin.Context) (int, bool) {
 	return id, true
 }
 
+// canModifyUser returns true if the caller (from JWT context) is the target user
+// or is a system user.
+func canModifyUser(c *gin.Context, targetID int) bool {
+	callerID, _ := c.Get("userID")
+	isSystemUser, _ := c.Get("isSystemUser")
+	if uid, ok := callerID.(uint); ok && int(uid) == targetID {
+		return true
+	}
+	return isSystemUser == true
+}
+
 // GetUsers handles GET /api/v1/users
 //
 //	@Summary	List all users
@@ -74,20 +85,26 @@ func (h *Handler) GetUser(c *gin.Context) {
 }
 
 // CreateUser handles POST /api/v1/users
-// If no system user exists yet, the first created user is marked as the system user.
+// Only system users may create new users.
 //
-//	@Summary	Create a new user
-//	@Description	The first user created is automatically marked as the system user (is_system_user=true).
+//	@Summary	Create a new user (system user only)
+//	@Description	Only a user with is_system_user=true may call this endpoint.
 //	@Tags		users
 //	@Accept		json
 //	@Produce	json
 //	@Param		user	body		UserPayload				true	"User data"
 //	@Success	201		{object}	map[string]interface{}	"data: User"
 //	@Failure	400		{object}	map[string]string		"validation error"
+//	@Failure	403		{object}	map[string]string		"forbidden"
 //	@Failure	409		{object}	map[string]string		"email already in use"
 //	@Failure	500		{object}	map[string]string		"error message"
 //	@Router		/api/v1/users [post]
 func (h *Handler) CreateUser(c *gin.Context) {
+	callerIsSystemUser, _ := c.Get("isSystemUser")
+	if callerIsSystemUser != true {
+		c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
+		return
+	}
 	var payload UserPayload
 	if err := c.ShouldBindJSON(&payload); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -116,6 +133,7 @@ func (h *Handler) CreateUser(c *gin.Context) {
 }
 
 // UpdateUser handles PUT /api/v1/users/:id
+// Only the user themselves or a system user may update a user.
 //
 //	@Summary	Update an existing user
 //	@Tags		users
@@ -125,6 +143,7 @@ func (h *Handler) CreateUser(c *gin.Context) {
 //	@Param		user	body		UserPayload				true	"User data"
 //	@Success	200		{object}	map[string]interface{}	"data: User"
 //	@Failure	400		{object}	map[string]string		"invalid id or validation error"
+//	@Failure	403		{object}	map[string]string		"forbidden"
 //	@Failure	404		{object}	map[string]string		"user not found"
 //	@Failure	409		{object}	map[string]string		"email already in use"
 //	@Failure	500		{object}	map[string]string		"error message"
@@ -132,6 +151,10 @@ func (h *Handler) CreateUser(c *gin.Context) {
 func (h *Handler) UpdateUser(c *gin.Context) {
 	id, ok := parseID(c)
 	if !ok {
+		return
+	}
+	if !canModifyUser(c, id) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
 		return
 	}
 	var payload UserPayload
@@ -156,6 +179,7 @@ func (h *Handler) UpdateUser(c *gin.Context) {
 }
 
 // DeleteUser handles DELETE /api/v1/users/:id
+// Only the user themselves or a system user may delete a user.
 //
 //	@Summary	Delete a user
 //	@Tags		users
@@ -163,12 +187,17 @@ func (h *Handler) UpdateUser(c *gin.Context) {
 //	@Param		id	path		int					true	"User ID"
 //	@Success	200	{object}	map[string]string	"message: user deleted"
 //	@Failure	400	{object}	map[string]string	"invalid id"
+//	@Failure	403	{object}	map[string]string	"forbidden"
 //	@Failure	404	{object}	map[string]string	"user not found"
 //	@Failure	500	{object}	map[string]string	"error message"
 //	@Router		/api/v1/users/{id} [delete]
 func (h *Handler) DeleteUser(c *gin.Context) {
 	id, ok := parseID(c)
 	if !ok {
+		return
+	}
+	if !canModifyUser(c, id) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
 		return
 	}
 	err := h.repo.Delete(c.Request.Context(), id)

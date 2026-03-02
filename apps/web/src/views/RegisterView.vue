@@ -1,26 +1,7 @@
 <script setup lang="ts">
-import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
-
-const form = ref({
-  name: '',
-  email: '',
-  password: '',
-  confirmPassword: '',
-})
-
-const loading = ref(false)
-
-function handleRegister() {
-  loading.value = true
-  // Sin lógica real por ahora — redirige directo al home
-  setTimeout(() => {
-    loading.value = false
-    router.push('/')
-  }, 700)
-}
 </script>
 
 <template>
@@ -68,96 +49,17 @@ function handleRegister() {
     <div class="auth-form-container">
       <div class="auth-form-card">
         <div class="form-header">
-          <h1>Crear cuenta</h1>
-          <p>Completa los datos para comenzar</p>
+          <h1>Acceso restringido</h1>
+          <p>El registro de nuevos usuarios es realizado por el administrador del sistema.</p>
         </div>
 
-        <form class="form" @submit.prevent="handleRegister">
-          <div class="form-group">
-            <label for="name">Nombre completo</label>
-            <div class="input-wrapper">
-              <span class="input-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
-                </svg>
-              </span>
-              <input
-                id="name"
-                v-model="form.name"
-                type="text"
-                placeholder="Juan García"
-                autocomplete="name"
-              />
-            </div>
-          </div>
+        <p class="info-text">
+          Si necesitas acceder, comunícate con el administrador para que cree tu cuenta.
+        </p>
 
-          <div class="form-group">
-            <label for="email">Correo electrónico</label>
-            <div class="input-wrapper">
-              <span class="input-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                  <rect width="20" height="16" x="2" y="4" rx="2"/>
-                  <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
-                </svg>
-              </span>
-              <input
-                id="email"
-                v-model="form.email"
-                type="email"
-                placeholder="tu@correo.com"
-                autocomplete="email"
-              />
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label for="password">Contraseña</label>
-              <div class="input-wrapper">
-                <span class="input-icon">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                    <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                  </svg>
-                </span>
-                <input
-                  id="password"
-                  v-model="form.password"
-                  type="password"
-                  placeholder="Mínimo 8 caracteres"
-                  autocomplete="new-password"
-                />
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label for="confirm">Confirmar</label>
-              <div class="input-wrapper">
-                <span class="input-icon">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                  </svg>
-                </span>
-                <input
-                  id="confirm"
-                  v-model="form.confirmPassword"
-                  type="password"
-                  placeholder="Repetir contraseña"
-                  autocomplete="new-password"
-                />
-              </div>
-            </div>
-          </div>
-
-          <button type="submit" class="btn-primary" :class="{ 'btn--loading': loading }">
-            <span v-if="!loading">Crear cuenta</span>
-            <span v-else class="btn-loader">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-              </svg>
-            </span>
-          </button>
-        </form>
+        <button type="button" class="btn-primary" @click="router.push('/login')">
+          Volver al inicio de sesión
+        </button>
 
         <p class="form-footer">
           ¿Ya tienes cuenta?
@@ -424,5 +326,15 @@ function handleRegister() {
 
 .form-footer a:hover {
   color: var(--color-accent-dark);
+}
+
+.info-text {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  line-height: 1.6;
 }
 </style>

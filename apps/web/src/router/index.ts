@@ -1,11 +1,12 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import AppLayout from '../components/AppLayout.vue'
 import HomeView from '../views/HomeView.vue'
+import { useAuthStore } from '@/stores/auth'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
-    // Auth routes (sin layout)
+    // Auth routes (no layout, no JWT required)
     {
       path: '/login',
       name: 'login',
@@ -17,10 +18,11 @@ const router = createRouter({
       component: () => import('../views/RegisterView.vue'),
     },
 
-    // App routes (con sidebar layout)
+    // App routes (sidebar layout, JWT required)
     {
       path: '/',
       component: AppLayout,
+      meta: { requiresAuth: true },
       children: [
         {
           path: '',
@@ -55,12 +57,30 @@ const router = createRouter({
       ],
     },
 
-    // Redirect raíz a login
+    // Catch-all → login
     {
       path: '/:pathMatch(.*)*',
       redirect: '/login',
     },
   ],
+})
+
+router.beforeEach(async (to) => {
+  const authStore = useAuthStore()
+
+  // Initialize session on first navigation if not yet attempted
+  if (!authStore.isAuthenticated && !authStore.loading) {
+    await authStore.initSession()
+  }
+
+  if (to.meta['requiresAuth'] && !authStore.isAuthenticated) {
+    return { name: 'login' }
+  }
+
+  // Redirect already-authenticated users away from login/register
+  if ((to.name === 'login' || to.name === 'register') && authStore.isAuthenticated) {
+    return { name: 'home' }
+  }
 })
 
 export default router
