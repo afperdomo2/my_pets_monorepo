@@ -10,12 +10,20 @@ const (
 	AuthProviderGoogle AuthProvider = "google"
 )
 
-// UserPayload is the shape accepted from HTTP clients on create and update.
-// It deliberately excludes server-managed fields (ID, timestamps, is_system_user).
-type UserPayload struct {
-	Name     string `json:"name"     binding:"required"`
+// CreateUserPayload is the shape accepted from HTTP clients on user creation.
+// Password is required because local accounts always need one.
+type CreateUserPayload struct {
+	Name     string `json:"name"     binding:"required,min=2,max=100"`
 	Email    string `json:"email"    binding:"required,email"`
-	Password string `json:"password" binding:"required,min=8"`
+	Password string `json:"password" binding:"required,min=8,max=72"`
+}
+
+// UpdateUserPayload is the shape accepted from HTTP clients on user update.
+// Password is optional: if omitted the existing hash is kept unchanged.
+type UpdateUserPayload struct {
+	Name     string `json:"name"     binding:"required,min=2,max=100"`
+	Email    string `json:"email"    binding:"required,email"`
+	Password string `json:"password" binding:"omitempty,min=8,max=72"`
 }
 
 // GoogleUserInfo contains the profile data returned by Google's userinfo endpoint.

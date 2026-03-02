@@ -11,6 +11,7 @@ const authStore = useAuthStore()
 const email = ref('')
 const password = ref('')
 const error = ref<string | null>(null)
+const fieldErrors = ref<Record<string, string>>({})
 
 const successMessage = computed(() =>
   route.query['success'] === 'account_created'
@@ -25,8 +26,22 @@ onMounted(async () => {
   }
 })
 
+function validate(): boolean {
+  fieldErrors.value = {}
+  if (!email.value.trim()) {
+    fieldErrors.value.email = 'El correo electrónico es obligatorio'
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value)) {
+    fieldErrors.value.email = 'Ingresa un correo electrónico válido'
+  }
+  if (!password.value) {
+    fieldErrors.value.password = 'La contraseña es obligatoria'
+  }
+  return Object.keys(fieldErrors.value).length === 0
+}
+
 async function handleLogin() {
   error.value = null
+  if (!validate()) return
   try {
     await authStore.login(email.value, password.value)
     router.push('/')
@@ -108,6 +123,7 @@ function handleGoogleLogin() {
                 autocomplete="email"
               />
             </div>
+            <p v-if="fieldErrors.email" class="field-error">{{ fieldErrors.email }}</p>
           </div>
 
           <div class="form-group">
@@ -130,6 +146,7 @@ function handleGoogleLogin() {
                 autocomplete="current-password"
               />
             </div>
+            <p v-if="fieldErrors.password" class="field-error">{{ fieldErrors.password }}</p>
           </div>
 
           <p v-if="successMessage" class="form-success">{{ successMessage }}</p>
@@ -464,6 +481,12 @@ function handleGoogleLogin() {
   border: 1px solid #fecaca;
   border-radius: var(--radius-md);
   padding: var(--space-2) var(--space-3);
+}
+
+.field-error {
+  font-size: var(--text-xs);
+  color: #dc2626;
+  margin-top: var(--space-1);
 }
 
 /* ── Success message ──────────────────────────────────────── */

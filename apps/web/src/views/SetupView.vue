@@ -12,19 +12,36 @@ const password = ref('')
 const confirmPassword = ref('')
 const loading = ref(false)
 const error = ref<string | null>(null)
+const fieldErrors = ref<Record<string, string>>({})
+
+function validate(): boolean {
+  fieldErrors.value = {}
+  if (!name.value.trim()) {
+    fieldErrors.value.name = 'El nombre es obligatorio'
+  } else if (name.value.trim().length < 2) {
+    fieldErrors.value.name = 'El nombre debe tener al menos 2 caracteres'
+  }
+  if (!email.value.trim()) {
+    fieldErrors.value.email = 'El correo electrónico es obligatorio'
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value)) {
+    fieldErrors.value.email = 'Ingresa un correo electrónico válido'
+  }
+  if (!password.value) {
+    fieldErrors.value.password = 'La contraseña es obligatoria'
+  } else if (password.value.length < 8) {
+    fieldErrors.value.password = 'La contraseña debe tener al menos 8 caracteres'
+  }
+  if (!confirmPassword.value) {
+    fieldErrors.value.confirmPassword = 'Confirma tu contraseña'
+  } else if (password.value !== confirmPassword.value) {
+    fieldErrors.value.confirmPassword = 'Las contraseñas no coinciden'
+  }
+  return Object.keys(fieldErrors.value).length === 0
+}
 
 async function handleSetup() {
   error.value = null
-
-  if (password.value.length < 8) {
-    error.value = 'La contraseña debe tener al menos 8 caracteres'
-    return
-  }
-
-  if (password.value !== confirmPassword.value) {
-    error.value = 'Las contraseñas no coinciden'
-    return
-  }
+  if (!validate()) return
 
   loading.value = true
   try {
@@ -109,9 +126,9 @@ async function handleSetup() {
                 type="text"
                 placeholder="Tu nombre completo"
                 autocomplete="name"
-                required
               />
             </div>
+            <p v-if="fieldErrors.name" class="field-error">{{ fieldErrors.name }}</p>
           </div>
 
           <div class="form-group">
@@ -129,9 +146,9 @@ async function handleSetup() {
                 type="email"
                 placeholder="admin@correo.com"
                 autocomplete="email"
-                required
               />
             </div>
+            <p v-if="fieldErrors.email" class="field-error">{{ fieldErrors.email }}</p>
           </div>
 
           <div class="form-group">
@@ -149,9 +166,9 @@ async function handleSetup() {
                 type="password"
                 placeholder="Mínimo 8 caracteres"
                 autocomplete="new-password"
-                required
               />
             </div>
+            <p v-if="fieldErrors.password" class="field-error">{{ fieldErrors.password }}</p>
           </div>
 
           <div class="form-group">
@@ -169,9 +186,9 @@ async function handleSetup() {
                 type="password"
                 placeholder="Repite tu contraseña"
                 autocomplete="new-password"
-                required
               />
             </div>
+            <p v-if="fieldErrors.confirmPassword" class="field-error">{{ fieldErrors.confirmPassword }}</p>
           </div>
 
           <p v-if="error" class="form-error">{{ error }}</p>
@@ -457,5 +474,11 @@ async function handleSetup() {
   border: 1px solid #fecaca;
   border-radius: var(--radius-md);
   padding: var(--space-2) var(--space-3);
+}
+
+.field-error {
+  font-size: var(--text-xs);
+  color: #dc2626;
+  margin-top: var(--space-1);
 }
 </style>

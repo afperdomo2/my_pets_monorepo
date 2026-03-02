@@ -20,8 +20,8 @@ type Repository interface {
 	GetAll(ctx context.Context) ([]User, error)
 	GetByID(ctx context.Context, id int) (User, error)
 	GetByEmail(ctx context.Context, email string) (User, error)
-	Create(ctx context.Context, payload UserPayload, isSystemUser bool) (User, error)
-	Update(ctx context.Context, id int, payload UserPayload) (User, error)
+	Create(ctx context.Context, payload CreateUserPayload, isSystemUser bool) (User, error)
+	Update(ctx context.Context, id int, payload UpdateUserPayload) (User, error)
 	Delete(ctx context.Context, id int) error
 	// HasUsers reports whether any user exists in the database (used for setup detection).
 	HasUsers(ctx context.Context) (bool, error)

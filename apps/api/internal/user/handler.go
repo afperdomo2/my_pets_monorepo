@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/my-pets/api/internal/validation"
 )
 
 // Handler holds the dependencies for user HTTP handlers.
@@ -105,9 +106,9 @@ func (h *Handler) CreateUser(c *gin.Context) {
 		c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
 		return
 	}
-	var payload UserPayload
+	var payload CreateUserPayload
 	if err := c.ShouldBindJSON(&payload); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": validation.Translate(err)})
 		return
 	}
 
@@ -157,9 +158,9 @@ func (h *Handler) UpdateUser(c *gin.Context) {
 		c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
 		return
 	}
-	var payload UserPayload
+	var payload UpdateUserPayload
 	if err := c.ShouldBindJSON(&payload); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": validation.Translate(err)})
 		return
 	}
 	updated, err := h.repo.Update(c.Request.Context(), id, payload)

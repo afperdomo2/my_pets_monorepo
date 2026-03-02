@@ -12,6 +12,7 @@ const id = Number(route.params.id)
 const pet = ref(store.pets.find(p => p.id === id))
 const editing = ref(false)
 const form = ref<PetPayload>({ name: '', species: '', breed: '', age: 0, owner: '' })
+const fieldErrors = ref<Record<string, string>>({})
 
 onMounted(async () => {
   if (store.pets.length === 0) await store.fetchPets()
@@ -22,10 +23,28 @@ onMounted(async () => {
   }
 })
 
+function validate(): boolean {
+  fieldErrors.value = {}
+  if (!form.value.name.trim()) {
+    fieldErrors.value.name = 'El nombre es obligatorio'
+  }
+  if (!form.value.species) {
+    fieldErrors.value.species = 'La especie es obligatoria'
+  }
+  const age = form.value.age ?? 0
+  if (age < 0 || age > 100) {
+    fieldErrors.value.age = 'La edad debe estar entre 0 y 100'
+  }
+  return Object.keys(fieldErrors.value).length === 0
+}
+
 async function handleUpdate() {
+  if (!validate()) return
   await store.updatePet(id, form.value)
-  pet.value = store.pets.find(p => p.id === id)
-  editing.value = false
+  if (!store.error) {
+    pet.value = store.pets.find(p => p.id === id)
+    editing.value = false
+  }
 }
 
 async function handleDelete() {
@@ -57,11 +76,40 @@ async function handleDelete() {
 
       <form v-else class="pet-form" @submit.prevent="handleUpdate">
         <h2>Editar mascota</h2>
-        <input v-model="form.name" placeholder="Nombre *" required />
-        <input v-model="form.species" placeholder="Especie *" required />
-        <input v-model="form.breed" placeholder="Raza" />
-        <input v-model.number="form.age" type="number" placeholder="Edad" min="0" />
-        <input v-model="form.owner" placeholder="Dueño" />
+
+        <div class="form-field">
+          <input v-model="form.name" placeholder="Nombre *" />
+          <p v-if="fieldErrors.name" class="field-error">{{ fieldErrors.name }}</p>
+        </div>
+
+        <div class="form-field">
+          <select v-model="form.species">
+            <option value="" disabled>Especie *</option>
+            <option value="dog">Perro</option>
+            <option value="cat">Gato</option>
+            <option value="bird">Ave</option>
+            <option value="rabbit">Conejo</option>
+            <option value="fish">Pez</option>
+            <option value="other">Otro</option>
+          </select>
+          <p v-if="fieldErrors.species" class="field-error">{{ fieldErrors.species }}</p>
+        </div>
+
+        <div class="form-field">
+          <input v-model="form.breed" placeholder="Raza" />
+        </div>
+
+        <div class="form-field">
+          <input v-model.number="form.age" type="number" placeholder="Edad" min="0" max="100" />
+          <p v-if="fieldErrors.age" class="field-error">{{ fieldErrors.age }}</p>
+        </div>
+
+        <div class="form-field">
+          <input v-model="form.owner" placeholder="Dueño" />
+        </div>
+
+        <p v-if="store.error" class="form-error">{{ store.error }}</p>
+
         <div class="actions">
           <button type="submit" class="btn-primary">Guardar</button>
           <button type="button" class="btn-secondary" @click="editing = false">Cancelar</button>
@@ -78,13 +126,17 @@ async function handleDelete() {
 .detail-card { margin-top: 1.5rem; padding: 1.5rem; background: #fff; border: 1px solid #e8e8e8; border-radius: 10px; }
 .detail-card h1 { margin-top: 0; }
 .detail-card p { margin: 0.5rem 0; }
-.pet-form { display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1.5rem; }
-.pet-form h2 { margin: 0; }
-.pet-form input { padding: 0.5rem 0.75rem; border: 1px solid #ddd; border-radius: 6px; font-size: 0.95rem; }
+.pet-form { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1.5rem; }
+.pet-form h2 { margin: 0 0 0.5rem; }
+.form-field { display: flex; flex-direction: column; gap: 0.25rem; }
+.pet-form input,
+.pet-form select { padding: 0.5rem 0.75rem; border: 1px solid #ddd; border-radius: 6px; font-size: 0.95rem; background: #fff; }
 .actions { display: flex; gap: 0.75rem; margin-top: 1rem; }
 .btn-primary { padding: 0.5rem 1.25rem; background: #42b883; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; }
 .btn-primary:hover { background: #369a6e; }
 .btn-secondary { padding: 0.5rem 1.25rem; background: #eee; color: #333; border: none; border-radius: 6px; cursor: pointer; }
 .btn-danger { padding: 0.5rem 1.25rem; background: #e74c3c; color: #fff; border: none; border-radius: 6px; cursor: pointer; }
 .status { margin-top: 2rem; color: #888; }
+.field-error { font-size: 0.75rem; color: #dc2626; margin: 0; }
+.form-error { font-size: 0.85rem; color: #dc2626; background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; padding: 0.4rem 0.75rem; margin: 0; }
 </style>

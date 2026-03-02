@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/my-pets/api/internal/user"
+	"github.com/my-pets/api/internal/validation"
 )
 
 // Handler holds setup handler dependencies.
@@ -71,11 +72,11 @@ func (h *Handler) Create(c *gin.Context) {
 
 	var payload SetupPayload
 	if err := c.ShouldBindJSON(&payload); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": validation.Translate(err)})
 		return
 	}
 
-	created, err := h.userRepo.Create(ctx, user.UserPayload{
+	created, err := h.userRepo.Create(ctx, user.CreateUserPayload{
 		Name:     payload.Name,
 		Email:    payload.Email,
 		Password: payload.Password,

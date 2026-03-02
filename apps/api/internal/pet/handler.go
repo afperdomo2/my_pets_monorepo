@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/my-pets/api/internal/validation"
 )
 
 // Handler holds the dependencies for pet HTTP handlers.
@@ -87,7 +88,7 @@ func (h *Handler) GetPet(c *gin.Context) {
 func (h *Handler) CreatePet(c *gin.Context) {
 	var payload PetPayload
 	if err := c.ShouldBindJSON(&payload); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": validation.Translate(err)})
 		return
 	}
 	created, err := h.repo.Create(c.Request.Context(), payload)
@@ -118,7 +119,7 @@ func (h *Handler) UpdatePet(c *gin.Context) {
 	}
 	var payload PetPayload
 	if err := c.ShouldBindJSON(&payload); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": validation.Translate(err)})
 		return
 	}
 	updated, err := h.repo.Update(c.Request.Context(), id, payload)

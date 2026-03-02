@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/my-pets/api/internal/config"
 	"github.com/my-pets/api/internal/user"
+	"github.com/my-pets/api/internal/validation"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -25,7 +26,7 @@ func NewHandler(cfg *config.Config, userRepo user.Repository) *Handler {
 // LoginPayload is the request body for local login.
 type LoginPayload struct {
 	Email    string `json:"email"    binding:"required,email"`
-	Password string `json:"password" binding:"required"`
+	Password string `json:"password" binding:"required,min=1"`
 }
 
 // setAuthCookies writes the access and refresh tokens as HttpOnly cookies.
@@ -79,7 +80,7 @@ func clearAuthCookies(c *gin.Context) {
 func (h *Handler) Login(c *gin.Context) {
 	var payload LoginPayload
 	if err := c.ShouldBindJSON(&payload); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": validation.Translate(err)})
 		return
 	}
 
