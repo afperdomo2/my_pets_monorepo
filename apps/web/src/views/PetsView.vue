@@ -56,7 +56,7 @@ async function handleDelete(id: number) {
 </template>
 
 <style scoped>
-.pets-view { max-width: 800px; margin: 0 auto; padding: 2rem 1rem; }
+.pets-view { width: 100%; padding: var(--space-8) var(--space-10); }
 .pets-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
 .pet-form { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 2rem; padding: 1rem; background: #f9f9f9; border-radius: 8px; }
 .pet-form input { flex: 1 1 180px; padding: 0.5rem 0.75rem; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9rem; }

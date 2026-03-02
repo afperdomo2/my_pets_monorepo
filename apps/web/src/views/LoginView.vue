@@ -1,0 +1,420 @@
+<script setup lang="ts">
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+const email = ref('')
+const password = ref('')
+const loading = ref(false)
+
+function handleLogin() {
+  loading.value = true
+  // Sin lógica real por ahora — redirige directo al home
+  setTimeout(() => {
+    loading.value = false
+    router.push('/')
+  }, 600)
+}
+</script>
+
+<template>
+  <div class="auth-page">
+    <!-- Panel decorativo izquierdo -->
+    <div class="auth-panel">
+      <div class="panel-content">
+        <div class="panel-brand">
+          <div class="panel-icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M11 6c0 4-3 6-3 10a4 4 0 0 0 8 0c0-4-3-6-3-10"/>
+              <circle cx="11" cy="4" r="1.5"/>
+            </svg>
+          </div>
+          <span class="panel-brand-name">My Pets</span>
+        </div>
+
+        <div class="panel-headline">
+          <h2>Cuida lo que más<br /><em>importa.</em></h2>
+          <p>Gestiona la salud y el bienestar de tus mascotas en un solo lugar.</p>
+        </div>
+
+        <div class="panel-features">
+          <div class="feature-item">
+            <span class="feature-dot" />
+            <span>Historial médico completo</span>
+          </div>
+          <div class="feature-item">
+            <span class="feature-dot" />
+            <span>Calendario de vacunas</span>
+          </div>
+          <div class="feature-item">
+            <span class="feature-dot" />
+            <span>Seguimiento de bienestar</span>
+          </div>
+        </div>
+
+        <!-- Decorative shapes -->
+        <div class="panel-shape panel-shape--1" />
+        <div class="panel-shape panel-shape--2" />
+        <div class="panel-shape panel-shape--3" />
+      </div>
+    </div>
+
+    <!-- Formulario derecho -->
+    <div class="auth-form-container">
+      <div class="auth-form-card">
+        <div class="form-header">
+          <h1>Bienvenido</h1>
+          <p>Inicia sesión para continuar</p>
+        </div>
+
+        <form class="form" @submit.prevent="handleLogin">
+          <div class="form-group">
+            <label for="email">Correo electrónico</label>
+            <div class="input-wrapper">
+              <span class="input-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                  <rect width="20" height="16" x="2" y="4" rx="2"/>
+                  <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+                </svg>
+              </span>
+              <input
+                id="email"
+                v-model="email"
+                type="email"
+                placeholder="tu@correo.com"
+                autocomplete="email"
+              />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="password">
+              Contraseña
+              <a href="#" class="forgot-link">¿Olvidaste tu contraseña?</a>
+            </label>
+            <div class="input-wrapper">
+              <span class="input-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                  <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+              </span>
+              <input
+                id="password"
+                v-model="password"
+                type="password"
+                placeholder="••••••••"
+                autocomplete="current-password"
+              />
+            </div>
+          </div>
+
+          <button type="submit" class="btn-primary" :class="{ 'btn--loading': loading }">
+            <span v-if="!loading">Ingresar</span>
+            <span v-else class="btn-loader">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+              </svg>
+            </span>
+          </button>
+        </form>
+
+        <p class="form-footer">
+          ¿No tienes cuenta?
+          <RouterLink to="/register">Crear cuenta</RouterLink>
+        </p>
+      </div>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.auth-page {
+  display: flex;
+  min-height: 100vh;
+  background: var(--color-bg);
+}
+
+/* ── Panel decorativo ─────────────────────────────────────── */
+.auth-panel {
+  flex: 0 0 460px;
+  background: var(--color-accent);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 900px) {
+  .auth-panel {
+    display: none;
+  }
+}
+
+.panel-content {
+  position: relative;
+  z-index: 2;
+  padding: var(--space-12);
+  color: var(--color-text-inverse);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-10);
+}
+
+.panel-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.panel-icon {
+  width: 44px;
+  height: 44px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(8px);
+}
+
+.panel-brand-name {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 600;
+  color: #fff;
+}
+
+.panel-headline h2 {
+  font-family: var(--font-display);
+  font-size: var(--text-4xl);
+  font-weight: 600;
+  line-height: 1.2;
+  color: #fff;
+  margin-bottom: var(--space-4);
+}
+
+.panel-headline h2 em {
+  font-style: italic;
+  opacity: 0.85;
+}
+
+.panel-headline p {
+  font-size: var(--text-base);
+  color: rgba(255, 255, 255, 0.75);
+  line-height: 1.6;
+  max-width: 320px;
+}
+
+.panel-features {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.feature-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 500;
+}
+
+.feature-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.6);
+  flex-shrink: 0;
+}
+
+/* Formas decorativas */
+.panel-shape {
+  position: absolute;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.06);
+  z-index: 1;
+}
+
+.panel-shape--1 {
+  width: 320px;
+  height: 320px;
+  top: -80px;
+  right: -80px;
+}
+
+.panel-shape--2 {
+  width: 200px;
+  height: 200px;
+  bottom: 60px;
+  right: 40px;
+}
+
+.panel-shape--3 {
+  width: 120px;
+  height: 120px;
+  bottom: -30px;
+  left: 60px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* ── Formulario ───────────────────────────────────────────── */
+.auth-form-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-8);
+}
+
+.auth-form-card {
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+.form-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.form-header h1 {
+  font-family: var(--font-display);
+  font-size: var(--text-3xl);
+  color: var(--color-text-primary);
+}
+
+.form-header p {
+  font-size: var(--text-base);
+  color: var(--color-text-secondary);
+}
+
+/* ── Form fields ──────────────────────────────────────────── */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.form-group label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.forgot-link {
+  font-size: var(--text-xs);
+  font-weight: 400;
+  color: var(--color-accent);
+  transition: color var(--transition-fast);
+}
+
+.forgot-link:hover {
+  color: var(--color-accent-dark);
+}
+
+.input-wrapper {
+  position: relative;
+}
+
+.input-icon {
+  position: absolute;
+  left: var(--space-3);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-text-tertiary);
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+}
+
+.input-wrapper input {
+  width: 100%;
+  padding: var(--space-3) var(--space-4) var(--space-3) calc(var(--space-3) + 16px + var(--space-2));
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  font-size: var(--text-sm);
+  color: var(--color-text-primary);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.input-wrapper input::placeholder {
+  color: var(--color-text-tertiary);
+}
+
+.input-wrapper input:focus {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-accent-light);
+}
+
+/* ── Botón ────────────────────────────────────────────────── */
+.btn-primary {
+  width: 100%;
+  padding: var(--space-3) var(--space-6);
+  background: var(--color-accent);
+  color: var(--color-text-inverse);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  transition: background var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
+  letter-spacing: 0.01em;
+  height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-primary:hover {
+  background: var(--color-accent-hover);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-primary:active {
+  transform: translateY(1px);
+}
+
+.btn--loading {
+  pointer-events: none;
+  opacity: 0.8;
+}
+
+.btn-loader svg {
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Footer del formulario ────────────────────────────────── */
+.form-footer {
+  text-align: center;
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.form-footer a {
+  color: var(--color-accent);
+  font-weight: 600;
+  margin-left: var(--space-1);
+}
+
+.form-footer a:hover {
+  color: var(--color-accent-dark);
+}
+</style>

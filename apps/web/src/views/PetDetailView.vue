@@ -72,7 +72,7 @@ async function handleDelete() {
 </template>
 
 <style scoped>
-.pet-detail { max-width: 500px; margin: 2rem auto; padding: 0 1rem; }
+.pet-detail { width: 100%; padding: var(--space-8) var(--space-10); }
 .back { color: #42b883; text-decoration: none; font-weight: 600; }
 .back:hover { text-decoration: underline; }
 .detail-card { margin-top: 1.5rem; padding: 1.5rem; background: #fff; border: 1px solid #e8e8e8; border-radius: 10px; }
