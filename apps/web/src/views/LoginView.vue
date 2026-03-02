@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { authService } from '@/services/authService'
@@ -17,6 +17,13 @@ const successMessage = computed(() =>
     ? 'Usuario creado exitosamente. Inicia sesión para continuar.'
     : null,
 )
+
+onMounted(async () => {
+  // Try to restore session from cookies if not already authenticated
+  if (!authStore.isAuthenticated && !authStore.loading) {
+    await authStore.initSession()
+  }
+})
 
 async function handleLogin() {
   error.value = null

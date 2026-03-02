@@ -109,10 +109,10 @@ router.beforeEach(async (to) => {
 
   const authStore = useAuthStore()
 
-  // Initialize session on first navigation if not yet attempted
-  if (!authStore.isAuthenticated && !authStore.loading) {
-    await authStore.initSession()
-  }
+  // Skip session initialization for now — let LoginView handle it
+  // if (!authStore.isAuthenticated && !authStore.loading && !authStore.loggingOut && to.name !== 'login') {
+  //   await authStore.initSession()
+  // }
 
   if (to.meta['requiresAuth'] && !authStore.isAuthenticated) {
     return { name: 'login' }

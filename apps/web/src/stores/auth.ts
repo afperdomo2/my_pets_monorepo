@@ -7,6 +7,7 @@ export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
   const loading = ref(false)
   const error = ref<string | null>(null)
+  const loggingOut = ref(false)
 
   const isAuthenticated = computed(() => user.value !== null)
 
@@ -25,12 +26,14 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function logout(): Promise<void> {
+    loggingOut.value = true
     try {
       await authService.logout()
     } catch {
       // Ignore network errors on logout — clear state anyway
     } finally {
       user.value = null
+      loggingOut.value = false
     }
   }
 
@@ -64,6 +67,7 @@ export const useAuthStore = defineStore('auth', () => {
     user,
     loading,
     error,
+    loggingOut,
     isAuthenticated,
     login,
     logout,
