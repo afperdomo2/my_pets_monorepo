@@ -86,10 +86,35 @@ pnpm dev
 | `make test-api` | Ejecutar tests Go |
 | `make lint-api` | `go vet` |
 | `make tidy` | `go mod tidy` |
+| `make swag` | Regenerar documentación Swagger |
 
 ---
 
-**Ejemplo de body para crear/actualizar:**
+## Swagger / API Docs
+
+La documentación interactiva de la API está disponible en:
+
+```
+http://localhost:8080/swagger/index.html
+```
+
+Incluye todos los endpoints de `pets`, `users` y el health check.
+
+### Regenerar los docs
+
+Cuando agregues o modifiques anotaciones en los handlers, regenera los docs con:
+
+```bash
+make swag
+```
+
+Esto ejecuta `swag init` y actualiza los archivos en `apps/api/docs/`.
+
+> Los archivos `docs/` están commiteados al repositorio para que el servidor pueda arrancar sin necesidad de tener `swag` instalado.
+
+---
+
+**Ejemplo de body para crear/actualizar una mascota:**
 
 ```json
 {
@@ -100,6 +125,18 @@ pnpm dev
   "owner": "Juan"
 }
 ```
+
+**Ejemplo de body para crear/actualizar un usuario:**
+
+```json
+{
+  "name": "Juan",
+  "email": "juan@example.com",
+  "password": "secreto123"
+}
+```
+
+> El primer usuario creado se marca automáticamente como `is_system_user: true`.
 
 ---
 

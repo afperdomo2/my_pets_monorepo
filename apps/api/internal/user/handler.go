@@ -29,6 +29,13 @@ func parseID(c *gin.Context) (int, bool) {
 }
 
 // GetUsers handles GET /api/v1/users
+//
+//	@Summary	List all users
+//	@Tags		users
+//	@Produce	json
+//	@Success	200	{object}	map[string]interface{}	"data: []User, total: int"
+//	@Failure	500	{object}	map[string]string		"error message"
+//	@Router		/api/v1/users [get]
 func (h *Handler) GetUsers(c *gin.Context) {
 	users, err := h.repo.GetAll(c.Request.Context())
 	if err != nil {
@@ -39,6 +46,16 @@ func (h *Handler) GetUsers(c *gin.Context) {
 }
 
 // GetUser handles GET /api/v1/users/:id
+//
+//	@Summary	Get a user by ID
+//	@Tags		users
+//	@Produce	json
+//	@Param		id	path		int						true	"User ID"
+//	@Success	200	{object}	map[string]interface{}	"data: User"
+//	@Failure	400	{object}	map[string]string		"invalid id"
+//	@Failure	404	{object}	map[string]string		"user not found"
+//	@Failure	500	{object}	map[string]string		"error message"
+//	@Router		/api/v1/users/{id} [get]
 func (h *Handler) GetUser(c *gin.Context) {
 	id, ok := parseID(c)
 	if !ok {
@@ -58,6 +75,18 @@ func (h *Handler) GetUser(c *gin.Context) {
 
 // CreateUser handles POST /api/v1/users
 // If no system user exists yet, the first created user is marked as the system user.
+//
+//	@Summary	Create a new user
+//	@Description	The first user created is automatically marked as the system user (is_system_user=true).
+//	@Tags		users
+//	@Accept		json
+//	@Produce	json
+//	@Param		user	body		UserPayload				true	"User data"
+//	@Success	201		{object}	map[string]interface{}	"data: User"
+//	@Failure	400		{object}	map[string]string		"validation error"
+//	@Failure	409		{object}	map[string]string		"email already in use"
+//	@Failure	500		{object}	map[string]string		"error message"
+//	@Router		/api/v1/users [post]
 func (h *Handler) CreateUser(c *gin.Context) {
 	var payload UserPayload
 	if err := c.ShouldBindJSON(&payload); err != nil {
@@ -87,6 +116,19 @@ func (h *Handler) CreateUser(c *gin.Context) {
 }
 
 // UpdateUser handles PUT /api/v1/users/:id
+//
+//	@Summary	Update an existing user
+//	@Tags		users
+//	@Accept		json
+//	@Produce	json
+//	@Param		id		path		int						true	"User ID"
+//	@Param		user	body		UserPayload				true	"User data"
+//	@Success	200		{object}	map[string]interface{}	"data: User"
+//	@Failure	400		{object}	map[string]string		"invalid id or validation error"
+//	@Failure	404		{object}	map[string]string		"user not found"
+//	@Failure	409		{object}	map[string]string		"email already in use"
+//	@Failure	500		{object}	map[string]string		"error message"
+//	@Router		/api/v1/users/{id} [put]
 func (h *Handler) UpdateUser(c *gin.Context) {
 	id, ok := parseID(c)
 	if !ok {
@@ -114,6 +156,16 @@ func (h *Handler) UpdateUser(c *gin.Context) {
 }
 
 // DeleteUser handles DELETE /api/v1/users/:id
+//
+//	@Summary	Delete a user
+//	@Tags		users
+//	@Produce	json
+//	@Param		id	path		int					true	"User ID"
+//	@Success	200	{object}	map[string]string	"message: user deleted"
+//	@Failure	400	{object}	map[string]string	"invalid id"
+//	@Failure	404	{object}	map[string]string	"user not found"
+//	@Failure	500	{object}	map[string]string	"error message"
+//	@Router		/api/v1/users/{id} [delete]
 func (h *Handler) DeleteUser(c *gin.Context) {
 	id, ok := parseID(c)
 	if !ok {

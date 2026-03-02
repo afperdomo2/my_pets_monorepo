@@ -29,6 +29,13 @@ func parseID(c *gin.Context) (int, bool) {
 }
 
 // GetPets handles GET /api/v1/pets
+//
+//	@Summary	List all pets
+//	@Tags		pets
+//	@Produce	json
+//	@Success	200	{object}	map[string]interface{}	"data: []Pet, total: int"
+//	@Failure	500	{object}	map[string]string		"error message"
+//	@Router		/api/v1/pets [get]
 func (h *Handler) GetPets(c *gin.Context) {
 	pets, err := h.repo.GetAll(c.Request.Context())
 	if err != nil {
@@ -39,6 +46,16 @@ func (h *Handler) GetPets(c *gin.Context) {
 }
 
 // GetPet handles GET /api/v1/pets/:id
+//
+//	@Summary	Get a pet by ID
+//	@Tags		pets
+//	@Produce	json
+//	@Param		id	path		int						true	"Pet ID"
+//	@Success	200	{object}	map[string]interface{}	"data: Pet"
+//	@Failure	400	{object}	map[string]string		"invalid id"
+//	@Failure	404	{object}	map[string]string		"pet not found"
+//	@Failure	500	{object}	map[string]string		"error message"
+//	@Router		/api/v1/pets/{id} [get]
 func (h *Handler) GetPet(c *gin.Context) {
 	id, ok := parseID(c)
 	if !ok {
@@ -57,6 +74,16 @@ func (h *Handler) GetPet(c *gin.Context) {
 }
 
 // CreatePet handles POST /api/v1/pets
+//
+//	@Summary	Create a new pet
+//	@Tags		pets
+//	@Accept		json
+//	@Produce	json
+//	@Param		pet	body		PetPayload				true	"Pet data"
+//	@Success	201	{object}	map[string]interface{}	"data: Pet"
+//	@Failure	400	{object}	map[string]string		"validation error"
+//	@Failure	500	{object}	map[string]string		"error message"
+//	@Router		/api/v1/pets [post]
 func (h *Handler) CreatePet(c *gin.Context) {
 	var payload PetPayload
 	if err := c.ShouldBindJSON(&payload); err != nil {
@@ -72,6 +99,18 @@ func (h *Handler) CreatePet(c *gin.Context) {
 }
 
 // UpdatePet handles PUT /api/v1/pets/:id
+//
+//	@Summary	Update an existing pet
+//	@Tags		pets
+//	@Accept		json
+//	@Produce	json
+//	@Param		id	path		int						true	"Pet ID"
+//	@Param		pet	body		PetPayload				true	"Pet data"
+//	@Success	200	{object}	map[string]interface{}	"data: Pet"
+//	@Failure	400	{object}	map[string]string		"invalid id or validation error"
+//	@Failure	404	{object}	map[string]string		"pet not found"
+//	@Failure	500	{object}	map[string]string		"error message"
+//	@Router		/api/v1/pets/{id} [put]
 func (h *Handler) UpdatePet(c *gin.Context) {
 	id, ok := parseID(c)
 	if !ok {
@@ -95,6 +134,16 @@ func (h *Handler) UpdatePet(c *gin.Context) {
 }
 
 // DeletePet handles DELETE /api/v1/pets/:id
+//
+//	@Summary	Delete a pet
+//	@Tags		pets
+//	@Produce	json
+//	@Param		id	path		int					true	"Pet ID"
+//	@Success	200	{object}	map[string]string	"message: pet deleted"
+//	@Failure	400	{object}	map[string]string	"invalid id"
+//	@Failure	404	{object}	map[string]string	"pet not found"
+//	@Failure	500	{object}	map[string]string	"error message"
+//	@Router		/api/v1/pets/{id} [delete]
 func (h *Handler) DeletePet(c *gin.Context) {
 	id, ok := parseID(c)
 	if !ok {

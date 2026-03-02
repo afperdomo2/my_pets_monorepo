@@ -7,6 +7,12 @@ import (
 )
 
 // Handler returns a simple liveness response.
+//
+//	@Summary	Health check
+//	@Tags		health
+//	@Produce	json
+//	@Success	200	{object}	map[string]string	"ok"
+//	@Router		/health [get]
 func Handler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"status":  "ok",

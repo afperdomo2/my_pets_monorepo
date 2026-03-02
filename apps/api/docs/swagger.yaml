@@ -1,0 +1,415 @@
+basePath: /
+definitions:
+  pet.PetPayload:
+    properties:
+      age:
+        type: integer
+      breed:
+        type: string
+      name:
+        type: string
+      owner:
+        type: string
+      species:
+        type: string
+    required:
+    - name
+    - species
+    type: object
+  user.UserPayload:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+      password:
+        minLength: 8
+        type: string
+    required:
+    - email
+    - name
+    - password
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: API REST para gestión de mascotas y usuarios.
+  title: My Pets API
+  version: "1.0"
+paths:
+  /api/v1/pets:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'data: []Pet, total: int'
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: error message
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: List all pets
+      tags:
+      - pets
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Pet data
+        in: body
+        name: pet
+        required: true
+        schema:
+          $ref: '#/definitions/pet.PetPayload'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: 'data: Pet'
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: validation error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: error message
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create a new pet
+      tags:
+      - pets
+  /api/v1/pets/{id}:
+    delete:
+      parameters:
+      - description: Pet ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'message: pet deleted'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: invalid id
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: pet not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: error message
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete a pet
+      tags:
+      - pets
+    get:
+      parameters:
+      - description: Pet ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'data: Pet'
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: invalid id
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: pet not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: error message
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get a pet by ID
+      tags:
+      - pets
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Pet ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Pet data
+        in: body
+        name: pet
+        required: true
+        schema:
+          $ref: '#/definitions/pet.PetPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'data: Pet'
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: invalid id or validation error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: pet not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: error message
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update an existing pet
+      tags:
+      - pets
+  /api/v1/users:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'data: []User, total: int'
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: error message
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: List all users
+      tags:
+      - users
+    post:
+      consumes:
+      - application/json
+      description: The first user created is automatically marked as the system user
+        (is_system_user=true).
+      parameters:
+      - description: User data
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/user.UserPayload'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: 'data: User'
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: validation error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: email already in use
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: error message
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create a new user
+      tags:
+      - users
+  /api/v1/users/{id}:
+    delete:
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'message: user deleted'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: invalid id
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: user not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: error message
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete a user
+      tags:
+      - users
+    get:
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'data: User'
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: invalid id
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: user not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: error message
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get a user by ID
+      tags:
+      - users
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: User data
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/user.UserPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'data: User'
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: invalid id or validation error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: user not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: email already in use
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: error message
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update an existing user
+      tags:
+      - users
+  /health:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ok
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Health check
+      tags:
+      - health
+swagger: "2.0"
+tags:
+- description: Liveness check
+  name: health
+- description: Operaciones sobre mascotas
+  name: pets
+- description: Operaciones sobre usuarios
+  name: users

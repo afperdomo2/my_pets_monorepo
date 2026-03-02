@@ -1,9 +1,10 @@
-.PHONY: dev-api build-api test-api lint-api clean
+.PHONY: dev-api build-api test-api lint-api swag clean
 
 API_DIR=./apps/api
 BINARY=./apps/api/tmp/server
 GOBIN=$(shell go env GOPATH)/bin
 AIR=$(GOBIN)/air
+SWAG=$(GOBIN)/swag
 
 ## dev-api: Run API with hot-reload (requires air)
 dev-api:
@@ -27,6 +28,12 @@ lint-api:
 ## tidy: Tidy Go modules
 tidy:
 	@cd $(API_DIR) && go mod tidy
+
+## swag: Regenerate Swagger docs (installs swag CLI if needed)
+swag:
+	@test -f $(SWAG) || go install github.com/swaggo/swag/cmd/swag@latest
+	@cd $(API_DIR) && $(SWAG) init -g cmd/server/main.go -o docs
+	@echo "Swagger docs regenerated at apps/api/docs/"
 
 ## clean: Remove built binaries
 clean:

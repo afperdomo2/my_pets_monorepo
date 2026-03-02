@@ -1,3 +1,4 @@
+// Package main is the entrypoint for the My Pets API server.
 package main
 
 import (
@@ -8,6 +9,20 @@ import (
 	"github.com/my-pets/api/internal/config"
 	"github.com/my-pets/api/internal/server"
 )
+
+//	@title			My Pets API
+//	@version		1.0
+//	@description	API REST para gestión de mascotas y usuarios.
+
+//	@host		localhost:8080
+//	@BasePath	/
+
+//	@tag.name			health
+//	@tag.description	Liveness check
+//	@tag.name			pets
+//	@tag.description	Operaciones sobre mascotas
+//	@tag.name			users
+//	@tag.description	Operaciones sobre usuarios
 
 func main() {
 	cfg := config.Load()
