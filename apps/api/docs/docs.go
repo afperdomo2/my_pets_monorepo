@@ -104,6 +104,11 @@ const docTemplate = `{
         },
         "/api/v1/auth/logout": {
             "post": {
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -120,12 +125,26 @@ const docTemplate = `{
                                 "type": "string"
                             }
                         }
+                    },
+                    "401": {
+                        "description": "authentication required",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
                     }
                 }
             }
         },
         "/api/v1/auth/me": {
             "get": {
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -184,6 +203,11 @@ const docTemplate = `{
         },
         "/api/v1/pets": {
             "get": {
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -199,6 +223,15 @@ const docTemplate = `{
                             "additionalProperties": true
                         }
                     },
+                    "401": {
+                        "description": "authentication required",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
                     "500": {
                         "description": "error message",
                         "schema": {
@@ -211,6 +244,11 @@ const docTemplate = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ],
                 "consumes": [
                     "application/json"
                 ],
@@ -249,6 +287,15 @@ const docTemplate = `{
                             }
                         }
                     },
+                    "401": {
+                        "description": "authentication required",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
                     "500": {
                         "description": "error message",
                         "schema": {
@@ -263,6 +310,11 @@ const docTemplate = `{
         },
         "/api/v1/pets/{id}": {
             "get": {
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -296,6 +348,15 @@ const docTemplate = `{
                             }
                         }
                     },
+                    "401": {
+                        "description": "authentication required",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
                     "404": {
                         "description": "pet not found",
                         "schema": {
@@ -317,6 +378,11 @@ const docTemplate = `{
                 }
             },
             "put": {
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ],
                 "consumes": [
                     "application/json"
                 ],
@@ -362,6 +428,15 @@ const docTemplate = `{
                             }
                         }
                     },
+                    "401": {
+                        "description": "authentication required",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
                     "404": {
                         "description": "pet not found",
                         "schema": {
@@ -383,6 +458,11 @@ const docTemplate = `{
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -411,6 +491,15 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "invalid id",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "authentication required",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -524,6 +613,11 @@ const docTemplate = `{
         },
         "/api/v1/users": {
             "get": {
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -539,6 +633,15 @@ const docTemplate = `{
                             "additionalProperties": true
                         }
                     },
+                    "401": {
+                        "description": "authentication required",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
                     "500": {
                         "description": "error message",
                         "schema": {
@@ -551,6 +654,11 @@ const docTemplate = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ],
                 "description": "Only a user with is_system_user=true may call this endpoint.",
                 "consumes": [
                     "application/json"
@@ -569,7 +677,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/user.UserPayload"
+                            "$ref": "#/definitions/user.CreateUserPayload"
                         }
                     }
                 ],
@@ -583,6 +691,15 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "validation error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "authentication required",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -622,6 +739,11 @@ const docTemplate = `{
         },
         "/api/v1/users/{id}": {
             "get": {
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -655,6 +777,15 @@ const docTemplate = `{
                             }
                         }
                     },
+                    "401": {
+                        "description": "authentication required",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
                     "404": {
                         "description": "user not found",
                         "schema": {
@@ -676,6 +807,11 @@ const docTemplate = `{
                 }
             },
             "put": {
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ],
                 "consumes": [
                     "application/json"
                 ],
@@ -700,7 +836,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/user.UserPayload"
+                            "$ref": "#/definitions/user.UpdateUserPayload"
                         }
                     }
                 ],
@@ -714,6 +850,15 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "invalid id or validation error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "authentication required",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -760,6 +905,11 @@ const docTemplate = `{
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -788,6 +938,15 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "invalid id",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "authentication required",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -860,7 +1019,8 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "password": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1
                 }
             }
         },
@@ -872,19 +1032,33 @@ const docTemplate = `{
             ],
             "properties": {
                 "age": {
-                    "type": "integer"
+                    "type": "integer",
+                    "maximum": 100,
+                    "minimum": 0
                 },
                 "breed": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 100
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 1
                 },
                 "owner": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 100
                 },
                 "species": {
-                    "type": "string"
+                    "type": "string",
+                    "enum": [
+                        "dog",
+                        "cat",
+                        "bird",
+                        "rabbit",
+                        "fish",
+                        "other"
+                    ]
                 }
             }
         },
@@ -908,7 +1082,7 @@ const docTemplate = `{
                 }
             }
         },
-        "user.UserPayload": {
+        "user.CreateUserPayload": {
             "type": "object",
             "required": [
                 "email",
@@ -920,13 +1094,46 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 2
                 },
                 "password": {
                     "type": "string",
+                    "maxLength": 72,
                     "minLength": 8
                 }
             }
+        },
+        "user.UpdateUserPayload": {
+            "type": "object",
+            "required": [
+                "email",
+                "name"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 2
+                },
+                "password": {
+                    "type": "string",
+                    "maxLength": 72,
+                    "minLength": 8
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "CookieAuth": {
+            "description": "Cookie HttpOnly de sesión. Obtenida al hacer login o refresh. Se envía automáticamente por el navegador.",
+            "type": "apiKey",
+            "name": "access_token",
+            "in": "cookie"
         }
     },
     "tags": [

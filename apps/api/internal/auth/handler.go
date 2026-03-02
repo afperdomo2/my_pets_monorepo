@@ -116,7 +116,9 @@ func (h *Handler) Login(c *gin.Context) {
 //	@Summary	Logout — clears auth cookies
 //	@Tags		auth
 //	@Produce	json
+//	@Security	CookieAuth
 //	@Success	200	{object}	map[string]string	"message: logged out"
+//	@Failure	401	{object}	map[string]string	"authentication required"
 //	@Router		/api/v1/auth/logout [post]
 func (h *Handler) Logout(c *gin.Context) {
 	clearAuthCookies(c)
@@ -159,6 +161,7 @@ func (h *Handler) Refresh(c *gin.Context) {
 //	@Summary	Get the currently authenticated user
 //	@Tags		auth
 //	@Produce	json
+//	@Security	CookieAuth
 //	@Success	200	{object}	map[string]interface{}	"data: User"
 //	@Failure	401	{object}	map[string]string		"unauthorized"
 //	@Router		/api/v1/auth/me [get]

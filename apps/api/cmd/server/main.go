@@ -24,6 +24,11 @@ import (
 //	@tag.name			users
 //	@tag.description	Operaciones sobre usuarios
 
+//	@securityDefinitions.apikey	CookieAuth
+//	@in							cookie
+//	@name						access_token
+//	@description				Cookie HttpOnly de sesión. Obtenida al hacer login o refresh. Se envía automáticamente por el navegador.
+
 func main() {
 	cfg := config.Load()
 

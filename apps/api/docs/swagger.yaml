@@ -5,6 +5,7 @@ definitions:
       email:
         type: string
       password:
+        minLength: 1
         type: string
     required:
     - email
@@ -13,14 +14,27 @@ definitions:
   pet.PetPayload:
     properties:
       age:
+        maximum: 100
+        minimum: 0
         type: integer
       breed:
+        maxLength: 100
         type: string
       name:
+        maxLength: 100
+        minLength: 1
         type: string
       owner:
+        maxLength: 100
         type: string
       species:
+        enum:
+        - dog
+        - cat
+        - bird
+        - rabbit
+        - fish
+        - other
         type: string
     required:
     - name
@@ -40,19 +54,38 @@ definitions:
     - name
     - password
     type: object
-  user.UserPayload:
+  user.CreateUserPayload:
     properties:
       email:
         type: string
       name:
+        maxLength: 100
+        minLength: 2
         type: string
       password:
+        maxLength: 72
         minLength: 8
         type: string
     required:
     - email
     - name
     - password
+    type: object
+  user.UpdateUserPayload:
+    properties:
+      email:
+        type: string
+      name:
+        maxLength: 100
+        minLength: 2
+        type: string
+      password:
+        maxLength: 72
+        minLength: 8
+        type: string
+    required:
+    - email
+    - name
     type: object
 host: localhost:8080
 info:
@@ -128,6 +161,14 @@ paths:
             additionalProperties:
               type: string
             type: object
+        "401":
+          description: authentication required
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - CookieAuth: []
       summary: Logout — clears auth cookies
       tags:
       - auth
@@ -147,6 +188,8 @@ paths:
             additionalProperties:
               type: string
             type: object
+      security:
+      - CookieAuth: []
       summary: Get the currently authenticated user
       tags:
       - auth
@@ -179,12 +222,20 @@ paths:
           schema:
             additionalProperties: true
             type: object
+        "401":
+          description: authentication required
+          schema:
+            additionalProperties:
+              type: string
+            type: object
         "500":
           description: error message
           schema:
             additionalProperties:
               type: string
             type: object
+      security:
+      - CookieAuth: []
       summary: List all pets
       tags:
       - pets
@@ -212,12 +263,20 @@ paths:
             additionalProperties:
               type: string
             type: object
+        "401":
+          description: authentication required
+          schema:
+            additionalProperties:
+              type: string
+            type: object
         "500":
           description: error message
           schema:
             additionalProperties:
               type: string
             type: object
+      security:
+      - CookieAuth: []
       summary: Create a new pet
       tags:
       - pets
@@ -244,6 +303,12 @@ paths:
             additionalProperties:
               type: string
             type: object
+        "401":
+          description: authentication required
+          schema:
+            additionalProperties:
+              type: string
+            type: object
         "404":
           description: pet not found
           schema:
@@ -256,6 +321,8 @@ paths:
             additionalProperties:
               type: string
             type: object
+      security:
+      - CookieAuth: []
       summary: Delete a pet
       tags:
       - pets
@@ -280,6 +347,12 @@ paths:
             additionalProperties:
               type: string
             type: object
+        "401":
+          description: authentication required
+          schema:
+            additionalProperties:
+              type: string
+            type: object
         "404":
           description: pet not found
           schema:
@@ -292,6 +365,8 @@ paths:
             additionalProperties:
               type: string
             type: object
+      security:
+      - CookieAuth: []
       summary: Get a pet by ID
       tags:
       - pets
@@ -324,6 +399,12 @@ paths:
             additionalProperties:
               type: string
             type: object
+        "401":
+          description: authentication required
+          schema:
+            additionalProperties:
+              type: string
+            type: object
         "404":
           description: pet not found
           schema:
@@ -336,6 +417,8 @@ paths:
             additionalProperties:
               type: string
             type: object
+      security:
+      - CookieAuth: []
       summary: Update an existing pet
       tags:
       - pets
@@ -403,12 +486,20 @@ paths:
           schema:
             additionalProperties: true
             type: object
+        "401":
+          description: authentication required
+          schema:
+            additionalProperties:
+              type: string
+            type: object
         "500":
           description: error message
           schema:
             additionalProperties:
               type: string
             type: object
+      security:
+      - CookieAuth: []
       summary: List all users
       tags:
       - users
@@ -422,7 +513,7 @@ paths:
         name: user
         required: true
         schema:
-          $ref: '#/definitions/user.UserPayload'
+          $ref: '#/definitions/user.CreateUserPayload'
       produces:
       - application/json
       responses:
@@ -433,6 +524,12 @@ paths:
             type: object
         "400":
           description: validation error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: authentication required
           schema:
             additionalProperties:
               type: string
@@ -455,6 +552,8 @@ paths:
             additionalProperties:
               type: string
             type: object
+      security:
+      - CookieAuth: []
       summary: Create a new user (system user only)
       tags:
       - users
@@ -481,6 +580,12 @@ paths:
             additionalProperties:
               type: string
             type: object
+        "401":
+          description: authentication required
+          schema:
+            additionalProperties:
+              type: string
+            type: object
         "403":
           description: forbidden
           schema:
@@ -499,6 +604,8 @@ paths:
             additionalProperties:
               type: string
             type: object
+      security:
+      - CookieAuth: []
       summary: Delete a user
       tags:
       - users
@@ -523,6 +630,12 @@ paths:
             additionalProperties:
               type: string
             type: object
+        "401":
+          description: authentication required
+          schema:
+            additionalProperties:
+              type: string
+            type: object
         "404":
           description: user not found
           schema:
@@ -535,6 +648,8 @@ paths:
             additionalProperties:
               type: string
             type: object
+      security:
+      - CookieAuth: []
       summary: Get a user by ID
       tags:
       - users
@@ -552,7 +667,7 @@ paths:
         name: user
         required: true
         schema:
-          $ref: '#/definitions/user.UserPayload'
+          $ref: '#/definitions/user.UpdateUserPayload'
       produces:
       - application/json
       responses:
@@ -563,6 +678,12 @@ paths:
             type: object
         "400":
           description: invalid id or validation error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: authentication required
           schema:
             additionalProperties:
               type: string
@@ -591,6 +712,8 @@ paths:
             additionalProperties:
               type: string
             type: object
+      security:
+      - CookieAuth: []
       summary: Update an existing user
       tags:
       - users
@@ -608,6 +731,13 @@ paths:
       summary: Health check
       tags:
       - health
+securityDefinitions:
+  CookieAuth:
+    description: Cookie HttpOnly de sesión. Obtenida al hacer login o refresh. Se
+      envía automáticamente por el navegador.
+    in: cookie
+    name: access_token
+    type: apiKey
 swagger: "2.0"
 tags:
 - description: Liveness check

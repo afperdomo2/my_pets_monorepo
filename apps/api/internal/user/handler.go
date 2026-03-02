@@ -45,7 +45,9 @@ func canModifyUser(c *gin.Context, targetID int) bool {
 //	@Summary	List all users
 //	@Tags		users
 //	@Produce	json
+//	@Security	CookieAuth
 //	@Success	200	{object}	map[string]interface{}	"data: []User, total: int"
+//	@Failure	401	{object}	map[string]string		"authentication required"
 //	@Failure	500	{object}	map[string]string		"error message"
 //	@Router		/api/v1/users [get]
 func (h *Handler) GetUsers(c *gin.Context) {
@@ -62,9 +64,11 @@ func (h *Handler) GetUsers(c *gin.Context) {
 //	@Summary	Get a user by ID
 //	@Tags		users
 //	@Produce	json
+//	@Security	CookieAuth
 //	@Param		id	path		int						true	"User ID"
 //	@Success	200	{object}	map[string]interface{}	"data: User"
 //	@Failure	400	{object}	map[string]string		"invalid id"
+//	@Failure	401	{object}	map[string]string		"authentication required"
 //	@Failure	404	{object}	map[string]string		"user not found"
 //	@Failure	500	{object}	map[string]string		"error message"
 //	@Router		/api/v1/users/{id} [get]
@@ -93,9 +97,11 @@ func (h *Handler) GetUser(c *gin.Context) {
 //	@Tags		users
 //	@Accept		json
 //	@Produce	json
-//	@Param		user	body		UserPayload				true	"User data"
+//	@Security	CookieAuth
+//	@Param		user	body		CreateUserPayload		true	"User data"
 //	@Success	201		{object}	map[string]interface{}	"data: User"
 //	@Failure	400		{object}	map[string]string		"validation error"
+//	@Failure	401		{object}	map[string]string		"authentication required"
 //	@Failure	403		{object}	map[string]string		"forbidden"
 //	@Failure	409		{object}	map[string]string		"email already in use"
 //	@Failure	500		{object}	map[string]string		"error message"
@@ -140,10 +146,12 @@ func (h *Handler) CreateUser(c *gin.Context) {
 //	@Tags		users
 //	@Accept		json
 //	@Produce	json
+//	@Security	CookieAuth
 //	@Param		id		path		int						true	"User ID"
-//	@Param		user	body		UserPayload				true	"User data"
+//	@Param		user	body		UpdateUserPayload		true	"User data"
 //	@Success	200		{object}	map[string]interface{}	"data: User"
 //	@Failure	400		{object}	map[string]string		"invalid id or validation error"
+//	@Failure	401		{object}	map[string]string		"authentication required"
 //	@Failure	403		{object}	map[string]string		"forbidden"
 //	@Failure	404		{object}	map[string]string		"user not found"
 //	@Failure	409		{object}	map[string]string		"email already in use"
@@ -185,9 +193,11 @@ func (h *Handler) UpdateUser(c *gin.Context) {
 //	@Summary	Delete a user
 //	@Tags		users
 //	@Produce	json
+//	@Security	CookieAuth
 //	@Param		id	path		int					true	"User ID"
 //	@Success	200	{object}	map[string]string	"message: user deleted"
 //	@Failure	400	{object}	map[string]string	"invalid id"
+//	@Failure	401	{object}	map[string]string	"authentication required"
 //	@Failure	403	{object}	map[string]string	"forbidden"
 //	@Failure	404	{object}	map[string]string	"user not found"
 //	@Failure	500	{object}	map[string]string	"error message"

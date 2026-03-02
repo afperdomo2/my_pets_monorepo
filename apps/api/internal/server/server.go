@@ -63,8 +63,7 @@ func Run(cfg *config.Config, db *sql.DB) {
 	authHandler := auth.RegisterRoutes(v1, cfg, userRepo)
 
 	// ── Protected routes (JWT required) ─────────────────────────────────────
-	protected := v1.Group("")
-	protected.Use(middleware.JWT(cfg))
+	protected := v1.Group("", middleware.JWT(cfg))
 	{
 		// Auth endpoints that need the caller to be authenticated
 		auth.RegisterProtectedRoutes(protected, authHandler)
