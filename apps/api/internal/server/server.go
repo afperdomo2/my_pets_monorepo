@@ -12,6 +12,7 @@ import (
 	"github.com/my-pets/api/internal/health"
 	"github.com/my-pets/api/internal/middleware"
 	"github.com/my-pets/api/internal/pet"
+	"github.com/my-pets/api/internal/setup"
 	"github.com/my-pets/api/internal/user"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -53,7 +54,12 @@ func Run(cfg *config.Config, db *sql.DB) {
 	// Versioned API root group
 	v1 := r.Group("/api/v1")
 
-	// ── Public auth routes (no JWT) ─────────────────────────────────────────
+	// ── Public routes (no JWT) ──────────────────────────────────────────────
+	// Setup endpoints (must be registered before auth, publicly accessible)
+	setupHandler := setup.NewHandler(userRepo)
+	setup.RegisterRoutes(v1, setupHandler)
+
+	// Auth endpoints that are public
 	authHandler := auth.RegisterRoutes(v1, cfg, userRepo)
 
 	// ── Protected routes (JWT required) ─────────────────────────────────────

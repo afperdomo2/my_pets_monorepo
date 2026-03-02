@@ -185,6 +185,14 @@ func (r *postgresRepo) Delete(ctx context.Context, id int) error {
 	return nil
 }
 
+func (r *postgresRepo) HasUsers(ctx context.Context) (bool, error) {
+	var exists bool
+	err := r.db.QueryRowContext(ctx,
+		`SELECT EXISTS(SELECT 1 FROM users LIMIT 1)`,
+	).Scan(&exists)
+	return exists, err
+}
+
 func (r *postgresRepo) SystemUserExists(ctx context.Context) (bool, error) {
 	var exists bool
 	err := r.db.QueryRowContext(ctx,

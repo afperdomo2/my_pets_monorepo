@@ -23,6 +23,8 @@ type Repository interface {
 	Create(ctx context.Context, payload UserPayload, isSystemUser bool) (User, error)
 	Update(ctx context.Context, id int, payload UserPayload) (User, error)
 	Delete(ctx context.Context, id int) error
+	// HasUsers reports whether any user exists in the database (used for setup detection).
+	HasUsers(ctx context.Context) (bool, error)
 	// SystemUserExists reports whether at least one system user has been created.
 	SystemUserExists(ctx context.Context) (bool, error)
 	// GetPasswordByEmail retrieves the stored bcrypt hash for login verification.
