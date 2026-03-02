@@ -1,0 +1,59 @@
+package server
+
+import (
+	"context"
+	"database/sql"
+	"log"
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+	"github.com/my-pets/api/internal/config"
+	"github.com/my-pets/api/internal/health"
+	"github.com/my-pets/api/internal/middleware"
+	"github.com/my-pets/api/internal/pet"
+	"github.com/my-pets/api/internal/user"
+)
+
+// Run wires up all dependencies and starts the HTTP server.
+// It blocks until the server exits or an error occurs.
+func Run(cfg *config.Config, db *sql.DB) {
+	ctx := context.Background()
+
+	// Run migrations for each domain.
+	if err := pet.Migrate(ctx, db); err != nil {
+		log.Fatalf("pet migration failed: %v", err)
+	}
+	if err := user.Migrate(ctx, db); err != nil {
+		log.Fatalf("user migration failed: %v", err)
+	}
+	log.Println("Migrations applied")
+
+	// Set Gin mode before creating the engine.
+	if cfg.GinMode == "release" {
+		gin.SetMode(gin.ReleaseMode)
+	}
+
+	r := gin.Default()
+	r.Use(middleware.CORS())
+
+	// Health check (no versioning prefix)
+	r.GET("/health", health.Handler)
+
+	// Versioned API group
+	v1 := r.Group("/api/v1")
+
+	// Pet domain
+	petRepo := pet.NewPostgresRepo(db)
+	petHandler := pet.NewHandler(petRepo)
+	pet.RegisterRoutes(v1, petHandler)
+
+	// User domain
+	userRepo := user.NewPostgresRepo(db)
+	userHandler := user.NewHandler(userRepo)
+	user.RegisterRoutes(v1, userHandler)
+
+	log.Printf("Server running on :%s", cfg.Port)
+	if err := r.Run(":" + cfg.Port); err != nil && err != http.ErrServerClosed {
+		log.Fatalf("Server error: %v", err)
+	}
+}

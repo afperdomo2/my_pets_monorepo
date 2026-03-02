@@ -89,19 +89,6 @@ pnpm dev
 
 ---
 
-## 🌐 API Endpoints
-
-Base URL: `http://localhost:8080/api/v1`
-
-| Método | Ruta | Descripción |
-|---|---|---|
-| `GET` | `/pets` | Listar mascotas |
-| `GET` | `/pets/:id` | Obtener mascota |
-| `POST` | `/pets` | Crear mascota |
-| `PUT` | `/pets/:id` | Actualizar mascota |
-| `DELETE` | `/pets/:id` | Eliminar mascota |
-| `GET` | `/health` | Health check |
-
 **Ejemplo de body para crear/actualizar:**
 
 ```json
