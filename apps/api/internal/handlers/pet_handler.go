@@ -1,103 +1,102 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/my-pets/api/internal/models"
+	"github.com/my-pets/api/internal/repository"
 )
 
-// In-memory store (replace with DB later)
-var pets = []models.Pet{
-	{ID: 1, Name: "Firulais", Species: "dog", Breed: "Labrador", Age: 3, Owner: "Juan", CreatedAt: time.Now(), UpdatedAt: time.Now()},
-	{ID: 2, Name: "Michi", Species: "cat", Breed: "Siamese", Age: 2, Owner: "Maria", CreatedAt: time.Now(), UpdatedAt: time.Now()},
+type PetHandler struct {
+	repo repository.PetRepository
 }
 
-var nextID uint = 3
-
-func GetPets(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"data":  pets,
-		"total": len(pets),
-	})
+func NewPetHandler(repo repository.PetRepository) *PetHandler {
+	return &PetHandler{repo: repo}
 }
 
-func GetPet(c *gin.Context) {
+func (h *PetHandler) GetPets(c *gin.Context) {
+	pets, err := h.repo.GetAll()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	if pets == nil {
+		pets = []models.Pet{}
+	}
+	c.JSON(http.StatusOK, gin.H{"data": pets, "total": len(pets)})
+}
+
+func (h *PetHandler) GetPet(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
 		return
 	}
-
-	for _, pet := range pets {
-		if pet.ID == uint(id) {
-			c.JSON(http.StatusOK, gin.H{"data": pet})
-			return
-		}
+	pet, err := h.repo.GetByID(id)
+	if errors.Is(err, repository.ErrNotFound) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "pet not found"})
+		return
 	}
-
-	c.JSON(http.StatusNotFound, gin.H{"error": "pet not found"})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": pet})
 }
 
-func CreatePet(c *gin.Context) {
+func (h *PetHandler) CreatePet(c *gin.Context) {
 	var pet models.Pet
 	if err := c.ShouldBindJSON(&pet); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-
-	pet.ID = nextID
-	pet.CreatedAt = time.Now()
-	pet.UpdatedAt = time.Now()
-	nextID++
-
-	pets = append(pets, pet)
-	c.JSON(http.StatusCreated, gin.H{"data": pet})
+	created, err := h.repo.Create(pet)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusCreated, gin.H{"data": created})
 }
 
-func UpdatePet(c *gin.Context) {
+func (h *PetHandler) UpdatePet(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
 		return
 	}
-
-	var input models.Pet
-	if err := c.ShouldBindJSON(&input); err != nil {
+	var pet models.Pet
+	if err := c.ShouldBindJSON(&pet); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-
-	for i, pet := range pets {
-		if pet.ID == uint(id) {
-			input.ID = pet.ID
-			input.CreatedAt = pet.CreatedAt
-			input.UpdatedAt = time.Now()
-			pets[i] = input
-			c.JSON(http.StatusOK, gin.H{"data": pets[i]})
-			return
-		}
+	updated, err := h.repo.Update(id, pet)
+	if errors.Is(err, repository.ErrNotFound) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "pet not found"})
+		return
 	}
-
-	c.JSON(http.StatusNotFound, gin.H{"error": "pet not found"})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": updated})
 }
 
-func DeletePet(c *gin.Context) {
+func (h *PetHandler) DeletePet(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
 		return
 	}
-
-	for i, pet := range pets {
-		if pet.ID == uint(id) {
-			pets = append(pets[:i], pets[i+1:]...)
-			c.JSON(http.StatusOK, gin.H{"message": "pet deleted"})
-			return
-		}
+	if err := h.repo.Delete(id); errors.Is(err, repository.ErrNotFound) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "pet not found"})
+		return
+	} else if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
 	}
-
-	c.JSON(http.StatusNotFound, gin.H{"error": "pet not found"})
+	c.JSON(http.StatusOK, gin.H{"message": "pet deleted"})
 }

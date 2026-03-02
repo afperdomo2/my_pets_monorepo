@@ -2,11 +2,13 @@
 
 API_DIR=./apps/api
 BINARY=./apps/api/tmp/server
+GOBIN=$(shell go env GOPATH)/bin
+AIR=$(GOBIN)/air
 
 ## dev-api: Run API with hot-reload (requires air)
 dev-api:
-	@which air > /dev/null || go install github.com/air-verse/air@latest
-	@cd $(API_DIR) && air -c .air.toml
+	@test -f $(AIR) || go install github.com/air-verse/air@latest
+	@cd $(API_DIR) && $(AIR) -c .air.toml
 
 ## build-api: Build the API binary
 build-api:

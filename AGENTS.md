@@ -11,9 +11,11 @@ my_pets_monorepo/
 ├── apps/
 │   ├── api/                  # Backend — Go 1.23+ + Gin
 │   │   ├── cmd/server/       # Entrypoint (package main)
+│   │   ├── .env              # Variables de entorno locales (no commitear)
 │   │   └── internal/
 │   │       ├── handlers/     # HTTP handlers (package handlers)
 │   │       ├── models/       # Data structs (package models)
+│   │       ├── repository/   # Capa de persistencia (interface + postgres)
 │   │       └── routes/       # Route registration (package routes)
 │   └── web/                  # Frontend — Vue 3 + Vite + TypeScript
 │       └── src/
@@ -26,7 +28,8 @@ my_pets_monorepo/
 │           └── router/       # Vue Router
 ├── packages/                 # Paquetes compartidos (futuro)
 ├── turbo.json
-├── package.json              # npm workspaces root
+├── package.json              # pnpm workspaces root
+├── pnpm-workspace.yaml       # Declaración de workspaces pnpm
 └── Makefile                  # Comandos Go
 ```
 
@@ -37,10 +40,10 @@ my_pets_monorepo/
 ### Desde la raíz
 
 ```bash
-npm install           # Instalar todas las dependencias JS
-npm run dev           # Dev server frontend (Turborepo)
-npm run build         # Build producción frontend
-npm run lint          # Lint frontend
+pnpm install          # Instalar todas las dependencias JS
+pnpm dev              # Dev server frontend (Turborepo)
+pnpm build            # Build producción frontend
+pnpm lint             # Lint frontend
 make docker-dev       # Levantar todo con Docker (API + web, hot-reload)
 make docker-down      # Detener Docker
 ```
@@ -72,15 +75,15 @@ cd apps/api && go test ./... -v
 
 ```bash
 # Desde la raíz:
-npm run dev           # vite dev server en :3000
-npm run build         # type-check + vite build
-npm run lint          # oxlint --fix → eslint --fix
+pnpm dev              # vite dev server en :3000
+pnpm build            # type-check + vite build
+pnpm lint             # oxlint --fix → eslint --fix
 
 # Desde apps/web:
-npm run type-check    # vue-tsc --build
-npm run lint:oxlint   # oxlint . --fix  (rápido, Rust)
-npm run lint:eslint   # eslint . --fix --cache
-npm run build-only    # vite build (sin type-check)
+pnpm type-check       # vue-tsc --build
+pnpm lint:oxlint      # oxlint . --fix  (rápido, Rust)
+pnpm lint:eslint      # eslint . --fix --cache
+pnpm build-only       # vite build (sin type-check)
 ```
 
 ---
@@ -245,7 +248,7 @@ Errores                 → { error: string }
 
 ## Notas importantes para agentes
 
-1. **No hay base de datos todavía** — el backend usa un slice en memoria. Al añadir DB, seguir el patrón `internal/repository/` con interfaces.
+1. **Base de datos PostgreSQL** — el backend usa `internal/repository/` con una interface `PetRepository`. La implementación está en `postgres.go`. Credenciales en `apps/api/.env` (no commitear). La migración de la tabla `pets` corre automáticamente al arrancar.
 2. **No hay autenticación** — agregar middleware de Gin antes de añadir rutas protegidas.
 3. **No hay tests en el frontend** — Vitest no está configurado; no asumir que existe.
 4. **MongoDB driver presente** como dependencia indirecta de Gin (no usarlo sin configurarlo explícitamente).

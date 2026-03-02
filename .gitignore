@@ -5,10 +5,10 @@ bin/
 *.exe
 *.out
 
-# Node
+# Node / pnpm
 node_modules/
-apps/web/node_modules/
-packages/*/node_modules/
+.pnpm-store/
+# pnpm-lock.yaml is committed — do not add it here
 
 # Build outputs
 apps/web/dist/

@@ -20,8 +20,8 @@ my_pets_monorepo/
 | Herramienta | Versión mínima |
 |---|---|
 | Go | 1.23+ |
-| Node.js | 20+ |
-| npm | 10+ |
+| Node.js | 22+ |
+| pnpm | 10+ |
 | Docker + Compose | Cualquier versión reciente |
 
 ---
@@ -46,7 +46,7 @@ make docker-dev
 **1. Instalar dependencias JS:**
 
 ```bash
-npm install
+pnpm install
 ```
 
 **2. Backend (requiere [`air`](https://github.com/air-verse/air) para hot-reload):**
@@ -58,7 +58,7 @@ make dev-api
 **3. Frontend (en otra terminal):**
 
 ```bash
-npm run dev
+pnpm dev
 ```
 
 > El frontend corre en `:3000` y hace proxy de `/api/*` → `:8080` automáticamente via Vite.
@@ -71,9 +71,9 @@ npm run dev
 
 | Comando | Descripción |
 |---|---|
-| `npm run dev` | Dev server del frontend (Turborepo) |
-| `npm run build` | Build de producción del frontend |
-| `npm run lint` | Lint del frontend |
+| `pnpm dev` | Dev server del frontend (Turborepo) |
+| `pnpm build` | Build de producción del frontend |
+| `pnpm lint` | Lint del frontend |
 | `make docker-dev` | Levantar todo con Docker (dev) |
 | `make docker-down` | Detener Docker |
 
@@ -120,7 +120,7 @@ Base URL: `http://localhost:8080/api/v1`
 
 ```bash
 # Frontend
-npm run build          # genera apps/web/dist/
+pnpm build             # genera apps/web/dist/
 
 # Backend
 make build-api         # genera bin/server

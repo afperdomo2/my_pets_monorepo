@@ -5,16 +5,16 @@ import (
 	"github.com/my-pets/api/internal/handlers"
 )
 
-func Setup(r *gin.Engine) {
+func Setup(r *gin.Engine, h *handlers.PetHandler) {
 	api := r.Group("/api/v1")
 	{
 		pets := api.Group("/pets")
 		{
-			pets.GET("", handlers.GetPets)
-			pets.GET("/:id", handlers.GetPet)
-			pets.POST("", handlers.CreatePet)
-			pets.PUT("/:id", handlers.UpdatePet)
-			pets.DELETE("/:id", handlers.DeletePet)
+			pets.GET("", h.GetPets)
+			pets.GET("/:id", h.GetPet)
+			pets.POST("", h.CreatePet)
+			pets.PUT("/:id", h.UpdatePet)
+			pets.DELETE("/:id", h.DeletePet)
 		}
 	}
 }

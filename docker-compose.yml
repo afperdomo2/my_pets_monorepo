@@ -1,4 +1,21 @@
 services:
+  db:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: devuser
+      POSTGRES_PASSWORD: devpassword
+      POSTGRES_DB: my_pets
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U devuser -d my_pets"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
   api:
     build:
       context: ./apps/api
@@ -12,6 +29,10 @@ services:
     environment:
       - PORT=8080
       - GIN_MODE=debug
+      - DATABASE_URL=host=db user=devuser password=devpassword dbname=my_pets port=5432 sslmode=disable
+    depends_on:
+      db:
+        condition: service_healthy
     restart: unless-stopped
 
   web:
@@ -30,6 +51,7 @@ services:
     restart: unless-stopped
 
 volumes:
+  postgres-data:
   go-cache:
   go-mod:
   web-node-modules:
