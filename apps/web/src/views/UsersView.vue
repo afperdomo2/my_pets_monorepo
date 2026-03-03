@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, computed } from 'vue'
+import { ref, computed } from 'vue'
 import { useForm } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'
 import {
@@ -11,11 +11,14 @@ import {
   IconX,
   IconLock,
 } from '@tabler/icons-vue'
-import { useUserStore } from '@/stores/users'
+import { useGetUsers, useCreateUser, useUpdateUser, useDeleteUser } from '@/composables/useUsers'
 import type { User } from '@/types/user'
 import { createUserSchema, updateUserSchema } from '@/schemas/user'
 
-const store = useUserStore()
+const { data: users, isLoading, isError, error: fetchError, refetch } = useGetUsers()
+const createUser = useCreateUser()
+const updateUser = useUpdateUser()
+const deleteUser = useDeleteUser()
 
 // ── Modal state ────────────────────────────────────────────
 type ModalMode = 'create' | 'edit'
@@ -24,19 +27,17 @@ const modalMode = ref<ModalMode>('create')
 const editingUser = ref<User | null>(null)
 
 const submitError = ref<string | null>(null)
-const submitting = ref(false)
 
 // ── Search ─────────────────────────────────────────────────
 const search = ref('')
 const filteredUsers = computed(() => {
+  const list = users.value ?? []
   const q = search.value.toLowerCase()
-  if (!q) return store.users
-  return store.users.filter(
+  if (!q) return list
+  return list.filter(
     (u) => u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q),
   )
 })
-
-onMounted(() => store.fetchUsers())
 
 // ── Helpers ────────────────────────────────────────────────
 function initials(name: string): string {
@@ -79,15 +80,12 @@ function openCreate() {
 }
 
 const handleCreate = handleCreateSubmit(async (values) => {
-  submitting.value = true
   submitError.value = null
   try {
-    await store.createUser(values)
+    await createUser.mutateAsync(values)
     showModal.value = false
   } catch (e) {
     submitError.value = e instanceof Error ? e.message : 'Error al crear usuario'
-  } finally {
-    submitting.value = false
   }
 })
 
@@ -115,15 +113,12 @@ function openEdit(user: User) {
 
 const handleEdit = handleEditSubmit(async (values) => {
   if (!editingUser.value) return
-  submitting.value = true
   submitError.value = null
   try {
-    await store.updateUser(editingUser.value.id, values)
+    await updateUser.mutateAsync({ id: editingUser.value.id, payload: values })
     showModal.value = false
   } catch (e) {
     submitError.value = e instanceof Error ? e.message : 'Error al actualizar usuario'
-  } finally {
-    submitting.value = false
   }
 })
 
@@ -134,7 +129,7 @@ async function handleDelete(user: User) {
   if (!confirm(`¿Eliminar a ${user.name}? Esta acción no se puede deshacer.`)) return
   deletingId.value = user.id
   try {
-    await store.deleteUser(user.id)
+    await deleteUser.mutateAsync(user.id)
   } catch (e) {
     alert(e instanceof Error ? e.message : 'Error al eliminar usuario')
   } finally {
@@ -168,22 +163,22 @@ function closeModal() {
         <input v-model="search" class="search-input" placeholder="Buscar por nombre o email…" />
       </div>
       <div class="stats-pill">
-        <span class="stats-num">{{ store.users.length }}</span>
-        <span class="stats-label">{{ store.users.length === 1 ? 'usuario' : 'usuarios' }}</span>
+        <span class="stats-num">{{ (users ?? []).length }}</span>
+        <span class="stats-label">{{ (users ?? []).length === 1 ? 'usuario' : 'usuarios' }}</span>
       </div>
     </div>
 
     <!-- Loading -->
-    <div v-if="store.loading" class="empty-state">
+    <div v-if="isLoading" class="empty-state">
       <div class="spinner" />
       <p>Cargando usuarios…</p>
     </div>
 
     <!-- Error -->
-    <div v-else-if="store.error" class="empty-state empty-state--error">
+    <div v-else-if="isError" class="empty-state empty-state--error">
       <IconAlertCircle :size="40" :stroke-width="1.5" />
-      <p>{{ store.error }}</p>
-      <button class="btn-secondary" @click="store.fetchUsers">Reintentar</button>
+      <p>{{ fetchError?.message }}</p>
+      <button class="btn-secondary" @click="() => refetch()">Reintentar</button>
     </div>
 
     <!-- Empty search -->
@@ -344,8 +339,8 @@ function closeModal() {
 
             <div class="modal-actions">
               <button type="button" class="btn-secondary" @click="closeModal">Cancelar</button>
-              <button type="submit" class="btn-primary" :disabled="submitting">
-                <div v-if="submitting" class="spinner spinner--sm spinner--white" />
+              <button type="submit" class="btn-primary" :disabled="createUser.isPending.value">
+                <div v-if="createUser.isPending.value" class="spinner spinner--sm spinner--white" />
                 <span v-else>Crear usuario</span>
               </button>
             </div>
@@ -384,8 +379,8 @@ function closeModal() {
 
             <div class="modal-actions">
               <button type="button" class="btn-secondary" @click="closeModal">Cancelar</button>
-              <button type="submit" class="btn-primary" :disabled="submitting">
-                <div v-if="submitting" class="spinner spinner--sm spinner--white" />
+              <button type="submit" class="btn-primary" :disabled="updateUser.isPending.value">
+                <div v-if="updateUser.isPending.value" class="spinner spinner--sm spinner--white" />
                 <span v-else>Guardar cambios</span>
               </button>
             </div>

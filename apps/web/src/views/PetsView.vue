@@ -1,15 +1,16 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { ref } from 'vue'
 import { useForm } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'
-import { usePetStore } from '@/stores/pets'
+import { useGetPets, useCreatePet, useDeletePet } from '@/composables/usePets'
 import { petSchema } from '@/schemas/pet'
 
-const store = usePetStore()
+const { data: pets, isLoading, isError, error } = useGetPets()
+const createPet = useCreatePet()
+const deletePet = useDeletePet()
 
 const showForm = ref(false)
-
-onMounted(() => store.fetchPets())
+const submitError = ref<string | null>(null)
 
 const { defineField, handleSubmit, errors, resetForm } = useForm({
   validationSchema: toTypedSchema(petSchema),
@@ -23,20 +24,24 @@ const [age, ageAttrs] = defineField('age')
 const [owner, ownerAttrs] = defineField('owner')
 
 const handleCreate = handleSubmit(async (values) => {
-  await store.createPet(values)
-  if (!store.error) {
+  submitError.value = null
+  try {
+    await createPet.mutateAsync(values)
     showForm.value = false
     resetForm()
+  } catch (e) {
+    submitError.value = e instanceof Error ? e.message : 'Error al crear mascota'
   }
 })
 
 function handleCancel() {
   showForm.value = false
   resetForm()
+  submitError.value = null
 }
 
 async function handleDelete(id: string) {
-  if (confirm('Eliminar mascota?')) await store.deletePet(id)
+  if (confirm('Eliminar mascota?')) await deletePet.mutateAsync(id)
 }
 </script>
 
@@ -88,15 +93,17 @@ async function handleDelete(id: string) {
         <input v-model="owner" v-bind="ownerAttrs" placeholder="Dueño" />
       </div>
 
-      <p v-if="store.error" class="form-error">{{ store.error }}</p>
+      <p v-if="submitError" class="form-error">{{ submitError }}</p>
 
-      <button type="submit" class="btn-primary">Guardar</button>
+      <button type="submit" class="btn-primary" :disabled="createPet.isPending.value">Guardar</button>
     </form>
 
-    <div v-if="store.loading" class="status">Cargando...</div>
+    <div v-if="isLoading" class="status">Cargando...</div>
+
+    <div v-else-if="isError" class="status">Error: {{ error?.message }}</div>
 
     <ul v-else class="pet-list">
-      <li v-for="pet in store.pets" :key="pet.id" class="pet-card">
+      <li v-for="pet in pets" :key="pet.id" class="pet-card">
         <RouterLink :to="`/pets/${pet.id}`" class="pet-name">
           {{ pet.name }}
         </RouterLink>

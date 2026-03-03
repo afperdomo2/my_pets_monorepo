@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@tabler/icons-vue": "^3.38.0",
+    "@tanstack/vue-query": "^5.92.9",
     "@vee-validate/zod": "^4.15.1",
     "pinia": "^3.0.4",
     "vee-validate": "^4.15.1",

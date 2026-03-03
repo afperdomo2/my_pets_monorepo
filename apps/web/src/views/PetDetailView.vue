@@ -1,18 +1,21 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useForm } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'
-import { usePetStore } from '@/stores/pets'
+import { useGetPet, useUpdatePet, useDeletePet } from '@/composables/usePets'
 import { petSchema } from '@/schemas/pet'
 
 const route = useRoute()
 const router = useRouter()
-const store = usePetStore()
 
 const id = String(route.params.id)
-const pet = ref(store.pets.find(p => p.id === id))
 const editing = ref(false)
+const submitError = ref<string | null>(null)
+
+const { data: pet, isLoading, isError } = useGetPet(id)
+const updatePet = useUpdatePet()
+const deletePet = useDeletePet()
 
 const { defineField, handleSubmit, errors, resetForm } = useForm({
   validationSchema: toTypedSchema(petSchema),
@@ -25,11 +28,9 @@ const [breed, breedAttrs] = defineField('breed')
 const [age, ageAttrs] = defineField('age')
 const [owner, ownerAttrs] = defineField('owner')
 
-onMounted(async () => {
-  if (store.pets.length === 0) await store.fetchPets()
-  const found = store.pets.find(p => p.id === id)
+// Populate form when pet data loads
+watch(pet, (found) => {
   if (found) {
-    pet.value = found
     resetForm({
       values: {
         name: found.name,
@@ -40,19 +41,21 @@ onMounted(async () => {
       },
     })
   }
-})
+}, { immediate: true })
 
 const handleUpdate = handleSubmit(async (values) => {
-  await store.updatePet(id, values)
-  if (!store.error) {
-    pet.value = store.pets.find(p => p.id === id)
+  submitError.value = null
+  try {
+    await updatePet.mutateAsync({ id, payload: values })
     editing.value = false
+  } catch (e) {
+    submitError.value = e instanceof Error ? e.message : 'Error al actualizar mascota'
   }
 })
 
 async function handleDelete() {
   if (confirm('Eliminar mascota?')) {
-    await store.deletePet(id)
+    await deletePet.mutateAsync(id)
     router.push('/pets')
   }
 }
@@ -62,7 +65,9 @@ async function handleDelete() {
   <div class="pet-detail">
     <RouterLink to="/pets" class="back">&larr; Volver</RouterLink>
 
-    <div v-if="!pet" class="status">Mascota no encontrada.</div>
+    <div v-if="isLoading" class="status">Cargando...</div>
+
+    <div v-else-if="isError || !pet" class="status">Mascota no encontrada.</div>
 
     <template v-else>
       <div v-if="!editing" class="detail-card">
@@ -118,10 +123,10 @@ async function handleDelete() {
           <input v-model="owner" v-bind="ownerAttrs" placeholder="Dueño" />
         </div>
 
-        <p v-if="store.error" class="form-error">{{ store.error }}</p>
+        <p v-if="submitError" class="form-error">{{ submitError }}</p>
 
         <div class="actions">
-          <button type="submit" class="btn-primary">Guardar</button>
+          <button type="submit" class="btn-primary" :disabled="updatePet.isPending.value">Guardar</button>
           <button type="button" class="btn-secondary" @click="editing = false">Cancelar</button>
         </div>
       </form>
