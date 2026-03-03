@@ -11,6 +11,14 @@ export const useAuthStore = defineStore('auth', () => {
 
   const isAuthenticated = computed(() => user.value !== null)
 
+  // Promise that resolves once the initial session check is complete.
+  // The router guard awaits this before evaluating auth state, preventing
+  // race conditions between app startup and the first navigation.
+  let _sessionResolve!: () => void
+  const sessionReady: Promise<void> = new Promise((resolve) => {
+    _sessionResolve = resolve
+  })
+
   async function login(email: string, password: string): Promise<void> {
     loading.value = true
     error.value = null
@@ -45,6 +53,7 @@ export const useAuthStore = defineStore('auth', () => {
   /**
    * Called once on app startup to restore session from the access_token cookie.
    * If the cookie is expired, attempts a silent refresh before giving up.
+   * Resolves `sessionReady` when done so the router guard can proceed safely.
    */
   async function initSession(): Promise<void> {
     loading.value = true
@@ -60,6 +69,7 @@ export const useAuthStore = defineStore('auth', () => {
       }
     } finally {
       loading.value = false
+      _sessionResolve()
     }
   }
 
@@ -69,6 +79,7 @@ export const useAuthStore = defineStore('auth', () => {
     error,
     loggingOut,
     isAuthenticated,
+    sessionReady,
     login,
     logout,
     fetchMe,

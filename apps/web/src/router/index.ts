@@ -89,6 +89,13 @@ const router = createRouter({
 })
 
 router.beforeEach(async (to) => {
+  const authStore = useAuthStore()
+
+  // Wait for the initial session check to complete before evaluating auth state.
+  // This prevents race conditions between app startup and the first navigation,
+  // which caused intermittent redirects to /login on F5.
+  await authStore.sessionReady
+
   // Check setup status once per page load
   if (!setupChecked) {
     try {
@@ -112,13 +119,6 @@ router.beforeEach(async (to) => {
   if (to.name === 'setup') {
     return { name: 'login' }
   }
-
-  const authStore = useAuthStore()
-
-  // Skip session initialization for now — let LoginView handle it
-  // if (!authStore.isAuthenticated && !authStore.loading && !authStore.loggingOut && to.name !== 'login') {
-  //   await authStore.initSession()
-  // }
 
   if (to.meta['requiresAuth'] && !authStore.isAuthenticated) {
     return { name: 'login' }

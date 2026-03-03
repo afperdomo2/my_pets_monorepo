@@ -54,16 +54,22 @@ func setAuthCookies(c *gin.Context, access, refresh string, secure bool) {
 }
 
 // clearAuthCookies removes both auth cookies by setting MaxAge to -1.
+// The Path of each cookie must match exactly what was used when setting it.
 func clearAuthCookies(c *gin.Context) {
-	for _, name := range []string{"access_token", "refresh_token"} {
-		http.SetCookie(c.Writer, &http.Cookie{
-			Name:     name,
-			Value:    "",
-			Path:     "/",
-			MaxAge:   -1,
-			HttpOnly: true,
-		})
-	}
+	http.SetCookie(c.Writer, &http.Cookie{
+		Name:     "access_token",
+		Value:    "",
+		Path:     "/",
+		MaxAge:   -1,
+		HttpOnly: true,
+	})
+	http.SetCookie(c.Writer, &http.Cookie{
+		Name:     "refresh_token",
+		Value:    "",
+		Path:     "/api/v1/auth/refresh",
+		MaxAge:   -1,
+		HttpOnly: true,
+	})
 }
 
 // Login handles POST /api/v1/auth/login
