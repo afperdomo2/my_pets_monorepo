@@ -1,54 +1,35 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useForm } from 'vee-validate'
+import { toTypedSchema } from '@vee-validate/zod'
 import { setupService } from '@/services/setupService'
 import { resetSetupCache } from '@/router'
+import { setupSchema } from '@/schemas/user'
 
 const router = useRouter()
 
-const name = ref('')
-const email = ref('')
-const password = ref('')
-const confirmPassword = ref('')
 const loading = ref(false)
 const error = ref<string | null>(null)
-const fieldErrors = ref<Record<string, string>>({})
 
-function validate(): boolean {
-  fieldErrors.value = {}
-  if (!name.value.trim()) {
-    fieldErrors.value.name = 'El nombre es obligatorio'
-  } else if (name.value.trim().length < 2) {
-    fieldErrors.value.name = 'El nombre debe tener al menos 2 caracteres'
-  }
-  if (!email.value.trim()) {
-    fieldErrors.value.email = 'El correo electrónico es obligatorio'
-  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value)) {
-    fieldErrors.value.email = 'Ingresa un correo electrónico válido'
-  }
-  if (!password.value) {
-    fieldErrors.value.password = 'La contraseña es obligatoria'
-  } else if (password.value.length < 8) {
-    fieldErrors.value.password = 'La contraseña debe tener al menos 8 caracteres'
-  }
-  if (!confirmPassword.value) {
-    fieldErrors.value.confirmPassword = 'Confirma tu contraseña'
-  } else if (password.value !== confirmPassword.value) {
-    fieldErrors.value.confirmPassword = 'Las contraseñas no coinciden'
-  }
-  return Object.keys(fieldErrors.value).length === 0
-}
+const { defineField, handleSubmit, errors } = useForm({
+  validationSchema: toTypedSchema(setupSchema),
+  initialValues: { name: '', email: '', password: '', confirmPassword: '' },
+})
 
-async function handleSetup() {
+const [name, nameAttrs] = defineField('name')
+const [email, emailAttrs] = defineField('email')
+const [password, passwordAttrs] = defineField('password')
+const [confirmPassword, confirmPasswordAttrs] = defineField('confirmPassword')
+
+const handleSetup = handleSubmit(async (values) => {
   error.value = null
-  if (!validate()) return
-
   loading.value = true
   try {
     await setupService.createFirstUser({
-      name: name.value,
-      email: email.value,
-      password: password.value,
+      name: values.name,
+      email: values.email,
+      password: values.password,
     })
     resetSetupCache()
     router.push({ name: 'login', query: { success: 'account_created' } })
@@ -57,7 +38,7 @@ async function handleSetup() {
   } finally {
     loading.value = false
   }
-}
+})
 </script>
 
 <template>
@@ -123,12 +104,13 @@ async function handleSetup() {
               <input
                 id="name"
                 v-model="name"
+                v-bind="nameAttrs"
                 type="text"
                 placeholder="Tu nombre completo"
                 autocomplete="name"
               />
             </div>
-            <p v-if="fieldErrors.name" class="field-error">{{ fieldErrors.name }}</p>
+            <p v-if="errors.name" class="field-error">{{ errors.name }}</p>
           </div>
 
           <div class="form-group">
@@ -143,12 +125,13 @@ async function handleSetup() {
               <input
                 id="email"
                 v-model="email"
+                v-bind="emailAttrs"
                 type="email"
                 placeholder="admin@correo.com"
                 autocomplete="email"
               />
             </div>
-            <p v-if="fieldErrors.email" class="field-error">{{ fieldErrors.email }}</p>
+            <p v-if="errors.email" class="field-error">{{ errors.email }}</p>
           </div>
 
           <div class="form-group">
@@ -163,12 +146,13 @@ async function handleSetup() {
               <input
                 id="password"
                 v-model="password"
+                v-bind="passwordAttrs"
                 type="password"
                 placeholder="Mínimo 8 caracteres"
                 autocomplete="new-password"
               />
             </div>
-            <p v-if="fieldErrors.password" class="field-error">{{ fieldErrors.password }}</p>
+            <p v-if="errors.password" class="field-error">{{ errors.password }}</p>
           </div>
 
           <div class="form-group">
@@ -183,12 +167,13 @@ async function handleSetup() {
               <input
                 id="confirm-password"
                 v-model="confirmPassword"
+                v-bind="confirmPasswordAttrs"
                 type="password"
                 placeholder="Repite tu contraseña"
                 autocomplete="new-password"
               />
             </div>
-            <p v-if="fieldErrors.confirmPassword" class="field-error">{{ fieldErrors.confirmPassword }}</p>
+            <p v-if="errors.confirmPassword" class="field-error">{{ errors.confirmPassword }}</p>
           </div>
 
           <p v-if="error" class="form-error">{{ error }}</p>

@@ -1,17 +1,17 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useForm } from 'vee-validate'
+import { toTypedSchema } from '@vee-validate/zod'
 import { useAuthStore } from '@/stores/auth'
 import { authService } from '@/services/authService'
+import { loginSchema } from '@/schemas/user'
 
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
 
-const email = ref('')
-const password = ref('')
 const error = ref<string | null>(null)
-const fieldErrors = ref<Record<string, string>>({})
 
 const successMessage = computed(() =>
   route.query['success'] === 'account_created'
@@ -26,29 +26,23 @@ onMounted(async () => {
   }
 })
 
-function validate(): boolean {
-  fieldErrors.value = {}
-  if (!email.value.trim()) {
-    fieldErrors.value.email = 'El correo electrónico es obligatorio'
-  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value)) {
-    fieldErrors.value.email = 'Ingresa un correo electrónico válido'
-  }
-  if (!password.value) {
-    fieldErrors.value.password = 'La contraseña es obligatoria'
-  }
-  return Object.keys(fieldErrors.value).length === 0
-}
+const { defineField, handleSubmit, errors } = useForm({
+  validationSchema: toTypedSchema(loginSchema),
+  initialValues: { email: '', password: '' },
+})
 
-async function handleLogin() {
+const [email, emailAttrs] = defineField('email')
+const [password, passwordAttrs] = defineField('password')
+
+const handleLogin = handleSubmit(async (values) => {
   error.value = null
-  if (!validate()) return
   try {
-    await authStore.login(email.value, password.value)
+    await authStore.login(values.email, values.password)
     router.push('/')
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Error al iniciar sesión'
   }
-}
+})
 
 function handleGoogleLogin() {
   authService.googleLogin()
@@ -118,12 +112,13 @@ function handleGoogleLogin() {
               <input
                 id="email"
                 v-model="email"
+                v-bind="emailAttrs"
                 type="email"
                 placeholder="tu@correo.com"
                 autocomplete="email"
               />
             </div>
-            <p v-if="fieldErrors.email" class="field-error">{{ fieldErrors.email }}</p>
+            <p v-if="errors.email" class="field-error">{{ errors.email }}</p>
           </div>
 
           <div class="form-group">
@@ -141,12 +136,13 @@ function handleGoogleLogin() {
               <input
                 id="password"
                 v-model="password"
+                v-bind="passwordAttrs"
                 type="password"
                 placeholder="••••••••"
                 autocomplete="current-password"
               />
             </div>
-            <p v-if="fieldErrors.password" class="field-error">{{ fieldErrors.password }}</p>
+            <p v-if="errors.password" class="field-error">{{ errors.password }}</p>
           </div>
 
           <p v-if="successMessage" class="form-success">{{ successMessage }}</p>

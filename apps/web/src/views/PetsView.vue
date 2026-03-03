@@ -1,45 +1,38 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import { useForm } from 'vee-validate'
+import { toTypedSchema } from '@vee-validate/zod'
 import { usePetStore } from '@/stores/pets'
-import type { PetPayload } from '@/types/pet'
+import { petSchema } from '@/schemas/pet'
 
 const store = usePetStore()
 
 const showForm = ref(false)
-const form = ref<PetPayload>({ name: '', species: '', breed: '', age: 0, owner: '' })
-const fieldErrors = ref<Record<string, string>>({})
 
 onMounted(() => store.fetchPets())
 
-function validate(): boolean {
-  fieldErrors.value = {}
-  if (!form.value.name.trim()) {
-    fieldErrors.value.name = 'El nombre es obligatorio'
-  }
-  if (!form.value.species) {
-    fieldErrors.value.species = 'La especie es obligatoria'
-  }
-  const age = form.value.age ?? 0
-  if (age < 0 || age > 100) {
-    fieldErrors.value.age = 'La edad debe estar entre 0 y 100'
-  }
-  return Object.keys(fieldErrors.value).length === 0
-}
+const { defineField, handleSubmit, errors, resetForm } = useForm({
+  validationSchema: toTypedSchema(petSchema),
+  initialValues: { name: '', species: '', breed: '', age: undefined, owner: '' },
+})
 
-async function handleCreate() {
-  if (!validate()) return
-  await store.createPet(form.value)
+const [name, nameAttrs] = defineField('name')
+const [species, speciesAttrs] = defineField('species')
+const [breed, breedAttrs] = defineField('breed')
+const [age, ageAttrs] = defineField('age')
+const [owner, ownerAttrs] = defineField('owner')
+
+const handleCreate = handleSubmit(async (values) => {
+  await store.createPet(values)
   if (!store.error) {
     showForm.value = false
-    form.value = { name: '', species: '', breed: '', age: 0, owner: '' }
-    fieldErrors.value = {}
+    resetForm()
   }
-}
+})
 
 function handleCancel() {
   showForm.value = false
-  form.value = { name: '', species: '', breed: '', age: 0, owner: '' }
-  fieldErrors.value = {}
+  resetForm()
 }
 
 async function handleDelete(id: number) {
@@ -58,12 +51,12 @@ async function handleDelete(id: number) {
 
     <form v-if="showForm" class="pet-form" @submit.prevent="handleCreate">
       <div class="form-field">
-        <input v-model="form.name" placeholder="Nombre *" />
-        <p v-if="fieldErrors.name" class="field-error">{{ fieldErrors.name }}</p>
+        <input v-model="name" v-bind="nameAttrs" placeholder="Nombre *" />
+        <p v-if="errors.name" class="field-error">{{ errors.name }}</p>
       </div>
 
       <div class="form-field">
-        <select v-model="form.species">
+        <select v-model="species" v-bind="speciesAttrs">
           <option value="" disabled>Especie *</option>
           <option value="dog">Perro</option>
           <option value="cat">Gato</option>
@@ -72,20 +65,27 @@ async function handleDelete(id: number) {
           <option value="fish">Pez</option>
           <option value="other">Otro</option>
         </select>
-        <p v-if="fieldErrors.species" class="field-error">{{ fieldErrors.species }}</p>
+        <p v-if="errors.species" class="field-error">{{ errors.species }}</p>
       </div>
 
       <div class="form-field">
-        <input v-model="form.breed" placeholder="Raza" />
+        <input v-model="breed" v-bind="breedAttrs" placeholder="Raza" />
       </div>
 
       <div class="form-field">
-        <input v-model.number="form.age" type="number" placeholder="Edad" min="0" max="100" />
-        <p v-if="fieldErrors.age" class="field-error">{{ fieldErrors.age }}</p>
+        <input
+          v-model.number="age"
+          v-bind="ageAttrs"
+          type="number"
+          placeholder="Edad"
+          min="0"
+          max="100"
+        />
+        <p v-if="errors.age" class="field-error">{{ errors.age }}</p>
       </div>
 
       <div class="form-field">
-        <input v-model="form.owner" placeholder="Dueño" />
+        <input v-model="owner" v-bind="ownerAttrs" placeholder="Dueño" />
       </div>
 
       <p v-if="store.error" class="form-error">{{ store.error }}</p>

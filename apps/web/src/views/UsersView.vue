@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { onMounted, ref, computed } from 'vue'
+import { useForm } from 'vee-validate'
+import { toTypedSchema } from '@vee-validate/zod'
 import { useUserStore } from '@/stores/users'
-import type { CreateUserPayload, UpdateUserPayload } from '@/types/user'
 import type { User } from '@/types/user'
+import { createUserSchema, updateUserSchema } from '@/schemas/user'
 
 const store = useUserStore()
 
@@ -12,9 +14,6 @@ const showModal = ref(false)
 const modalMode = ref<ModalMode>('create')
 const editingUser = ref<User | null>(null)
 
-const createForm = ref<CreateUserPayload>({ name: '', email: '', password: '' })
-const editForm = ref<UpdateUserPayload>({ name: '', email: '' })
-const fieldErrors = ref<Record<string, string>>({})
 const submitError = ref<string | null>(null)
 const submitting = ref(false)
 
@@ -48,68 +47,76 @@ function formatDate(iso: string): string {
   })
 }
 
-// ── Create ─────────────────────────────────────────────────
+// ── Create form ─────────────────────────────────────────────
+const {
+  defineField: defineCreateField,
+  handleSubmit: handleCreateSubmit,
+  errors: createErrors,
+  resetForm: resetCreateForm,
+} = useForm({
+  validationSchema: toTypedSchema(createUserSchema),
+  initialValues: { name: '', email: '', password: '' },
+})
+
+const [createName, createNameAttrs] = defineCreateField('name')
+const [createEmail, createEmailAttrs] = defineCreateField('email')
+const [createPassword, createPasswordAttrs] = defineCreateField('password')
+
 function openCreate() {
   modalMode.value = 'create'
-  createForm.value = { name: '', email: '', password: '' }
-  fieldErrors.value = {}
+  resetCreateForm({ values: { name: '', email: '', password: '' } })
   submitError.value = null
   showModal.value = true
 }
 
-function validateCreate(): boolean {
-  fieldErrors.value = {}
-  if (!createForm.value.name.trim()) fieldErrors.value['name'] = 'El nombre es obligatorio'
-  if (!createForm.value.email.trim()) fieldErrors.value['email'] = 'El email es obligatorio'
-  if (!createForm.value.password || createForm.value.password.length < 8)
-    fieldErrors.value['password'] = 'La contraseña debe tener al menos 8 caracteres'
-  return Object.keys(fieldErrors.value).length === 0
-}
-
-async function handleCreate() {
-  if (!validateCreate()) return
+const handleCreate = handleCreateSubmit(async (values) => {
   submitting.value = true
   submitError.value = null
   try {
-    await store.createUser(createForm.value)
+    await store.createUser(values)
     showModal.value = false
   } catch (e) {
     submitError.value = e instanceof Error ? e.message : 'Error al crear usuario'
   } finally {
     submitting.value = false
   }
-}
+})
 
-// ── Edit ───────────────────────────────────────────────────
+// ── Edit form ───────────────────────────────────────────────
+const {
+  defineField: defineEditField,
+  handleSubmit: handleEditSubmit,
+  errors: editErrors,
+  resetForm: resetEditForm,
+} = useForm({
+  validationSchema: toTypedSchema(updateUserSchema),
+  initialValues: { name: '', email: '' },
+})
+
+const [editName, editNameAttrs] = defineEditField('name')
+const [editEmail, editEmailAttrs] = defineEditField('email')
+
 function openEdit(user: User) {
   modalMode.value = 'edit'
   editingUser.value = user
-  editForm.value = { name: user.name, email: user.email }
-  fieldErrors.value = {}
+  resetEditForm({ values: { name: user.name, email: user.email } })
   submitError.value = null
   showModal.value = true
 }
 
-function validateEdit(): boolean {
-  fieldErrors.value = {}
-  if (!editForm.value.name.trim()) fieldErrors.value['name'] = 'El nombre es obligatorio'
-  if (!editForm.value.email.trim()) fieldErrors.value['email'] = 'El email es obligatorio'
-  return Object.keys(fieldErrors.value).length === 0
-}
-
-async function handleEdit() {
-  if (!validateEdit() || !editingUser.value) return
+const handleEdit = handleEditSubmit(async (values) => {
+  if (!editingUser.value) return
   submitting.value = true
   submitError.value = null
   try {
-    await store.updateUser(editingUser.value.id, editForm.value)
+    await store.updateUser(editingUser.value.id, values)
     showModal.value = false
   } catch (e) {
     submitError.value = e instanceof Error ? e.message : 'Error al actualizar usuario'
   } finally {
     submitting.value = false
   }
-}
+})
 
 // ── Delete ─────────────────────────────────────────────────
 const deletingId = ref<number | null>(null)
@@ -384,40 +391,43 @@ function closeModal() {
             <div class="field">
               <label class="field-label">Nombre completo</label>
               <input
-                v-model="createForm.name"
+                v-model="createName"
+                v-bind="createNameAttrs"
                 class="field-input"
-                :class="{ 'field-input--error': fieldErrors['name'] }"
+                :class="{ 'field-input--error': createErrors['name'] }"
                 placeholder="Ej. María García"
                 autocomplete="name"
               />
-              <p v-if="fieldErrors['name']" class="field-error">{{ fieldErrors['name'] }}</p>
+              <p v-if="createErrors['name']" class="field-error">{{ createErrors['name'] }}</p>
             </div>
 
             <div class="field">
               <label class="field-label">Correo electrónico</label>
               <input
-                v-model="createForm.email"
+                v-model="createEmail"
+                v-bind="createEmailAttrs"
                 class="field-input"
-                :class="{ 'field-input--error': fieldErrors['email'] }"
+                :class="{ 'field-input--error': createErrors['email'] }"
                 type="email"
                 placeholder="correo@ejemplo.com"
                 autocomplete="email"
               />
-              <p v-if="fieldErrors['email']" class="field-error">{{ fieldErrors['email'] }}</p>
+              <p v-if="createErrors['email']" class="field-error">{{ createErrors['email'] }}</p>
             </div>
 
             <div class="field">
               <label class="field-label">Contraseña</label>
               <input
-                v-model="createForm.password"
+                v-model="createPassword"
+                v-bind="createPasswordAttrs"
                 class="field-input"
-                :class="{ 'field-input--error': fieldErrors['password'] }"
+                :class="{ 'field-input--error': createErrors['password'] }"
                 type="password"
                 placeholder="Mínimo 8 caracteres"
                 autocomplete="new-password"
               />
-              <p v-if="fieldErrors['password']" class="field-error">
-                {{ fieldErrors['password'] }}
+              <p v-if="createErrors['password']" class="field-error">
+                {{ createErrors['password'] }}
               </p>
             </div>
 
@@ -437,26 +447,28 @@ function closeModal() {
             <div class="field">
               <label class="field-label">Nombre completo</label>
               <input
-                v-model="editForm.name"
+                v-model="editName"
+                v-bind="editNameAttrs"
                 class="field-input"
-                :class="{ 'field-input--error': fieldErrors['name'] }"
+                :class="{ 'field-input--error': editErrors['name'] }"
                 placeholder="Ej. María García"
                 autocomplete="name"
               />
-              <p v-if="fieldErrors['name']" class="field-error">{{ fieldErrors['name'] }}</p>
+              <p v-if="editErrors['name']" class="field-error">{{ editErrors['name'] }}</p>
             </div>
 
             <div class="field">
               <label class="field-label">Correo electrónico</label>
               <input
-                v-model="editForm.email"
+                v-model="editEmail"
+                v-bind="editEmailAttrs"
                 class="field-input"
-                :class="{ 'field-input--error': fieldErrors['email'] }"
+                :class="{ 'field-input--error': editErrors['email'] }"
                 type="email"
                 placeholder="correo@ejemplo.com"
                 autocomplete="email"
               />
-              <p v-if="fieldErrors['email']" class="field-error">{{ fieldErrors['email'] }}</p>
+              <p v-if="editErrors['email']" class="field-error">{{ editErrors['email'] }}</p>
             </div>
 
             <p v-if="submitError" class="submit-error">{{ submitError }}</p>

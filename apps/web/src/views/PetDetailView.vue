@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useForm } from 'vee-validate'
+import { toTypedSchema } from '@vee-validate/zod'
 import { usePetStore } from '@/stores/pets'
-import type { PetPayload } from '@/types/pet'
+import { petSchema } from '@/schemas/pet'
 
 const route = useRoute()
 const router = useRouter()
@@ -11,41 +13,42 @@ const store = usePetStore()
 const id = Number(route.params.id)
 const pet = ref(store.pets.find(p => p.id === id))
 const editing = ref(false)
-const form = ref<PetPayload>({ name: '', species: '', breed: '', age: 0, owner: '' })
-const fieldErrors = ref<Record<string, string>>({})
+
+const { defineField, handleSubmit, errors, resetForm } = useForm({
+  validationSchema: toTypedSchema(petSchema),
+  initialValues: { name: '', species: '', breed: '', age: undefined, owner: '' },
+})
+
+const [name, nameAttrs] = defineField('name')
+const [species, speciesAttrs] = defineField('species')
+const [breed, breedAttrs] = defineField('breed')
+const [age, ageAttrs] = defineField('age')
+const [owner, ownerAttrs] = defineField('owner')
 
 onMounted(async () => {
   if (store.pets.length === 0) await store.fetchPets()
   const found = store.pets.find(p => p.id === id)
   if (found) {
     pet.value = found
-    form.value = { name: found.name, species: found.species, breed: found.breed, age: found.age, owner: found.owner }
+    resetForm({
+      values: {
+        name: found.name,
+        species: found.species,
+        breed: found.breed,
+        age: found.age,
+        owner: found.owner,
+      },
+    })
   }
 })
 
-function validate(): boolean {
-  fieldErrors.value = {}
-  if (!form.value.name.trim()) {
-    fieldErrors.value.name = 'El nombre es obligatorio'
-  }
-  if (!form.value.species) {
-    fieldErrors.value.species = 'La especie es obligatoria'
-  }
-  const age = form.value.age ?? 0
-  if (age < 0 || age > 100) {
-    fieldErrors.value.age = 'La edad debe estar entre 0 y 100'
-  }
-  return Object.keys(fieldErrors.value).length === 0
-}
-
-async function handleUpdate() {
-  if (!validate()) return
-  await store.updatePet(id, form.value)
+const handleUpdate = handleSubmit(async (values) => {
+  await store.updatePet(id, values)
   if (!store.error) {
     pet.value = store.pets.find(p => p.id === id)
     editing.value = false
   }
-}
+})
 
 async function handleDelete() {
   if (confirm('Eliminar mascota?')) {
@@ -78,12 +81,12 @@ async function handleDelete() {
         <h2>Editar mascota</h2>
 
         <div class="form-field">
-          <input v-model="form.name" placeholder="Nombre *" />
-          <p v-if="fieldErrors.name" class="field-error">{{ fieldErrors.name }}</p>
+          <input v-model="name" v-bind="nameAttrs" placeholder="Nombre *" />
+          <p v-if="errors.name" class="field-error">{{ errors.name }}</p>
         </div>
 
         <div class="form-field">
-          <select v-model="form.species">
+          <select v-model="species" v-bind="speciesAttrs">
             <option value="" disabled>Especie *</option>
             <option value="dog">Perro</option>
             <option value="cat">Gato</option>
@@ -92,20 +95,27 @@ async function handleDelete() {
             <option value="fish">Pez</option>
             <option value="other">Otro</option>
           </select>
-          <p v-if="fieldErrors.species" class="field-error">{{ fieldErrors.species }}</p>
+          <p v-if="errors.species" class="field-error">{{ errors.species }}</p>
         </div>
 
         <div class="form-field">
-          <input v-model="form.breed" placeholder="Raza" />
+          <input v-model="breed" v-bind="breedAttrs" placeholder="Raza" />
         </div>
 
         <div class="form-field">
-          <input v-model.number="form.age" type="number" placeholder="Edad" min="0" max="100" />
-          <p v-if="fieldErrors.age" class="field-error">{{ fieldErrors.age }}</p>
+          <input
+            v-model.number="age"
+            v-bind="ageAttrs"
+            type="number"
+            placeholder="Edad"
+            min="0"
+            max="100"
+          />
+          <p v-if="errors.age" class="field-error">{{ errors.age }}</p>
         </div>
 
         <div class="form-field">
-          <input v-model="form.owner" placeholder="Dueño" />
+          <input v-model="owner" v-bind="ownerAttrs" placeholder="Dueño" />
         </div>
 
         <p v-if="store.error" class="form-error">{{ store.error }}</p>

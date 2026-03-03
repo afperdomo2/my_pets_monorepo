@@ -33,6 +33,11 @@
   --color-text-inverse:   #FFFFFF;
   --color-text-on-accent: #FFFFFF;
 
+  /* Estados de error */
+  --color-error:          #dc2626;
+  --color-error-light:    #fef2f2;
+  --color-error-border:   #fecaca;
+
   /* Sidebar */
   --sidebar-width:            260px;
   --sidebar-bg:               #FFFFFF;
