@@ -18,11 +18,11 @@ var ErrWrongProvider = errors.New("account registered with a different login met
 // All methods accept a context to support cancellation and timeouts.
 type Repository interface {
 	GetAll(ctx context.Context) ([]User, error)
-	GetByID(ctx context.Context, id int) (User, error)
+	GetByID(ctx context.Context, id string) (User, error)
 	GetByEmail(ctx context.Context, email string) (User, error)
 	Create(ctx context.Context, payload CreateUserPayload, isSystemUser bool) (User, error)
-	Update(ctx context.Context, id int, payload UpdateUserPayload) (User, error)
-	Delete(ctx context.Context, id int) error
+	Update(ctx context.Context, id string, payload UpdateUserPayload) (User, error)
+	Delete(ctx context.Context, id string) error
 	// HasUsers reports whether any user exists in the database (used for setup detection).
 	HasUsers(ctx context.Context) (bool, error)
 	// SystemUserExists reports whether at least one system user has been created.

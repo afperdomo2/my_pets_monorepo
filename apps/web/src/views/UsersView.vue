@@ -128,7 +128,7 @@ const handleEdit = handleEditSubmit(async (values) => {
 })
 
 // ── Delete ─────────────────────────────────────────────────
-const deletingId = ref<number | null>(null)
+const deletingId = ref<string | null>(null)
 
 async function handleDelete(user: User) {
   if (!confirm(`¿Eliminar a ${user.name}? Esta acción no se puede deshacer.`)) return

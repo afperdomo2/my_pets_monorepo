@@ -112,7 +112,7 @@ function handleGoogleLogin() {
           <div class="form-group">
             <label for="password">
               Contraseña
-              <a href="#" class="forgot-link">¿Olvidaste tu contraseña?</a>
+              <a href="#" class="forgot-link" tabindex="-1">¿Olvidaste tu contraseña?</a>
             </label>
             <div class="input-wrapper">
               <span class="input-icon">

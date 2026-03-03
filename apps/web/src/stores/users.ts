@@ -26,13 +26,13 @@ export const useUserStore = defineStore('users', () => {
     users.value.push(res.data)
   }
 
-  async function updateUser(id: number, payload: UpdateUserPayload): Promise<void> {
+  async function updateUser(id: string, payload: UpdateUserPayload): Promise<void> {
     const res = await userService.update(id, payload)
     const idx = users.value.findIndex((u) => u.id === id)
     if (idx !== -1) users.value[idx] = res.data
   }
 
-  async function deleteUser(id: number): Promise<void> {
+  async function deleteUser(id: string): Promise<void> {
     await userService.remove(id)
     users.value = users.value.filter((u) => u.id !== id)
   }

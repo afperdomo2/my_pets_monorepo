@@ -153,7 +153,7 @@ func (h *Handler) Refresh(c *gin.Context) {
 		return
 	}
 
-	u, err := h.userRepo.GetByID(c.Request.Context(), int(claims.UserID))
+	u, err := h.userRepo.GetByID(c.Request.Context(), claims.UserID)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "user not found"})
 		return
@@ -173,7 +173,7 @@ func (h *Handler) Refresh(c *gin.Context) {
 //	@Router		/api/v1/auth/me [get]
 func (h *Handler) Me(c *gin.Context) {
 	userID, _ := c.Get("userID")
-	u, err := h.userRepo.GetByID(c.Request.Context(), int(userID.(uint)))
+	u, err := h.userRepo.GetByID(c.Request.Context(), userID.(string))
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "user not found"})
 		return

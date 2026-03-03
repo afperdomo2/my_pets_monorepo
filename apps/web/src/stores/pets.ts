@@ -27,14 +27,14 @@ export const usePetStore = defineStore('pets', () => {
     return res.data
   }
 
-  async function updatePet(id: number, payload: PetPayload) {
+  async function updatePet(id: string, payload: PetPayload) {
     const res = await petService.update(id, payload)
     const idx = pets.value.findIndex(p => p.id === id)
     if (idx !== -1) pets.value[idx] = res.data
     return res.data
   }
 
-  async function deletePet(id: number) {
+  async function deletePet(id: string) {
     await petService.remove(id)
     pets.value = pets.value.filter(p => p.id !== id)
   }

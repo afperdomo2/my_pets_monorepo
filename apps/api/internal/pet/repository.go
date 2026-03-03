@@ -12,8 +12,8 @@ var ErrNotFound = errors.New("pet not found")
 // All methods accept a context to support cancellation and timeouts.
 type Repository interface {
 	GetAll(ctx context.Context) ([]Pet, error)
-	GetByID(ctx context.Context, id int) (Pet, error)
+	GetByID(ctx context.Context, id string) (Pet, error)
 	Create(ctx context.Context, payload PetPayload) (Pet, error)
-	Update(ctx context.Context, id int, payload PetPayload) (Pet, error)
-	Delete(ctx context.Context, id int) error
+	Update(ctx context.Context, id string, payload PetPayload) (Pet, error)
+	Delete(ctx context.Context, id string) error
 }

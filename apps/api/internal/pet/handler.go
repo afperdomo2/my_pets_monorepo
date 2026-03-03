@@ -3,7 +3,6 @@ package pet
 import (
 	"errors"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/my-pets/api/internal/validation"
@@ -20,11 +19,12 @@ func NewHandler(repo Repository) *Handler {
 }
 
 // parseID extracts and validates the :id path parameter.
-func parseID(c *gin.Context) (int, bool) {
-	id, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
+// UUIDs are passed directly as strings from the URL path.
+func parseID(c *gin.Context) (string, bool) {
+	id := c.Param("id")
+	if id == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
-		return 0, false
+		return "", false
 	}
 	return id, true
 }
@@ -54,7 +54,7 @@ func (h *Handler) GetPets(c *gin.Context) {
 //	@Tags		pets
 //	@Produce	json
 //	@Security	CookieAuth
-//	@Param		id	path		int						true	"Pet ID"
+//	@Param		id	path		string					true	"Pet ID"
 //	@Success	200	{object}	map[string]interface{}	"data: Pet"
 //	@Failure	400	{object}	map[string]string		"invalid id"
 //	@Failure	401	{object}	map[string]string		"authentication required"
@@ -112,7 +112,7 @@ func (h *Handler) CreatePet(c *gin.Context) {
 //	@Accept		json
 //	@Produce	json
 //	@Security	CookieAuth
-//	@Param		id	path		int						true	"Pet ID"
+//	@Param		id	path		string					true	"Pet ID"
 //	@Param		pet	body		PetPayload				true	"Pet data"
 //	@Success	200	{object}	map[string]interface{}	"data: Pet"
 //	@Failure	400	{object}	map[string]string		"invalid id or validation error"
@@ -148,7 +148,7 @@ func (h *Handler) UpdatePet(c *gin.Context) {
 //	@Tags		pets
 //	@Produce	json
 //	@Security	CookieAuth
-//	@Param		id	path		int					true	"Pet ID"
+//	@Param		id	path		string				true	"Pet ID"
 //	@Success	200	{object}	map[string]string	"message: pet deleted"
 //	@Failure	400	{object}	map[string]string	"invalid id"
 //	@Failure	401	{object}	map[string]string	"authentication required"

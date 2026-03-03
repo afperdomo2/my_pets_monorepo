@@ -15,7 +15,7 @@ type PetPayload struct {
 // Pet is the full entity returned by the API and stored in the database.
 // It embeds PetPayload so fields are not repeated.
 type Pet struct {
-	ID        uint      `json:"id"`
+	ID        string    `json:"id"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 	PetPayload

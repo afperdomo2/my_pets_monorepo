@@ -3,7 +3,6 @@ package user
 import (
 	"errors"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/my-pets/api/internal/validation"
@@ -20,21 +19,22 @@ func NewHandler(repo Repository) *Handler {
 }
 
 // parseID extracts and validates the :id path parameter.
-func parseID(c *gin.Context) (int, bool) {
-	id, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
+// UUIDs are passed directly as strings from the URL path.
+func parseID(c *gin.Context) (string, bool) {
+	id := c.Param("id")
+	if id == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
-		return 0, false
+		return "", false
 	}
 	return id, true
 }
 
 // canModifyUser returns true if the caller (from JWT context) is the target user
 // or is a system user.
-func canModifyUser(c *gin.Context, targetID int) bool {
+func canModifyUser(c *gin.Context, targetID string) bool {
 	callerID, _ := c.Get("userID")
 	isSystemUser, _ := c.Get("isSystemUser")
-	if uid, ok := callerID.(uint); ok && int(uid) == targetID {
+	if uid, ok := callerID.(string); ok && uid == targetID {
 		return true
 	}
 	return isSystemUser == true
@@ -73,7 +73,7 @@ func (h *Handler) GetUsers(c *gin.Context) {
 //	@Tags		users
 //	@Produce	json
 //	@Security	CookieAuth
-//	@Param		id	path		int						true	"User ID"
+//	@Param		id	path		string					true	"User ID"
 //	@Success	200	{object}	map[string]interface{}	"data: User"
 //	@Failure	400	{object}	map[string]string		"invalid id"
 //	@Failure	401	{object}	map[string]string		"authentication required"
@@ -138,7 +138,7 @@ func (h *Handler) CreateUser(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create user"})
 		return
 	}
-	// First user ever → mark as system user
+	// First user ever -> mark as system user
 	isSystemUser = !isSystemUser
 
 	created, err := h.repo.Create(ctx, payload, isSystemUser)
@@ -161,7 +161,7 @@ func (h *Handler) CreateUser(c *gin.Context) {
 //	@Accept		json
 //	@Produce	json
 //	@Security	CookieAuth
-//	@Param		id		path		int						true	"User ID"
+//	@Param		id		path		string					true	"User ID"
 //	@Param		user	body		UpdateUserPayload		true	"User data"
 //	@Success	200		{object}	map[string]interface{}	"data: User"
 //	@Failure	400		{object}	map[string]string		"invalid id or validation error"
@@ -209,7 +209,7 @@ func (h *Handler) UpdateUser(c *gin.Context) {
 //	@Tags		users
 //	@Produce	json
 //	@Security	CookieAuth
-//	@Param		id	path		int					true	"User ID"
+//	@Param		id	path		string				true	"User ID"
 //	@Success	200	{object}	map[string]string	"message: user deleted"
 //	@Failure	400	{object}	map[string]string	"invalid id"
 //	@Failure	401	{object}	map[string]string	"authentication required"

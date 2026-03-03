@@ -17,7 +17,7 @@ const (
 
 // Claims are the JWT payload fields embedded in both access and refresh tokens.
 type Claims struct {
-	UserID       uint   `json:"uid"`
+	UserID       string `json:"uid"`
 	Email        string `json:"email"`
 	IsSystemUser bool   `json:"is_system_user"`
 	jwt.RegisteredClaims

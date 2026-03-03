@@ -35,7 +35,7 @@ function handleCancel() {
   resetForm()
 }
 
-async function handleDelete(id: number) {
+async function handleDelete(id: string) {
   if (confirm('Eliminar mascota?')) await store.deletePet(id)
 }
 </script>

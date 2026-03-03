@@ -10,7 +10,7 @@ const route = useRoute()
 const router = useRouter()
 const store = usePetStore()
 
-const id = Number(route.params.id)
+const id = String(route.params.id)
 const pet = ref(store.pets.find(p => p.id === id))
 const editing = ref(false)
 

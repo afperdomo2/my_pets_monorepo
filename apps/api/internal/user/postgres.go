@@ -6,6 +6,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -22,7 +23,7 @@ func NewPostgresRepo(db *sql.DB) Repository {
 func Migrate(ctx context.Context, db *sql.DB) error {
 	queries := []string{
 		`CREATE TABLE IF NOT EXISTS users (
-			id             SERIAL PRIMARY KEY,
+			id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 			name           VARCHAR(100)        NOT NULL,
 			email          VARCHAR(255) UNIQUE NOT NULL,
 			password       VARCHAR(255),
@@ -82,7 +83,7 @@ func (r *postgresRepo) GetAll(ctx context.Context) ([]User, error) {
 	return users, rows.Err()
 }
 
-func (r *postgresRepo) GetByID(ctx context.Context, id int) (User, error) {
+func (r *postgresRepo) GetByID(ctx context.Context, id string) (User, error) {
 	row := r.db.QueryRowContext(ctx,
 		`SELECT `+userColumns+` FROM users WHERE id = $1`, id,
 	)
@@ -129,11 +130,12 @@ func (r *postgresRepo) Create(ctx context.Context, payload CreateUserPayload, is
 	if err != nil {
 		return User{}, err
 	}
+	newID := uuid.New().String()
 	row := r.db.QueryRowContext(ctx,
-		`INSERT INTO users (name, email, password, is_system_user, auth_provider)
-		 VALUES ($1, $2, $3, $4, 'local')
+		`INSERT INTO users (id, name, email, password, is_system_user, auth_provider)
+		 VALUES ($1, $2, $3, $4, $5, 'local')
 		 RETURNING `+userColumns,
-		payload.Name, payload.Email, string(hash), isSystemUser,
+		newID, payload.Name, payload.Email, string(hash), isSystemUser,
 	)
 	u, err := scanUser(row)
 	if err != nil {
@@ -145,7 +147,7 @@ func (r *postgresRepo) Create(ctx context.Context, payload CreateUserPayload, is
 	return u, nil
 }
 
-func (r *postgresRepo) Update(ctx context.Context, id int, payload UpdateUserPayload) (User, error) {
+func (r *postgresRepo) Update(ctx context.Context, id string, payload UpdateUserPayload) (User, error) {
 	row := r.db.QueryRowContext(ctx,
 		`UPDATE users
 		 SET name=$1, email=$2, updated_at=$3
@@ -166,7 +168,7 @@ func (r *postgresRepo) Update(ctx context.Context, id int, payload UpdateUserPay
 	return u, nil
 }
 
-func (r *postgresRepo) Delete(ctx context.Context, id int) error {
+func (r *postgresRepo) Delete(ctx context.Context, id string) error {
 	res, err := r.db.ExecContext(ctx, `DELETE FROM users WHERE id = $1`, id)
 	if err != nil {
 		return err
@@ -200,14 +202,15 @@ func (r *postgresRepo) SystemUserExists(ctx context.Context) (bool, error) {
 // UpsertByGoogleID creates a new user or returns the existing one for a given Google account.
 // If the email already exists with a local provider, ErrWrongProvider is returned.
 func (r *postgresRepo) UpsertByGoogleID(ctx context.Context, info GoogleUserInfo, isSystemUser bool) (User, error) {
+	newID := uuid.New().String()
 	row := r.db.QueryRowContext(ctx,
-		`INSERT INTO users (name, email, google_id, is_system_user, auth_provider)
-		 VALUES ($1, $2, $3, $4, 'google')
+		`INSERT INTO users (id, name, email, google_id, is_system_user, auth_provider)
+		 VALUES ($1, $2, $3, $4, $5, 'google')
 		 ON CONFLICT (google_id) DO UPDATE
 		   SET name = EXCLUDED.name,
 		       updated_at = NOW()
 		 RETURNING `+userColumns,
-		info.Name, info.Email, info.GoogleID, isSystemUser,
+		newID, info.Name, info.Email, info.GoogleID, isSystemUser,
 	)
 	u, err := scanUser(row)
 	if err != nil {

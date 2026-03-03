@@ -11,7 +11,7 @@ import (
 // JWT returns a Gin middleware that validates the access_token HttpOnly cookie.
 // On success it injects the following keys into the Gin context:
 //
-//	"userID"       uint
+//	"userID"       string
 //	"email"        string
 //	"isSystemUser" bool
 //

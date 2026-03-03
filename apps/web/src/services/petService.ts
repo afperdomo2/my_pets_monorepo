@@ -20,7 +20,7 @@ export const petService = {
     return request('/pets')
   },
 
-  getById(id: number): Promise<ApiResponse<Pet>> {
+  getById(id: string): Promise<ApiResponse<Pet>> {
     return request(`/pets/${id}`)
   },
 
@@ -31,14 +31,14 @@ export const petService = {
     })
   },
 
-  update(id: number, payload: PetPayload): Promise<ApiResponse<Pet>> {
+  update(id: string, payload: PetPayload): Promise<ApiResponse<Pet>> {
     return request(`/pets/${id}`, {
       method: 'PUT',
       body: JSON.stringify(payload),
     })
   },
 
-  remove(id: number): Promise<{ message: string }> {
+  remove(id: string): Promise<{ message: string }> {
     return request(`/pets/${id}`, { method: 'DELETE' })
   },
 }

@@ -25,7 +25,7 @@ export const userService = {
     return request('/users')
   },
 
-  getById(id: number): Promise<ApiResponse<User>> {
+  getById(id: string): Promise<ApiResponse<User>> {
     return request(`/users/${id}`)
   },
 
@@ -36,14 +36,14 @@ export const userService = {
     })
   },
 
-  update(id: number, payload: UpdateUserPayload): Promise<ApiResponse<User>> {
+  update(id: string, payload: UpdateUserPayload): Promise<ApiResponse<User>> {
     return request(`/users/${id}`, {
       method: 'PUT',
       body: JSON.stringify(payload),
     })
   },
 
-  remove(id: number): Promise<{ message: string }> {
+  remove(id: string): Promise<{ message: string }> {
     return request(`/users/${id}`, { method: 'DELETE' })
   },
 }

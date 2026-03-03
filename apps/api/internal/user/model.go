@@ -36,7 +36,7 @@ type GoogleUserInfo struct {
 // Password is excluded from JSON responses to avoid leaking it.
 // is_system_user marks the initial bootstrap account created during first-time setup.
 type User struct {
-	ID           uint         `json:"id"`
+	ID           string       `json:"id"`
 	Name         string       `json:"name"`
 	Email        string       `json:"email"`
 	IsSystemUser bool         `json:"is_system_user"`

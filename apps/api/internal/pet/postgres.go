@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"errors"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type postgresRepo struct {
@@ -20,7 +22,7 @@ func NewPostgresRepo(db *sql.DB) Repository {
 func Migrate(ctx context.Context, db *sql.DB) error {
 	query := `
 	CREATE TABLE IF NOT EXISTS pets (
-		id         SERIAL PRIMARY KEY,
+		id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 		name       VARCHAR(100) NOT NULL,
 		species    VARCHAR(50)  NOT NULL,
 		breed      VARCHAR(100),
@@ -66,7 +68,7 @@ func (r *postgresRepo) GetAll(ctx context.Context) ([]Pet, error) {
 	return pets, rows.Err()
 }
 
-func (r *postgresRepo) GetByID(ctx context.Context, id int) (Pet, error) {
+func (r *postgresRepo) GetByID(ctx context.Context, id string) (Pet, error) {
 	row := r.db.QueryRowContext(ctx,
 		`SELECT `+petColumns+` FROM pets WHERE id = $1`, id,
 	)
@@ -78,16 +80,17 @@ func (r *postgresRepo) GetByID(ctx context.Context, id int) (Pet, error) {
 }
 
 func (r *postgresRepo) Create(ctx context.Context, payload PetPayload) (Pet, error) {
+	newID := uuid.New().String()
 	row := r.db.QueryRowContext(ctx,
-		`INSERT INTO pets (name, species, breed, age, owner)
-		 VALUES ($1, $2, $3, $4, $5)
+		`INSERT INTO pets (id, name, species, breed, age, owner)
+		 VALUES ($1, $2, $3, $4, $5, $6)
 		 RETURNING `+petColumns,
-		payload.Name, payload.Species, payload.Breed, payload.Age, payload.Owner,
+		newID, payload.Name, payload.Species, payload.Breed, payload.Age, payload.Owner,
 	)
 	return scanPet(row)
 }
 
-func (r *postgresRepo) Update(ctx context.Context, id int, payload PetPayload) (Pet, error) {
+func (r *postgresRepo) Update(ctx context.Context, id string, payload PetPayload) (Pet, error) {
 	row := r.db.QueryRowContext(ctx,
 		`UPDATE pets
 		 SET name=$1, species=$2, breed=$3, age=$4, owner=$5, updated_at=$6
@@ -103,7 +106,7 @@ func (r *postgresRepo) Update(ctx context.Context, id int, payload PetPayload) (
 	return p, err
 }
 
-func (r *postgresRepo) Delete(ctx context.Context, id int) error {
+func (r *postgresRepo) Delete(ctx context.Context, id string) error {
 	res, err := r.db.ExecContext(ctx, `DELETE FROM pets WHERE id = $1`, id)
 	if err != nil {
 		return err
