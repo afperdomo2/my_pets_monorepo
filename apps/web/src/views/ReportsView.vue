@@ -1,9 +1,11 @@
+<script setup lang="ts">
+import { IconChartBar } from '@tabler/icons-vue'
+</script>
+
 <template>
   <div class="placeholder-view">
     <div class="placeholder-icon">
-      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>
-      </svg>
+      <IconChartBar :size="32" :stroke-width="1.5" />
     </div>
     <div class="placeholder-text">
       <h1>Reportes</h1>

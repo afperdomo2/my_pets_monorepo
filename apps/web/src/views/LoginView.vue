@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useForm } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'
+import { IconDroplet, IconMail, IconLock, IconLoader2 } from '@tabler/icons-vue'
 import { useAuthStore } from '@/stores/auth'
 import { authService } from '@/services/authService'
 import { loginSchema } from '@/schemas/user'
@@ -56,10 +57,7 @@ function handleGoogleLogin() {
       <div class="panel-content">
         <div class="panel-brand">
           <div class="panel-icon">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M11 6c0 4-3 6-3 10a4 4 0 0 0 8 0c0-4-3-6-3-10"/>
-              <circle cx="11" cy="4" r="1.5"/>
-            </svg>
+            <IconDroplet :size="28" />
           </div>
           <span class="panel-brand-name">My Pets</span>
         </div>
@@ -104,10 +102,7 @@ function handleGoogleLogin() {
             <label for="email">Correo electrónico</label>
             <div class="input-wrapper">
               <span class="input-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                  <rect width="20" height="16" x="2" y="4" rx="2"/>
-                  <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
-                </svg>
+                <IconMail :size="16" />
               </span>
               <input
                 id="email"
@@ -128,10 +123,7 @@ function handleGoogleLogin() {
             </label>
             <div class="input-wrapper">
               <span class="input-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                  <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
-                  <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                </svg>
+                <IconLock :size="16" />
               </span>
               <input
                 id="password"
@@ -151,9 +143,7 @@ function handleGoogleLogin() {
           <button type="submit" class="btn-primary" :class="{ 'btn--loading': authStore.loading }">
             <span v-if="!authStore.loading">Ingresar</span>
             <span v-else class="btn-loader">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-              </svg>
+              <IconLoader2 :size="18" />
             </span>
           </button>
         </form>

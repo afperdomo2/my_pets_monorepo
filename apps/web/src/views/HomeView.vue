@@ -1,13 +1,23 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
+import { IconPaw, IconVaccine, IconAlertTriangle, IconUsers, IconPlus } from '@tabler/icons-vue'
+import type { Component } from 'vue'
 
-const stats = [
+const stats: {
+  label: string
+  value: string
+  change: string
+  positive: boolean
+  icon: Component
+  color: string
+  to: string
+}[] = [
   {
     label: 'Mascotas registradas',
     value: '12',
     change: '+2 este mes',
     positive: true,
-    icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="4" r="2"/><circle cx="18" cy="8" r="2"/><circle cx="4" cy="8" r="2"/><path d="M11 6c0 4-3 6-3 10a4 4 0 0 0 8 0c0-4-3-6-3-10"/><path d="M6.5 14c-1.5 1-2.5 2.5-2.5 4"/><path d="M17.5 14c1.5 1 2.5 2.5 2.5 4"/></svg>`,
+    icon: IconPaw,
     color: 'accent',
     to: '/pets',
   },
@@ -16,7 +26,7 @@ const stats = [
     value: '9',
     change: '75% del total',
     positive: true,
-    icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m18 2 4 4"/><path d="m17 7 3-3"/><path d="M19 9 8.7 19.3c-1 1-2.5 1-3.4 0l-1.6-1.6c-1-1-1-2.5 0-3.4L14 4"/><path d="m9 8 2 2"/><path d="m13 12 2 2"/></svg>`,
+    icon: IconVaccine,
     color: 'green',
     to: '/vaccines',
   },
@@ -25,7 +35,7 @@ const stats = [
     value: '3',
     change: 'Requieren atención',
     positive: false,
-    icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,
+    icon: IconAlertTriangle,
     color: 'orange',
     to: '/vaccines',
   },
@@ -34,7 +44,7 @@ const stats = [
     value: '8',
     change: 'Registrados',
     positive: true,
-    icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
+    icon: IconUsers,
     color: 'blue',
     to: '/pets',
   },
@@ -63,9 +73,7 @@ const upcomingVaccines = [
         <p>Aquí está el resumen de hoy — <span class="date">Lunes, 2 de marzo de 2026</span></p>
       </div>
       <RouterLink to="/pets" class="btn-new-pet">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-        </svg>
+        <IconPlus :size="16" :stroke-width="2.5" />
         Nueva mascota
       </RouterLink>
     </div>
@@ -79,7 +87,7 @@ const upcomingVaccines = [
         class="stat-card"
         :class="`stat-card--${stat.color}`"
       >
-        <div class="stat-icon" v-html="stat.icon" />
+        <div class="stat-icon"><component :is="stat.icon" :size="22" :stroke-width="1.75" /></div>
         <div class="stat-body">
           <span class="stat-value">{{ stat.value }}</span>
           <span class="stat-label">{{ stat.label }}</span>

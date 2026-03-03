@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
+import { IconDroplet } from '@tabler/icons-vue'
 
 const router = useRouter()
 </script>
@@ -11,10 +12,7 @@ const router = useRouter()
       <div class="panel-content">
         <div class="panel-brand">
           <div class="panel-icon">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M11 6c0 4-3 6-3 10a4 4 0 0 0 8 0c0-4-3-6-3-10"/>
-              <circle cx="11" cy="4" r="1.5"/>
-            </svg>
+            <IconDroplet :size="28" />
           </div>
           <span class="panel-brand-name">My Pets</span>
         </div>

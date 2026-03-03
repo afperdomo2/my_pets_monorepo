@@ -1,11 +1,11 @@
+<script setup lang="ts">
+import { IconVaccine } from '@tabler/icons-vue'
+</script>
+
 <template>
   <div class="placeholder-view">
     <div class="placeholder-icon">
-      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="m18 2 4 4"/><path d="m17 7 3-3"/>
-        <path d="M19 9 8.7 19.3c-1 1-2.5 1-3.4 0l-1.6-1.6c-1-1-1-2.5 0-3.4L14 4"/>
-        <path d="m9 8 2 2"/><path d="m13 12 2 2"/>
-      </svg>
+      <IconVaccine :size="32" :stroke-width="1.5" />
     </div>
     <div class="placeholder-text">
       <h1>Vacunas</h1>
