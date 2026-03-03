@@ -1,137 +1,363 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useForm } from 'vee-validate'
-import { toTypedSchema } from '@vee-validate/zod'
-import { useGetPets, useCreatePet, useDeletePet } from '@/composables/usePets'
-import { petSchema } from '@/schemas/pet'
+import { ref, computed } from 'vue'
+import { IconPlus, IconRefresh, IconSearch, IconAlertCircle } from '@tabler/icons-vue'
+import { useGetPets, useDeletePet } from '@/composables/usePets'
+import PetCard from '@/components/pets/PetCard.vue'
+import PetFormModal from '@/components/pets/PetFormModal.vue'
+import PetEmptyState from '@/components/pets/PetEmptyState.vue'
+import type { Pet } from '@/types/pet'
 
-const { data: pets, isLoading, isError, error } = useGetPets()
-const createPet = useCreatePet()
+const { data: pets, isLoading, isError, error, refetch, isFetching } = useGetPets()
 const deletePet = useDeletePet()
 
-const showForm = ref(false)
-const submitError = ref<string | null>(null)
+const showModal = ref(false)
+const modalMode = ref<'create' | 'edit'>('create')
+const editingPet = ref<Pet | undefined>(undefined)
+const deletingId = ref<string | null>(null)
+const search = ref('')
 
-const { defineField, handleSubmit, errors, resetForm } = useForm({
-  validationSchema: toTypedSchema(petSchema),
-  initialValues: { name: '', species: '', breed: '', age: undefined, owner: '' },
+const filteredPets = computed(() => {
+  const list = pets.value ?? []
+  const q = search.value.toLowerCase().trim()
+  if (!q) return list
+  return list.filter(
+    (p) =>
+      p.name.toLowerCase().includes(q) ||
+      p.species.toLowerCase().includes(q) ||
+      p.breed?.toLowerCase().includes(q) ||
+      p.owner?.toLowerCase().includes(q),
+  )
 })
 
-const [name, nameAttrs] = defineField('name')
-const [species, speciesAttrs] = defineField('species')
-const [breed, breedAttrs] = defineField('breed')
-const [age, ageAttrs] = defineField('age')
-const [owner, ownerAttrs] = defineField('owner')
+function openCreate() {
+  editingPet.value = undefined
+  modalMode.value = 'create'
+  showModal.value = true
+}
 
-const handleCreate = handleSubmit(async (values) => {
-  submitError.value = null
-  try {
-    await createPet.mutateAsync(values)
-    showForm.value = false
-    resetForm()
-  } catch (e) {
-    submitError.value = e instanceof Error ? e.message : 'Error al crear mascota'
-  }
-})
-
-function handleCancel() {
-  showForm.value = false
-  resetForm()
-  submitError.value = null
+function openEdit(pet: Pet) {
+  editingPet.value = pet
+  modalMode.value = 'edit'
+  showModal.value = true
 }
 
 async function handleDelete(id: string) {
-  if (confirm('Eliminar mascota?')) await deletePet.mutateAsync(id)
+  if (!confirm('¿Eliminar esta mascota?')) return
+  deletingId.value = id
+  try {
+    await deletePet.mutateAsync(id)
+  } finally {
+    deletingId.value = null
+  }
 }
 </script>
 
 <template>
   <div class="pets-view">
-    <header class="pets-header">
-      <h1>Mascotas</h1>
-      <button class="btn-primary" @click="showForm ? handleCancel() : (showForm = true)">
-        {{ showForm ? 'Cancelar' : '+ Agregar' }}
-      </button>
-    </header>
-
-    <form v-if="showForm" class="pet-form" @submit.prevent="handleCreate">
-      <div class="form-field">
-        <input v-model="name" v-bind="nameAttrs" placeholder="Nombre *" />
-        <p v-if="errors.name" class="field-error">{{ errors.name }}</p>
+    <!-- Header -->
+    <div class="page-header">
+      <div class="page-header__text">
+        <h1 class="page-title">Mascotas</h1>
+        <p class="page-subtitle">Administrá el registro de tus mascotas</p>
       </div>
-
-      <div class="form-field">
-        <select v-model="species" v-bind="speciesAttrs">
-          <option value="" disabled>Especie *</option>
-          <option value="dog">Perro</option>
-          <option value="cat">Gato</option>
-          <option value="bird">Ave</option>
-          <option value="rabbit">Conejo</option>
-          <option value="fish">Pez</option>
-          <option value="other">Otro</option>
-        </select>
-        <p v-if="errors.species" class="field-error">{{ errors.species }}</p>
+      <div class="header-actions">
+        <button
+          class="btn-refresh"
+          title="Refrescar"
+          :disabled="isFetching"
+          @click="() => refetch()"
+        >
+          <IconRefresh :size="16" :stroke-width="2" :class="{ spinning: isFetching }" />
+          <span>Refrescar</span>
+        </button>
+        <button class="btn-create" @click="openCreate">
+          <IconPlus :size="16" :stroke-width="2.5" />
+          Nueva mascota
+        </button>
       </div>
+    </div>
 
-      <div class="form-field">
-        <input v-model="breed" v-bind="breedAttrs" placeholder="Raza" />
-      </div>
-
-      <div class="form-field">
+    <!-- Toolbar: search + stats -->
+    <div class="toolbar">
+      <div class="search-box">
+        <IconSearch class="search-icon" :size="16" :stroke-width="2" />
         <input
-          v-model.number="age"
-          v-bind="ageAttrs"
-          type="number"
-          placeholder="Edad"
-          min="0"
-          max="100"
+          v-model="search"
+          class="search-input"
+          placeholder="Buscar por nombre, especie, raza…"
         />
-        <p v-if="errors.age" class="field-error">{{ errors.age }}</p>
       </div>
-
-      <div class="form-field">
-        <input v-model="owner" v-bind="ownerAttrs" placeholder="Dueño" />
+      <div v-if="!isLoading && !isError" class="stats-pill">
+        <span class="stats-num">{{ (pets ?? []).length }}</span>
+        <span class="stats-label">{{ (pets ?? []).length === 1 ? 'mascota' : 'mascotas' }}</span>
       </div>
+    </div>
 
-      <p v-if="submitError" class="form-error">{{ submitError }}</p>
+    <!-- Loading -->
+    <div v-if="isLoading" class="feedback-state">
+      <div class="spinner" />
+      <p>Cargando mascotas…</p>
+    </div>
 
-      <button type="submit" class="btn-primary" :disabled="createPet.isPending.value">Guardar</button>
-    </form>
+    <!-- Error -->
+    <div v-else-if="isError" class="feedback-state feedback-state--error">
+      <IconAlertCircle :size="40" :stroke-width="1.5" />
+      <p>{{ error?.message ?? 'Error al cargar mascotas' }}</p>
+      <button class="btn-retry" @click="() => refetch()">Reintentar</button>
+    </div>
 
-    <div v-if="isLoading" class="status">Cargando...</div>
+    <!-- Empty (no pets at all) -->
+    <PetEmptyState
+      v-else-if="!filteredPets.length && !search"
+      @add="openCreate"
+    />
 
-    <div v-else-if="isError" class="status">Error: {{ error?.message }}</div>
+    <!-- Empty search -->
+    <PetEmptyState
+      v-else-if="!filteredPets.length && search"
+      :searching="true"
+      :query="search"
+    />
 
-    <ul v-else class="pet-list">
-      <li v-for="pet in pets" :key="pet.id" class="pet-card">
-        <RouterLink :to="`/pets/${pet.id}`" class="pet-name">
-          {{ pet.name }}
-        </RouterLink>
-        <span class="pet-meta">{{ pet.species }} · {{ pet.breed }}</span>
-        <span class="pet-meta">Dueño: {{ pet.owner || '—' }}</span>
-        <button class="btn-danger" @click="handleDelete(pet.id)">Eliminar</button>
-      </li>
-    </ul>
+    <!-- Grid -->
+    <div v-else class="pets-grid">
+      <PetCard
+        v-for="pet in filteredPets"
+        :key="pet.id"
+        :pet="pet"
+        :deleting="deletingId === pet.id"
+        @edit="openEdit"
+        @delete="handleDelete"
+      />
+    </div>
+
+    <!-- Modal -->
+    <PetFormModal
+      v-model="showModal"
+      :mode="modalMode"
+      :pet="editingPet"
+    />
   </div>
 </template>
 
 <style scoped>
-.pets-view { width: 100%; padding: var(--space-8) var(--space-10); }
-.pets-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
-.pet-form { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 2rem; padding: 1rem; background: #f9f9f9; border-radius: 8px; }
-.form-field { flex: 1 1 180px; display: flex; flex-direction: column; gap: 0.25rem; }
-.pet-form input,
-.pet-form select { width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9rem; background: #fff; }
-.pet-list { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 0.75rem; }
-.pet-card { display: flex; align-items: center; gap: 1rem; padding: 1rem 1.25rem; background: #fff; border: 1px solid #e8e8e8; border-radius: 10px; }
-.pet-name { font-weight: 600; font-size: 1.05rem; text-decoration: none; color: #2c3e50; flex: 1; }
-.pet-name:hover { color: #42b883; }
-.pet-meta { font-size: 0.85rem; color: #888; }
-.btn-primary { padding: 0.5rem 1.25rem; background: #42b883; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; }
-.btn-primary:hover { background: #369a6e; }
-.btn-danger { padding: 0.4rem 0.9rem; background: #e74c3c; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem; margin-left: auto; }
-.btn-danger:hover { background: #c0392b; }
-.status { text-align: center; padding: 2rem; color: #888; }
-.field-error { font-size: 0.75rem; color: #dc2626; margin: 0; }
-.form-error { flex: 1 1 100%; font-size: 0.85rem; color: #dc2626; background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; padding: 0.4rem 0.75rem; margin: 0; }
+.pets-view {
+  width: 100%;
+  padding: var(--space-8) var(--space-10);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+/* ── Header ─────────────────────────── */
+.page-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.page-title {
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0 0 var(--space-1);
+  line-height: 1.2;
+}
+
+.page-subtitle {
+  font-size: var(--text-sm);
+  color: var(--color-text-tertiary);
+  margin: 0;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1.5px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+}
+.btn-icon:hover:not(:disabled) {
+  background: var(--color-bg-alt);
+  border-color: var(--color-border);
+  color: var(--color-text-primary);
+}
+.btn-icon:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1.5px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+  font-size: var(--text-sm);
+  font-weight: 500;
+}
+
+.btn-refresh:hover:not(:disabled) {
+  background: var(--color-bg-alt);
+  border-color: var(--color-border);
+  color: var(--color-text-primary);
+}
+
+.btn-refresh:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-create {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-5);
+  background: var(--color-accent);
+  color: var(--color-text-on-accent);
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition-fast), transform var(--transition-fast);
+  white-space: nowrap;
+}
+.btn-create:hover {
+  background: var(--color-accent-hover);
+  transform: translateY(-1px);
+}
+
+/* ── Toolbar ─────────────────────────── */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.search-box {
+  position: relative;
+  flex: 1;
+  max-width: 400px;
+}
+
+.search-icon {
+  position: absolute;
+  left: var(--space-3);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-text-tertiary);
+  pointer-events: none;
+}
+
+.search-input {
+  width: 100%;
+  padding: var(--space-2) var(--space-3) var(--space-2) 2.25rem;
+  border: 1.5px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  color: var(--color-text-primary);
+  background: var(--color-surface);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  box-sizing: border-box;
+}
+.search-input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px rgba(61, 122, 95, 0.12);
+}
+
+.stats-pill {
+  margin-left: auto;
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-1);
+  background: var(--color-accent-light);
+  border-radius: var(--radius-full);
+  padding: var(--space-1) var(--space-3);
+}
+.stats-num {
+  font-size: var(--text-base);
+  font-weight: 700;
+  color: var(--color-accent);
+}
+.stats-label {
+  font-size: var(--text-xs);
+  color: var(--color-accent);
+  font-weight: 500;
+}
+
+/* ── Grid ────────────────────────────── */
+.pets-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--space-4);
+}
+
+/* ── Feedback states ─────────────────── */
+.feedback-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  padding: var(--space-16) var(--space-4);
+  color: var(--color-text-tertiary);
+  text-align: center;
+}
+.feedback-state--error {
+  color: var(--color-error);
+}
+
+.btn-retry {
+  padding: var(--space-2) var(--space-5);
+  background: transparent;
+  color: var(--color-error);
+  border: 1.5px solid var(--color-error-border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+.btn-retry:hover {
+  background: var(--color-error-light);
+}
+
+/* ── Spinner ─────────────────────────── */
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--color-border-light);
+  border-top-color: var(--color-accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+.spinning {
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
 </style>

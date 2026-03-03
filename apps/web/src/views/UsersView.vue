@@ -10,12 +10,13 @@ import {
   IconTrash,
   IconX,
   IconLock,
+  IconRefresh,
 } from '@tabler/icons-vue'
 import { useGetUsers, useCreateUser, useUpdateUser, useDeleteUser } from '@/composables/useUsers'
 import type { User } from '@/types/user'
 import { createUserSchema, updateUserSchema } from '@/schemas/user'
 
-const { data: users, isLoading, isError, error: fetchError, refetch } = useGetUsers()
+const { data: users, isLoading, isError, error: fetchError, refetch, isFetching } = useGetUsers()
 const createUser = useCreateUser()
 const updateUser = useUpdateUser()
 const deleteUser = useDeleteUser()
@@ -150,10 +151,21 @@ function closeModal() {
         <h1 class="page-title">Gestión de usuarios</h1>
         <p class="page-subtitle">Administra los accesos al sistema</p>
       </div>
-      <button class="btn-create" @click="openCreate">
-        <IconPlus :size="16" :stroke-width="2.5" />
-        Nuevo usuario
-      </button>
+      <div class="header-actions">
+        <button
+          class="btn-refresh"
+          title="Refrescar"
+          :disabled="isFetching"
+          @click="() => refetch()"
+        >
+          <IconRefresh :size="16" :stroke-width="2" :class="{ spinning: isFetching }" />
+          <span>Refrescar</span>
+        </button>
+        <button class="btn-create" @click="openCreate">
+          <IconPlus :size="16" :stroke-width="2.5" />
+          Nuevo usuario
+        </button>
+      </div>
     </div>
 
     <!-- Search + stats -->
@@ -421,6 +433,66 @@ function closeModal() {
   font-size: var(--text-sm);
   color: var(--color-text-tertiary);
   margin: 0;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1.5px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+}
+.btn-icon:hover:not(:disabled) {
+  background: var(--color-bg-alt);
+  border-color: var(--color-border);
+  color: var(--color-text-primary);
+}
+.btn-icon:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1.5px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+  font-size: var(--text-sm);
+  font-weight: 500;
+}
+
+.btn-refresh:hover:not(:disabled) {
+  background: var(--color-bg-alt);
+  border-color: var(--color-border);
+  color: var(--color-text-primary);
+}
+
+.btn-refresh:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.spinning {
+  animation: spin 0.7s linear infinite;
 }
 
 .btn-create {

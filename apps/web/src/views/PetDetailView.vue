@@ -1,157 +1,382 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useForm } from 'vee-validate'
-import { toTypedSchema } from '@vee-validate/zod'
-import { useGetPet, useUpdatePet, useDeletePet } from '@/composables/usePets'
-import { petSchema } from '@/schemas/pet'
+import { IconArrowLeft, IconEdit, IconTrash, IconPaw } from '@tabler/icons-vue'
+import { useGetPet, useDeletePet } from '@/composables/usePets'
+import PetFormModal from '@/components/pets/PetFormModal.vue'
 
 const route = useRoute()
 const router = useRouter()
 
 const id = String(route.params.id)
-const editing = ref(false)
-const submitError = ref<string | null>(null)
+const showEditModal = ref(false)
 
 const { data: pet, isLoading, isError } = useGetPet(id)
-const updatePet = useUpdatePet()
 const deletePet = useDeletePet()
 
-const { defineField, handleSubmit, errors, resetForm } = useForm({
-  validationSchema: toTypedSchema(petSchema),
-  initialValues: { name: '', species: '', breed: '', age: undefined, owner: '' },
-})
+const SPECIES_EMOJI: Record<string, string> = {
+  dog: '🐕',
+  cat: '🐈',
+  bird: '🦜',
+  rabbit: '🐇',
+  fish: '🐠',
+  other: '🐾',
+}
+const SPECIES_LABEL: Record<string, string> = {
+  dog: 'Perro',
+  cat: 'Gato',
+  bird: 'Ave',
+  rabbit: 'Conejo',
+  fish: 'Pez',
+  other: 'Otro',
+}
 
-const [name, nameAttrs] = defineField('name')
-const [species, speciesAttrs] = defineField('species')
-const [breed, breedAttrs] = defineField('breed')
-const [age, ageAttrs] = defineField('age')
-const [owner, ownerAttrs] = defineField('owner')
+function speciesEmoji(s: string) { return SPECIES_EMOJI[s] ?? '🐾' }
+function speciesLabel(s: string) { return SPECIES_LABEL[s] ?? s }
 
-// Populate form when pet data loads
-watch(pet, (found) => {
-  if (found) {
-    resetForm({
-      values: {
-        name: found.name,
-        species: found.species,
-        breed: found.breed,
-        age: found.age,
-        owner: found.owner,
-      },
-    })
-  }
-}, { immediate: true })
-
-const handleUpdate = handleSubmit(async (values) => {
-  submitError.value = null
-  try {
-    await updatePet.mutateAsync({ id, payload: values })
-    editing.value = false
-  } catch (e) {
-    submitError.value = e instanceof Error ? e.message : 'Error al actualizar mascota'
-  }
-})
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString('es-ES', {
+    day: '2-digit', month: 'long', year: 'numeric',
+  })
+}
 
 async function handleDelete() {
-  if (confirm('Eliminar mascota?')) {
-    await deletePet.mutateAsync(id)
-    router.push('/pets')
-  }
+  if (!confirm(`¿Eliminar a ${pet.value?.name}? Esta acción no se puede deshacer.`)) return
+  await deletePet.mutateAsync(id)
+  router.push('/pets')
 }
 </script>
 
 <template>
   <div class="pet-detail">
-    <RouterLink to="/pets" class="back">&larr; Volver</RouterLink>
+    <!-- Back nav -->
+    <RouterLink to="/pets" class="back-link">
+      <IconArrowLeft :size="16" :stroke-width="2.5" />
+      Volver a mascotas
+    </RouterLink>
 
-    <div v-if="isLoading" class="status">Cargando...</div>
+    <!-- Loading -->
+    <div v-if="isLoading" class="feedback-state">
+      <div class="spinner" />
+      <p>Cargando…</p>
+    </div>
 
-    <div v-else-if="isError || !pet" class="status">Mascota no encontrada.</div>
+    <!-- Error / not found -->
+    <div v-else-if="isError || !pet" class="feedback-state feedback-state--error">
+      <IconPaw :size="40" :stroke-width="1.5" />
+      <p>Mascota no encontrada.</p>
+      <RouterLink to="/pets" class="btn-back">Volver al listado</RouterLink>
+    </div>
 
+    <!-- Detail card -->
     <template v-else>
-      <div v-if="!editing" class="detail-card">
-        <h1>{{ pet.name }}</h1>
-        <p><strong>Especie:</strong> {{ pet.species }}</p>
-        <p><strong>Raza:</strong> {{ pet.breed || '—' }}</p>
-        <p><strong>Edad:</strong> {{ pet.age }} años</p>
-        <p><strong>Dueño:</strong> {{ pet.owner || '—' }}</p>
-        <div class="actions">
-          <button class="btn-primary" @click="editing = true">Editar</button>
-          <button class="btn-danger" @click="handleDelete">Eliminar</button>
+      <div class="detail-layout">
+        <!-- Left: main card -->
+        <div class="detail-card">
+          <!-- Strip -->
+          <div class="card-strip" :class="`strip--${pet.species}`" />
+
+          <div class="card-content">
+            <!-- Avatar -->
+            <div class="species-avatar" :class="`avatar--${pet.species}`">
+              <span class="species-emoji">{{ speciesEmoji(pet.species) }}</span>
+            </div>
+
+            <!-- Name + badges -->
+            <div class="pet-header">
+              <h1 class="pet-name">{{ pet.name }}</h1>
+              <div class="badges">
+                <span class="badge badge--species">{{ speciesLabel(pet.species) }}</span>
+                <span v-if="pet.breed" class="badge badge--breed">{{ pet.breed }}</span>
+              </div>
+            </div>
+
+            <!-- Stats row -->
+            <div class="stats-row">
+              <div v-if="pet.age" class="stat">
+                <span class="stat-value">{{ pet.age }}</span>
+                <span class="stat-label">{{ pet.age === 1 ? 'año' : 'años' }}</span>
+              </div>
+              <div v-if="pet.owner" class="stat">
+                <span class="stat-value">{{ pet.owner }}</span>
+                <span class="stat-label">Dueño</span>
+              </div>
+              <div class="stat">
+                <span class="stat-value">{{ formatDate(pet.created_at) }}</span>
+                <span class="stat-label">Registrado</span>
+              </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="card-actions">
+              <button class="btn-edit" @click="showEditModal = true">
+                <IconEdit :size="15" :stroke-width="2" />
+                Editar
+              </button>
+              <button class="btn-delete" :disabled="deletePet.isPending.value" @click="handleDelete">
+                <span v-if="deletePet.isPending.value" class="spinner-sm" />
+                <IconTrash v-else :size="15" :stroke-width="2" />
+                Eliminar
+              </button>
+            </div>
+          </div>
         </div>
       </div>
-
-      <form v-else class="pet-form" @submit.prevent="handleUpdate">
-        <h2>Editar mascota</h2>
-
-        <div class="form-field">
-          <input v-model="name" v-bind="nameAttrs" placeholder="Nombre *" />
-          <p v-if="errors.name" class="field-error">{{ errors.name }}</p>
-        </div>
-
-        <div class="form-field">
-          <select v-model="species" v-bind="speciesAttrs">
-            <option value="" disabled>Especie *</option>
-            <option value="dog">Perro</option>
-            <option value="cat">Gato</option>
-            <option value="bird">Ave</option>
-            <option value="rabbit">Conejo</option>
-            <option value="fish">Pez</option>
-            <option value="other">Otro</option>
-          </select>
-          <p v-if="errors.species" class="field-error">{{ errors.species }}</p>
-        </div>
-
-        <div class="form-field">
-          <input v-model="breed" v-bind="breedAttrs" placeholder="Raza" />
-        </div>
-
-        <div class="form-field">
-          <input
-            v-model.number="age"
-            v-bind="ageAttrs"
-            type="number"
-            placeholder="Edad"
-            min="0"
-            max="100"
-          />
-          <p v-if="errors.age" class="field-error">{{ errors.age }}</p>
-        </div>
-
-        <div class="form-field">
-          <input v-model="owner" v-bind="ownerAttrs" placeholder="Dueño" />
-        </div>
-
-        <p v-if="submitError" class="form-error">{{ submitError }}</p>
-
-        <div class="actions">
-          <button type="submit" class="btn-primary" :disabled="updatePet.isPending.value">Guardar</button>
-          <button type="button" class="btn-secondary" @click="editing = false">Cancelar</button>
-        </div>
-      </form>
     </template>
+
+    <!-- Edit modal -->
+    <PetFormModal
+      v-if="pet"
+      v-model="showEditModal"
+      mode="edit"
+      :pet="pet"
+    />
   </div>
 </template>
 
 <style scoped>
-.pet-detail { width: 100%; padding: var(--space-8) var(--space-10); }
-.back { color: #42b883; text-decoration: none; font-weight: 600; }
-.back:hover { text-decoration: underline; }
-.detail-card { margin-top: 1.5rem; padding: 1.5rem; background: #fff; border: 1px solid #e8e8e8; border-radius: 10px; }
-.detail-card h1 { margin-top: 0; }
-.detail-card p { margin: 0.5rem 0; }
-.pet-form { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1.5rem; }
-.pet-form h2 { margin: 0 0 0.5rem; }
-.form-field { display: flex; flex-direction: column; gap: 0.25rem; }
-.pet-form input,
-.pet-form select { padding: 0.5rem 0.75rem; border: 1px solid #ddd; border-radius: 6px; font-size: 0.95rem; background: #fff; }
-.actions { display: flex; gap: 0.75rem; margin-top: 1rem; }
-.btn-primary { padding: 0.5rem 1.25rem; background: #42b883; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; }
-.btn-primary:hover { background: #369a6e; }
-.btn-secondary { padding: 0.5rem 1.25rem; background: #eee; color: #333; border: none; border-radius: 6px; cursor: pointer; }
-.btn-danger { padding: 0.5rem 1.25rem; background: #e74c3c; color: #fff; border: none; border-radius: 6px; cursor: pointer; }
-.status { margin-top: 2rem; color: #888; }
-.field-error { font-size: 0.75rem; color: #dc2626; margin: 0; }
-.form-error { font-size: 0.85rem; color: #dc2626; background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; padding: 0.4rem 0.75rem; margin: 0; }
+.pet-detail {
+  width: 100%;
+  padding: var(--space-8) var(--space-10);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+/* ── Back link ───────────────────────── */
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text-tertiary);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+  width: fit-content;
+}
+.back-link:hover {
+  color: var(--color-accent);
+}
+
+/* ── Detail layout ───────────────────── */
+.detail-layout {
+  display: flex;
+  gap: var(--space-6);
+  align-items: flex-start;
+}
+
+/* ── Detail card ─────────────────────── */
+.detail-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+  max-width: 560px;
+  width: 100%;
+}
+
+.card-strip {
+  height: 6px;
+  width: 100%;
+}
+.strip--dog    { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+.strip--cat    { background: linear-gradient(90deg, #8b5cf6, #a78bfa); }
+.strip--bird   { background: linear-gradient(90deg, #06b6d4, #22d3ee); }
+.strip--rabbit { background: linear-gradient(90deg, #ec4899, #f472b6); }
+.strip--fish   { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+.strip--other  { background: linear-gradient(90deg, var(--color-accent), var(--color-accent-muted)); }
+
+.card-content {
+  padding: var(--space-8);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+/* ── Species avatar ──────────────────── */
+.species-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.avatar--dog    { background: #fef3c7; }
+.avatar--cat    { background: #ede9fe; }
+.avatar--bird   { background: #cffafe; }
+.avatar--rabbit { background: #fce7f3; }
+.avatar--fish   { background: #dbeafe; }
+.avatar--other  { background: var(--color-accent-light); }
+
+.species-emoji { font-size: 2.75rem; line-height: 1; }
+
+/* ── Pet header ──────────────────────── */
+.pet-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.pet-name {
+  font-family: var(--font-display);
+  font-size: var(--text-3xl);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0;
+  line-height: 1.15;
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px var(--space-3);
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+.badge--species {
+  background: var(--color-accent-light);
+  color: var(--color-accent-dark);
+}
+.badge--breed {
+  background: var(--color-bg-alt);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border-light);
+}
+
+/* ── Stats row ───────────────────────── */
+.stats-row {
+  display: flex;
+  gap: var(--space-6);
+  flex-wrap: wrap;
+  padding: var(--space-4) 0;
+  border-top: 1px solid var(--color-border-light);
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.stat-value {
+  font-family: var(--font-display);
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+.stat-label {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ── Card actions ────────────────────── */
+.card-actions {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.btn-edit {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-5);
+  background: var(--color-accent);
+  color: var(--color-text-on-accent);
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition-fast), transform var(--transition-fast);
+}
+.btn-edit:hover {
+  background: var(--color-accent-hover);
+  transform: translateY(-1px);
+}
+
+.btn-delete {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  background: transparent;
+  color: var(--color-error);
+  border: 1.5px solid var(--color-error-border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+.btn-delete:hover:not(:disabled) {
+  background: var(--color-error-light);
+  border-color: var(--color-error);
+}
+.btn-delete:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Feedback states ─────────────────── */
+.feedback-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-16);
+  color: var(--color-text-tertiary);
+  text-align: center;
+}
+.feedback-state--error {
+  color: var(--color-error);
+}
+
+.btn-back {
+  padding: var(--space-2) var(--space-5);
+  background: var(--color-accent);
+  color: var(--color-text-on-accent);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-decoration: none;
+  transition: background var(--transition-fast);
+}
+.btn-back:hover { background: var(--color-accent-hover); }
+
+/* ── Spinner ─────────────────────────── */
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--color-border-light);
+  border-top-color: var(--color-accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+.spinner-sm {
+  display: inline-block;
+  width: 13px;
+  height: 13px;
+  border: 2px solid rgba(220, 38, 38, 0.3);
+  border-top-color: var(--color-error);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
 </style>
