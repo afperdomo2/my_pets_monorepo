@@ -324,7 +324,7 @@ const docTemplate = `{
                 "summary": "Get a pet by ID",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "Pet ID",
                         "name": "id",
                         "in": "path",
@@ -395,7 +395,7 @@ const docTemplate = `{
                 "summary": "Update an existing pet",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "Pet ID",
                         "name": "id",
                         "in": "path",
@@ -472,7 +472,7 @@ const docTemplate = `{
                 "summary": "Delete a pet",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "Pet ID",
                         "name": "id",
                         "in": "path",
@@ -762,7 +762,7 @@ const docTemplate = `{
                 "summary": "Get a user by ID (system user only)",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "User ID",
                         "name": "id",
                         "in": "path",
@@ -842,7 +842,7 @@ const docTemplate = `{
                 "summary": "Update an existing user",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "User ID",
                         "name": "id",
                         "in": "path",
@@ -937,7 +937,7 @@ const docTemplate = `{
                 "summary": "Delete a user",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "User ID",
                         "name": "id",
                         "in": "path",

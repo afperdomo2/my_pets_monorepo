@@ -170,12 +170,31 @@ const upcomingVaccines = [
   width: 100%;
 }
 
+@media (max-width: 768px) {
+  .home-view {
+    padding: var(--space-5) var(--space-4);
+    gap: var(--space-5);
+  }
+}
+
 /* ── Page header ──────────────────────────────────────────── */
 .page-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--space-4);
+}
+
+@media (max-width: 480px) {
+  .page-header {
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .btn-new-pet {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
 .page-header-text h1 {
@@ -226,6 +245,10 @@ const upcomingVaccines = [
 
 @media (max-width: 1200px) {
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 480px) {
+  .stats-grid { grid-template-columns: 1fr 1fr; gap: var(--space-3); }
 }
 
 .stat-card {
@@ -305,6 +328,10 @@ const upcomingVaccines = [
 
 @media (max-width: 900px) {
   .content-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+  .content-grid { gap: var(--space-4); }
 }
 
 /* ── Panels ───────────────────────────────────────────────── */

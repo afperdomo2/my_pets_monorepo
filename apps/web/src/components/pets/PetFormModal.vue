@@ -203,6 +203,13 @@ function close() {
   padding: var(--space-4);
 }
 
+@media (max-width: 480px) {
+  .modal-backdrop {
+    align-items: flex-end;
+    padding: 0;
+  }
+}
+
 /* ── Modal box ────────────────────────── */
 .modal {
   background: var(--color-surface);
@@ -211,6 +218,15 @@ function close() {
   width: 100%;
   max-width: 520px;
   overflow: hidden;
+}
+
+@media (max-width: 480px) {
+  .modal {
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    max-width: 100%;
+    max-height: 92vh;
+    overflow-y: auto;
+  }
 }
 
 /* ── Header ───────────────────────────── */
@@ -276,6 +292,12 @@ function close() {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: var(--space-4);
+}
+
+@media (max-width: 480px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
 }
 
 .field {

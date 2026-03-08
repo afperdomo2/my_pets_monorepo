@@ -4,8 +4,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/my-pets/api/internal/auth"
 	"github.com/my-pets/api/internal/config"
+	"github.com/my-pets/api/internal/domain/auth"
 )
 
 // JWT returns a Gin middleware that validates the access_token HttpOnly cookie.

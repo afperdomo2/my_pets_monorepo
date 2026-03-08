@@ -7,7 +7,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/my-pets/api/internal/config"
-	"github.com/my-pets/api/internal/user"
+	"github.com/my-pets/api/internal/models"
 )
 
 const (
@@ -24,7 +24,7 @@ type Claims struct {
 }
 
 // GenerateAccessToken creates a signed JWT access token valid for 20 minutes.
-func GenerateAccessToken(cfg *config.Config, u user.User) (string, error) {
+func GenerateAccessToken(cfg *config.Config, u models.User) (string, error) {
 	claims := Claims{
 		UserID:       u.ID,
 		Email:        u.Email,
@@ -40,8 +40,7 @@ func GenerateAccessToken(cfg *config.Config, u user.User) (string, error) {
 }
 
 // GenerateRefreshToken creates a signed JWT refresh token valid for 20 days.
-// It only contains the subject (user ID) to minimize exposure.
-func GenerateRefreshToken(cfg *config.Config, u user.User) (string, error) {
+func GenerateRefreshToken(cfg *config.Config, u models.User) (string, error) {
 	claims := Claims{
 		UserID:       u.ID,
 		Email:        u.Email,

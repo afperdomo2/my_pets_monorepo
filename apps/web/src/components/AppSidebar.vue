@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import {
   IconDroplet,
@@ -13,9 +13,20 @@ import {
 } from '@tabler/icons-vue'
 import { useAuthStore } from '@/stores/auth'
 
+const props = defineProps<{ open?: boolean }>()
+const emit = defineEmits<{ close: [] }>()
+
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
+
+// Close drawer when route changes (mobile nav)
+watch(
+  () => route.path,
+  () => {
+    if (props.open) emit('close')
+  },
+)
 
 async function handleLogout() {
   await authStore.logout()
@@ -58,7 +69,12 @@ function isActive(itemName: string): boolean {
 </script>
 
 <template>
-  <aside class="sidebar">
+  <!-- Mobile overlay -->
+  <Transition name="overlay">
+    <div v-if="open" class="sidebar-overlay" aria-hidden="true" @click="emit('close')" />
+  </Transition>
+
+  <aside class="sidebar" :class="{ 'sidebar--open': open }">
     <!-- Brand -->
     <div class="sidebar-brand">
       <div class="brand-icon">
@@ -360,5 +376,43 @@ function isActive(itemName: string): boolean {
 .user-logout:hover {
   color: var(--color-error);
   background: #FEF2F2;
+}
+
+/* ── Mobile: drawer behavior ──────────────────────────────── */
+.sidebar-overlay {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    transform: translateX(-100%);
+    transition: transform var(--transition-base);
+    box-shadow: none;
+    top: 0;
+  }
+
+  .sidebar--open {
+    transform: translateX(0);
+    box-shadow: var(--shadow-xl);
+  }
+
+  .sidebar-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(26, 26, 24, 0.45);
+    z-index: 99;
+    backdrop-filter: blur(2px);
+  }
+}
+
+/* ── Overlay transition ───────────────────────────────────── */
+.overlay-enter-active,
+.overlay-leave-active {
+  transition: opacity var(--transition-base);
+}
+.overlay-enter-from,
+.overlay-leave-to {
+  opacity: 0;
 }
 </style>

@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/my-pets/api/internal/user"
+	"github.com/my-pets/api/internal/domain/user"
 	"github.com/my-pets/api/internal/validation"
 )
 

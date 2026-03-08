@@ -9,19 +9,23 @@ Guía para agentes de código (AI) que trabajen en este monorepo.
 ```
 my_pets_monorepo/
 ├── apps/
-│   ├── api/                  # Backend — Go 1.23+ + Gin
+│   ├── api/                  # Backend — Go 1.23+ + Gin + GORM
 │   │   ├── cmd/server/       # Entrypoint (package main)
 │   │   ├── docs/             # Swagger generado por swag
 │   │   ├── .env              # Variables de entorno locales (no commitear)
 │   │   └── internal/
-│   │       ├── auth/         # JWT login/logout/refresh/me + Google OAuth
 │   │       ├── config/       # Config struct cargada desde env
-│   │       ├── health/       # GET /health
+│   │       ├── database/     # GORM Connect() + AutoMigrate()
 │   │       ├── middleware/   # CORS + JWT middleware
-│   │       ├── pet/          # Dominio mascotas (handler, repo, routes, migrate)
+│   │       ├── models/       # Structs GORM compartidos (Pet, User)
 │   │       ├── server/       # Wire-up de rutas y arranque HTTP
-│   │       ├── setup/        # Flujo de primer usuario (handler + routes)
-│   │       └── user/         # Dominio usuarios (handler, repo, routes, migrate)
+│   │       ├── validation/   # Traducción de errores de validación a español
+│   │       └── domain/       # Módulos de negocio (endpoints)
+│   │           ├── auth/     # JWT login/logout/refresh/me + Google OAuth
+│   │           ├── health/   # GET /health
+│   │           ├── pet/      # Mascotas (handler, payload, repository, gorm_repo, routes)
+│   │           ├── setup/    # Flujo de primer usuario (handler + routes)
+│   │           └── user/     # Usuarios (handler, payload, repository, gorm_repo, routes)
 │   └── web/                  # Frontend — Vue 3 + Vite + TypeScript
 │       └── src/
 │           ├── types/        # Interfaces TS compartidas
@@ -70,10 +74,10 @@ GONOSUMDB="*" go build ./...
 
 ```bash
 # Un test específico por nombre:
-go test ./internal/auth/ -run TestLogin -v
+go test ./internal/domain/auth/ -run TestLogin -v
 
 # Un paquete completo:
-go test ./internal/pet/ -v
+go test ./internal/domain/pet/ -v
 
 # Todos los tests:
 go test ./... -v
@@ -99,9 +103,12 @@ pnpm build            # type-check + vite build
 
 ### Estructura de paquetes
 
-- Cada dominio en `internal/` es un paquete autónomo con su propio `handler.go`, `repository.go`, `routes.go`, `postgres.go` (impl) y `migrate.go`.
+- `internal/domain/` agrupa todos los módulos de negocio (auth, pet, user, setup, health). Cada uno es un paquete autónomo con su propio `handler.go`, `payload.go`, `repository.go`, `gorm_repo.go` y `routes.go`.
+- `internal/models/` contiene los structs GORM compartidos (`Pet`, `User`) con tags `gorm:"..."` y `json:"..."`.
+- `internal/database/` expone `Connect(*gorm.DB)` y `Migrate(*gorm.DB)` — centraliza la conexión y el AutoMigrate.
+- `internal/middleware/` y `internal/config/` son infraestructura transversal — separados de los dominios.
+- `internal/server/server.go` → wire-up de rutas y arranque HTTP. Recibe `*gorm.DB`.
 - `cmd/server/main.go` → solo arranque, config e inyección de dependencias.
-- `internal/server/server.go` → wire-up de rutas y arranque HTTP.
 - No crear paquetes fuera de `cmd/` o `internal/` salvo justificación clara.
 
 ### Naming
@@ -130,17 +137,20 @@ import (
 
 ```go
 type Pet struct {
-    ID        uint      `json:"id"`
-    Name      string    `json:"name"      binding:"required"`
-    Species   string    `json:"species"   binding:"required"`
+    ID        string    `json:"id"      gorm:"primaryKey;type:uuid;default:gen_random_uuid()"`
+    Name      string    `json:"name"    gorm:"not null"`
+    Species   string    `json:"species" gorm:"not null"`
     Breed     string    `json:"breed"`
     CreatedAt time.Time `json:"created_at"`
+    UpdatedAt time.Time `json:"updated_at"`
 }
 ```
 
 - Siempre `json:` tags en snake_case.
-- `binding:"required"` en campos obligatorios para validación de Gin.
-- Timestamps como `time.Time`.
+- `gorm:` tags en los structs de `internal/models/` para schema management.
+- `binding:"required"` en los **payload** structs (en cada dominio) para validación de Gin.
+- Timestamps como `time.Time` — GORM los gestiona automáticamente.
+- Los payloads HTTP (`PetPayload`, `CreateUserPayload`, etc.) viven en cada dominio (`internal/domain/<name>/payload.go`), no en `internal/models/`.
 
 ### Manejo de errores
 
@@ -302,7 +312,7 @@ Errores                              → { error: string }
 
 ## Notas importantes para agentes
 
-1. **PostgreSQL** — credenciales en `apps/api/.env` (no commitear). Las migraciones de `pets` y `users` corren automáticamente al arrancar via `pet.Migrate` y `user.Migrate`.
+1. **PostgreSQL** — credenciales en `apps/api/.env` (no commitear). Las migraciones de `pets` y `users` corren automáticamente al arrancar via `database.Migrate()` (GORM AutoMigrate).
 2. **GONOSUMDB** — algunos entornos con restricciones de red requieren `GONOSUMDB="*"` para `go build`. Los errores LSP de módulos como `golang-jwt/jwt/v5` u `oauth2` suelen ser falsos positivos; verificar con `go build ./...`.
 3. **No hay tests en el frontend** — Vitest no está configurado; no asumir que existe.
 4. **oxlint corre antes que ESLint** — no saltarse ninguno de los dos pasos de lint.

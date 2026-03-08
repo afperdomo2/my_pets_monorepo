@@ -149,12 +149,36 @@ async function handleDelete(id: string) {
   gap: var(--space-6);
 }
 
+@media (max-width: 768px) {
+  .pets-view {
+    padding: var(--space-5) var(--space-4);
+    gap: var(--space-4);
+  }
+}
+
 /* ── Header ─────────────────────────── */
 .page-header {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
   gap: var(--space-4);
+}
+
+@media (max-width: 480px) {
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-3);
+  }
+
+  .header-actions {
+    width: 100%;
+  }
+
+  .btn-create {
+    flex: 1;
+    justify-content: center;
+  }
 }
 
 .page-title {
@@ -252,6 +276,17 @@ async function handleDelete(id: string) {
   display: flex;
   align-items: center;
   gap: var(--space-3);
+}
+
+@media (max-width: 480px) {
+  .toolbar {
+    flex-wrap: wrap;
+  }
+
+  .search-box {
+    max-width: 100%;
+    flex: 1 1 100%;
+  }
 }
 
 .search-box {

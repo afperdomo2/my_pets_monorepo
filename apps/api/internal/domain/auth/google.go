@@ -9,7 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/my-pets/api/internal/config"
-	"github.com/my-pets/api/internal/user"
+	"github.com/my-pets/api/internal/domain/user"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 )

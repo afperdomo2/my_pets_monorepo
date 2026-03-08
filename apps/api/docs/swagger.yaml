@@ -283,7 +283,7 @@ paths:
         in: path
         name: id
         required: true
-        type: integer
+        type: string
       produces:
       - application/json
       responses:
@@ -328,7 +328,7 @@ paths:
         in: path
         name: id
         required: true
-        type: integer
+        type: string
       produces:
       - application/json
       responses:
@@ -374,7 +374,7 @@ paths:
         in: path
         name: id
         required: true
-        type: integer
+        type: string
       - description: Pet data
         in: body
         name: pet
@@ -566,7 +566,7 @@ paths:
         in: path
         name: id
         required: true
-        type: integer
+        type: string
       produces:
       - application/json
       responses:
@@ -617,7 +617,7 @@ paths:
         in: path
         name: id
         required: true
-        type: integer
+        type: string
       produces:
       - application/json
       responses:
@@ -669,7 +669,7 @@ paths:
         in: path
         name: id
         required: true
-        type: integer
+        type: string
       - description: User data
         in: body
         name: user

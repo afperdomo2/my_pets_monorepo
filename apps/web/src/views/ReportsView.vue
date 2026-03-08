@@ -27,6 +27,13 @@ import { IconChartBar } from '@tabler/icons-vue'
   padding: var(--space-8) var(--space-10);
 }
 
+@media (max-width: 768px) {
+  .placeholder-view {
+    padding: var(--space-6) var(--space-4);
+    min-height: calc(100vh - 56px);
+  }
+}
+
 .placeholder-icon {
   width: 72px;
   height: 72px;

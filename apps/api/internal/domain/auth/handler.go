@@ -7,7 +7,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/my-pets/api/internal/config"
-	"github.com/my-pets/api/internal/user"
+	"github.com/my-pets/api/internal/domain/user"
+	"github.com/my-pets/api/internal/models"
 	"github.com/my-pets/api/internal/validation"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -182,7 +183,7 @@ func (h *Handler) Me(c *gin.Context) {
 }
 
 // issueTokensAndRespond generates both tokens, sets cookies, and returns the user.
-func (h *Handler) issueTokensAndRespond(c *gin.Context, u user.User) {
+func (h *Handler) issueTokensAndRespond(c *gin.Context, u models.User) {
 	access, err := GenerateAccessToken(h.cfg, u)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate token"})

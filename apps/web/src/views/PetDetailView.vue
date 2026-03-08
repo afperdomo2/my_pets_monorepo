@@ -143,6 +143,13 @@ async function handleDelete() {
   gap: var(--space-6);
 }
 
+@media (max-width: 768px) {
+  .pet-detail {
+    padding: var(--space-5) var(--space-4);
+    gap: var(--space-4);
+  }
+}
+
 /* ── Back link ───────────────────────── */
 .back-link {
   display: inline-flex;
@@ -175,6 +182,16 @@ async function handleDelete() {
   box-shadow: var(--shadow-md);
   max-width: 560px;
   width: 100%;
+}
+
+@media (max-width: 768px) {
+  .detail-card {
+    max-width: 100%;
+  }
+
+  .card-content {
+    padding: var(--space-5);
+  }
 }
 
 .card-strip {

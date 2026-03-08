@@ -133,13 +133,13 @@ func (h *Handler) CreateUser(c *gin.Context) {
 	}
 
 	ctx := c.Request.Context()
-	isSystemUser, err := h.repo.SystemUserExists(ctx)
+	systemExists, err := h.repo.SystemUserExists(ctx)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create user"})
 		return
 	}
 	// First user ever -> mark as system user
-	isSystemUser = !isSystemUser
+	isSystemUser := !systemExists
 
 	created, err := h.repo.Create(ctx, payload, isSystemUser)
 	if errors.Is(err, ErrEmailTaken) {
@@ -227,7 +227,7 @@ func (h *Handler) DeleteUser(c *gin.Context) {
 		return
 	}
 
-	// Prevent deletion of system users
+	// Prevent deletion of system users.
 	target, err := h.repo.GetByID(c.Request.Context(), id)
 	if errors.Is(err, ErrNotFound) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})

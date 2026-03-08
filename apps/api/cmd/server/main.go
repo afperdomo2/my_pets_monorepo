@@ -2,11 +2,10 @@
 package main
 
 import (
-	"database/sql"
 	"log"
 
-	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/my-pets/api/internal/config"
+	"github.com/my-pets/api/internal/database"
 	"github.com/my-pets/api/internal/server"
 )
 
@@ -32,13 +31,8 @@ import (
 func main() {
 	cfg := config.Load()
 
-	db, err := sql.Open("pgx", cfg.DatabaseURL)
+	db, err := database.Connect(cfg.DatabaseURL, cfg.GinMode)
 	if err != nil {
-		log.Fatalf("Failed to open database: %v", err)
-	}
-	defer db.Close()
-
-	if err := db.Ping(); err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 	log.Println("Connected to PostgreSQL")

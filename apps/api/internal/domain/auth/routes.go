@@ -3,7 +3,7 @@ package auth
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/my-pets/api/internal/config"
-	"github.com/my-pets/api/internal/user"
+	"github.com/my-pets/api/internal/domain/user"
 )
 
 // RegisterRoutes mounts all auth endpoints.
