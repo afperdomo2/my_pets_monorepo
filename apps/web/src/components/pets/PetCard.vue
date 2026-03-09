@@ -1,8 +1,9 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { IconEdit, IconTrash } from '@tabler/icons-vue'
 import type { Pet } from '@/types/pet'
+import { calcAge, formatAge, isBirthdayToday } from '@/utils/pet'
 
-defineProps<{ pet: Pet; deleting?: boolean }>()
 defineEmits<{ edit: [pet: Pet]; delete: [id: string] }>()
 
 const SPECIES_EMOJI: Record<string, string> = {
@@ -30,6 +31,13 @@ function speciesEmoji(s: string) {
 function speciesLabel(s: string) {
   return SPECIES_LABEL[s] ?? s
 }
+
+const props = defineProps<{ pet: Pet; deleting?: boolean }>()
+
+const ageText = computed(() => formatAge(calcAge(props.pet.birth_date)))
+const isBirthday = computed(
+  () => props.pet.birth_date_exact && isBirthdayToday(props.pet.birth_date),
+)
 </script>
 
 <template>
@@ -44,26 +52,24 @@ function speciesLabel(s: string) {
         <span class="species-emoji">{{ speciesEmoji(pet.species) }}</span>
       </div>
 
-      <!-- Info -->
-      <div class="card-info">
-        <RouterLink :to="`/pets/${pet.id}`" class="pet-name">{{ pet.name }}</RouterLink>
+        <div class="card-info">
+          <div class="pet-name-row">
+            <RouterLink :to="`/pets/${pet.id}`" class="pet-name">{{ pet.name }}</RouterLink>
+            <span v-if="isBirthday" class="birthday-icon" title="Cumpleaños hoy">🎂</span>
+          </div>
 
-        <div class="badges">
-          <span class="badge badge--species">{{ speciesLabel(pet.species) }}</span>
-          <span v-if="pet.breed" class="badge badge--breed">{{ pet.breed }}</span>
-        </div>
+          <div class="badges">
+            <span class="badge badge--species">{{ speciesLabel(pet.species) }}</span>
+            <span v-if="pet.breed" class="badge badge--breed">{{ pet.breed }}</span>
+          </div>
 
-        <div class="card-meta">
-          <span v-if="pet.age" class="meta-item">
-            <span class="meta-dot" />
-            {{ pet.age }} {{ pet.age === 1 ? 'año' : 'años' }}
-          </span>
-          <span v-if="pet.owner" class="meta-item">
-            <span class="meta-dot" />
-            {{ pet.owner }}
-          </span>
+          <div class="card-meta">
+            <span class="meta-item">
+              <span class="meta-dot" />
+              {{ ageText }}
+            </span>
+          </div>
         </div>
-      </div>
     </div>
 
     <!-- Actions -->
@@ -173,6 +179,21 @@ function speciesLabel(s: string) {
   z-index: 1;
 }
 .pet-name:hover { color: var(--color-accent); }
+
+.pet-name-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.birthday-icon {
+  font-size: 1rem;
+  line-height: 1;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+}
 
 .badges {
   display: flex;

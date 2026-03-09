@@ -1,7 +1,8 @@
 import { petService } from '@/services/petService'
-import type { Pet, PetPayload } from '@/types/pet'
+import type { Pet, CreatePetPayload, UpdatePetPayload } from '@/types/pet'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
+import type { Ref } from 'vue'
 
 const PETS_STALE_TIME = 30 * 60_000
 const PET_STALE_TIME = 30 * 60_000
@@ -89,7 +90,7 @@ export function useGetPet(id: string) {
 export function useCreatePet() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (payload: PetPayload) => petService.create(payload).then((r) => r.data),
+    mutationFn: (payload: CreatePetPayload) => petService.create(payload).then((r) => r.data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pets'] })
     },
@@ -99,7 +100,7 @@ export function useCreatePet() {
 export function useUpdatePet() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, payload }: { id: string; payload: PetPayload }) =>
+    mutationFn: ({ id, payload }: { id: string; payload: UpdatePetPayload }) =>
       petService.update(id, payload).then((r) => r.data),
     onSuccess: (updatedPet) => {
       queryClient.setQueryData(['pets', updatedPet.id], updatedPet)
@@ -115,5 +116,28 @@ export function useDeletePet() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pets'] })
     },
+  })
+}
+
+/**
+ * Query que obtiene la etapa de vida sugerida para una especie + peso dados.
+ * Se activa solo cuando species es dog/cat y weightGrams > 0.
+ */
+export function useGetLifeStage(species: Ref<string>, weightGrams: Ref<number | null>) {
+  const enabled = computed(
+    () =>
+      (species.value === 'dog' || species.value === 'cat') &&
+      weightGrams.value !== null &&
+      weightGrams.value > 0,
+  )
+
+  return useQuery({
+    queryKey: computed(() => ['life-stage', species.value, weightGrams.value]),
+    queryFn: () =>
+      petService
+        .getLifeStage(species.value, weightGrams.value!)
+        .then((r) => r.data.life_stage),
+    enabled,
+    staleTime: Infinity, // resultado determinístico — no necesita revalidar
   })
 }

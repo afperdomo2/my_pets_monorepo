@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { IconArrowLeft, IconEdit, IconTrash, IconPaw } from '@tabler/icons-vue'
 import { useGetPet, useDeletePet } from '@/composables/usePets'
 import PetFormModal from '@/components/pets/PetFormModal.vue'
+import { calcAge, formatAge, formatBirthDate, formatWeight, isBirthdayToday, lifeStageLabel } from '@/utils/pet'
 
 const route = useRoute()
 const router = useRouter()
@@ -38,6 +39,24 @@ function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('es-ES', {
     day: '2-digit', month: 'long', year: 'numeric',
   })
+}
+
+const ageText = computed(() => pet.value ? formatAge(calcAge(pet.value.birth_date)) : '')
+const isBirthday = computed(
+  () => !!pet.value && pet.value.birth_date_exact && isBirthdayToday(pet.value.birth_date),
+)
+
+const LIFE_STAGE_COLORS: Record<string, { bg: string; text: string }> = {
+  puppy:    { bg: '#fef9c3', text: '#854d0e' },
+  kitten:   { bg: '#fef9c3', text: '#854d0e' },
+  junior:   { bg: '#dcfce7', text: '#166534' },
+  adult:    { bg: '#dbeafe', text: '#1e40af' },
+  senior:   { bg: '#ede9fe', text: '#5b21b6' },
+  geriatric:{ bg: '#fee2e2', text: '#991b1b' },
+}
+
+function lifeStageStyle(stage: string) {
+  return LIFE_STAGE_COLORS[stage] ?? { bg: 'var(--color-bg-alt)', text: 'var(--color-text-secondary)' }
 }
 
 async function handleDelete() {
@@ -84,7 +103,10 @@ async function handleDelete() {
 
             <!-- Name + badges -->
             <div class="pet-header">
-              <h1 class="pet-name">{{ pet.name }}</h1>
+              <div class="pet-name-row">
+                <h1 class="pet-name">{{ pet.name }}</h1>
+                <span v-if="isBirthday" class="birthday-icon" title="Cumpleaños hoy">🎂</span>
+              </div>
               <div class="badges">
                 <span class="badge badge--species">{{ speciesLabel(pet.species) }}</span>
                 <span v-if="pet.breed" class="badge badge--breed">{{ pet.breed }}</span>
@@ -93,18 +115,45 @@ async function handleDelete() {
 
             <!-- Stats row -->
             <div class="stats-row">
-              <div v-if="pet.age" class="stat">
-                <span class="stat-value">{{ pet.age }}</span>
-                <span class="stat-label">{{ pet.age === 1 ? 'año' : 'años' }}</span>
+              <!-- Age -->
+              <div class="stat">
+                <span class="stat-value">{{ ageText }}</span>
+                <span class="stat-label">
+                  {{ pet.birth_date_exact ? 'Edad' : 'Edad estimada' }}
+                </span>
               </div>
-              <div v-if="pet.owner" class="stat">
-                <span class="stat-value">{{ pet.owner }}</span>
-                <span class="stat-label">Dueño</span>
+
+              <!-- Exact birth date (only when birth_date_exact) -->
+              <div v-if="pet.birth_date_exact" class="stat">
+                <span class="stat-value">{{ formatBirthDate(pet.birth_date) }}</span>
+                <span class="stat-label">Nacimiento</span>
               </div>
+
+              <!-- Weight -->
+              <div v-if="pet.weight_grams !== null" class="stat">
+                <span class="stat-value">{{ formatWeight(pet.weight_grams!) }}</span>
+                <span class="stat-label">Peso</span>
+              </div>
+
+              <!-- Registered date -->
               <div class="stat">
                 <span class="stat-value">{{ formatDate(pet.created_at) }}</span>
                 <span class="stat-label">Registrado</span>
               </div>
+            </div>
+
+            <!-- Life stage badge -->
+            <div v-if="pet.life_stage" class="life-stage-row">
+              <span class="life-stage-label">Etapa de vida:</span>
+              <span
+                class="life-stage-badge"
+                :style="{
+                  background: lifeStageStyle(pet.life_stage).bg,
+                  color: lifeStageStyle(pet.life_stage).text,
+                }"
+              >
+                {{ lifeStageLabel(pet.life_stage) }}
+              </span>
             </div>
 
             <!-- Actions -->
@@ -230,10 +279,15 @@ async function handleDelete() {
 
 .species-emoji { font-size: 2.75rem; line-height: 1; }
 
-/* ── Pet header ──────────────────────── */
 .pet-header {
   display: flex;
   flex-direction: column;
+  gap: var(--space-2);
+}
+
+.pet-name-row {
+  display: flex;
+  align-items: center;
   gap: var(--space-2);
 }
 
@@ -244,6 +298,35 @@ async function handleDelete() {
   color: var(--color-text-primary);
   margin: 0;
   line-height: 1.15;
+}
+
+.birthday-icon {
+  font-size: 1.75rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+/* ── Life stage ──────────────────────── */
+.life-stage-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.life-stage-label {
+  font-size: var(--text-sm);
+  color: var(--color-text-tertiary);
+  font-weight: 500;
+}
+
+.life-stage-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px var(--space-3);
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  letter-spacing: 0.02em;
 }
 
 .badges {

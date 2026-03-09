@@ -21,7 +21,6 @@ func NewHandler(repo Repository) *Handler {
 }
 
 // parseID extracts and validates the :id path parameter.
-// UUIDs are passed directly as strings from the URL path.
 func parseID(c *gin.Context) (string, bool) {
 	id := c.Param("id")
 	if id == "" {
@@ -31,9 +30,14 @@ func parseID(c *gin.Context) (string, bool) {
 	return id, true
 }
 
+// ownerID extracts the authenticated user's ID from the Gin context (set by JWT middleware).
+func ownerID(c *gin.Context) string {
+	return c.GetString("userID")
+}
+
 // GetPets handles GET /api/v1/pets
 //
-//	@Summary	List pets (paginated)
+//	@Summary	List pets for the authenticated user (paginated)
 //	@Tags		pets
 //	@Produce	json
 //	@Security	CookieAuth
@@ -53,7 +57,7 @@ func (h *Handler) GetPets(c *gin.Context) {
 		perPage = 10
 	}
 
-	pets, total, err := h.repo.GetPaginated(c.Request.Context(), page, perPage)
+	pets, total, err := h.repo.GetPaginated(c.Request.Context(), ownerID(c), page, perPage)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch pets"})
 		return
@@ -71,7 +75,7 @@ func (h *Handler) GetPets(c *gin.Context) {
 
 // GetPet handles GET /api/v1/pets/:id
 //
-//	@Summary	Get a pet by ID
+//	@Summary	Get a pet by ID (must belong to the authenticated user)
 //	@Tags		pets
 //	@Produce	json
 //	@Security	CookieAuth
@@ -87,7 +91,7 @@ func (h *Handler) GetPet(c *gin.Context) {
 	if !ok {
 		return
 	}
-	p, err := h.repo.GetByID(c.Request.Context(), id)
+	p, err := h.repo.GetByID(c.Request.Context(), id, ownerID(c))
 	if errors.Is(err, ErrNotFound) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "pet not found"})
 		return
@@ -101,24 +105,24 @@ func (h *Handler) GetPet(c *gin.Context) {
 
 // CreatePet handles POST /api/v1/pets
 //
-//	@Summary	Create a new pet
+//	@Summary	Create a new pet for the authenticated user
 //	@Tags		pets
 //	@Accept		json
 //	@Produce	json
 //	@Security	CookieAuth
-//	@Param		pet	body		PetPayload				true	"Pet data"
+//	@Param		pet	body		CreatePetPayload		true	"Pet data"
 //	@Success	201	{object}	map[string]interface{}	"data: Pet"
 //	@Failure	400	{object}	map[string]string		"validation error"
 //	@Failure	401	{object}	map[string]string		"authentication required"
 //	@Failure	500	{object}	map[string]string		"error message"
 //	@Router		/api/v1/pets [post]
 func (h *Handler) CreatePet(c *gin.Context) {
-	var payload PetPayload
+	var payload CreatePetPayload
 	if err := c.ShouldBindJSON(&payload); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": validation.Translate(err)})
 		return
 	}
-	created, err := h.repo.Create(c.Request.Context(), payload)
+	created, err := h.repo.Create(c.Request.Context(), ownerID(c), payload)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create pet"})
 		return
@@ -128,13 +132,13 @@ func (h *Handler) CreatePet(c *gin.Context) {
 
 // UpdatePet handles PUT /api/v1/pets/:id
 //
-//	@Summary	Update an existing pet
+//	@Summary	Update a pet (must belong to the authenticated user)
 //	@Tags		pets
 //	@Accept		json
 //	@Produce	json
 //	@Security	CookieAuth
 //	@Param		id	path		string					true	"Pet ID"
-//	@Param		pet	body		PetPayload				true	"Pet data"
+//	@Param		pet	body		UpdatePetPayload		true	"Pet data"
 //	@Success	200	{object}	map[string]interface{}	"data: Pet"
 //	@Failure	400	{object}	map[string]string		"invalid id or validation error"
 //	@Failure	401	{object}	map[string]string		"authentication required"
@@ -146,12 +150,12 @@ func (h *Handler) UpdatePet(c *gin.Context) {
 	if !ok {
 		return
 	}
-	var payload PetPayload
+	var payload UpdatePetPayload
 	if err := c.ShouldBindJSON(&payload); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": validation.Translate(err)})
 		return
 	}
-	updated, err := h.repo.Update(c.Request.Context(), id, payload)
+	updated, err := h.repo.Update(c.Request.Context(), id, ownerID(c), payload)
 	if errors.Is(err, ErrNotFound) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "pet not found"})
 		return
@@ -165,7 +169,7 @@ func (h *Handler) UpdatePet(c *gin.Context) {
 
 // DeletePet handles DELETE /api/v1/pets/:id
 //
-//	@Summary	Delete a pet
+//	@Summary	Delete a pet (must belong to the authenticated user)
 //	@Tags		pets
 //	@Produce	json
 //	@Security	CookieAuth
@@ -181,7 +185,7 @@ func (h *Handler) DeletePet(c *gin.Context) {
 	if !ok {
 		return
 	}
-	err := h.repo.Delete(c.Request.Context(), id)
+	err := h.repo.Delete(c.Request.Context(), id, ownerID(c))
 	if errors.Is(err, ErrNotFound) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "pet not found"})
 		return
@@ -191,4 +195,39 @@ func (h *Handler) DeletePet(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "pet deleted"})
+}
+
+// GetLifeStage handles GET /api/v1/pets/life-stage
+//
+//	@Summary	Calculate life stage for a dog or cat based on weight
+//	@Tags		pets
+//	@Produce	json
+//	@Security	CookieAuth
+//	@Param		species			query		string	true	"Pet species (dog or cat)"
+//	@Param		weight_grams	query		int		true	"Weight in grams"
+//	@Success	200	{object}	map[string]string	"life_stage: string"
+//	@Failure	400	{object}	map[string]string	"missing or invalid parameters"
+//	@Failure	401	{object}	map[string]string	"authentication required"
+//	@Router		/api/v1/pets/life-stage [get]
+func (h *Handler) GetLifeStage(c *gin.Context) {
+	species := c.Query("species")
+	if species == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "species is required"})
+		return
+	}
+
+	weightStr := c.Query("weight_grams")
+	if weightStr == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "weight_grams is required"})
+		return
+	}
+
+	weightGrams, err := strconv.Atoi(weightStr)
+	if err != nil || weightGrams < 1 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "weight_grams must be a positive integer"})
+		return
+	}
+
+	stage := CalculateLifeStage(species, weightGrams)
+	c.JSON(http.StatusOK, gin.H{"life_stage": stage})
 }

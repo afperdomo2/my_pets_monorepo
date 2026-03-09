@@ -26,8 +26,7 @@ const filteredPets = computed(() => {
     (p) =>
       p.name.toLowerCase().includes(q) ||
       p.species.toLowerCase().includes(q) ||
-      p.breed?.toLowerCase().includes(q) ||
-      p.owner?.toLowerCase().includes(q),
+      p.breed?.toLowerCase().includes(q),
   )
 })
 

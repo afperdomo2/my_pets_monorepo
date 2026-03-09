@@ -1,4 +1,4 @@
-import type { Pet, PetPayload, ApiResponse, PaginatedResponse } from '@/types/pet'
+import type { Pet, CreatePetPayload, UpdatePetPayload, ApiResponse, PaginatedResponse } from '@/types/pet'
 
 const BASE_URL = '/api/v1'
 
@@ -24,14 +24,14 @@ export const petService = {
     return request(`/pets/${id}`)
   },
 
-  create(payload: PetPayload): Promise<ApiResponse<Pet>> {
+  create(payload: CreatePetPayload): Promise<ApiResponse<Pet>> {
     return request('/pets', {
       method: 'POST',
       body: JSON.stringify(payload),
     })
   },
 
-  update(id: string, payload: PetPayload): Promise<ApiResponse<Pet>> {
+  update(id: string, payload: UpdatePetPayload): Promise<ApiResponse<Pet>> {
     return request(`/pets/${id}`, {
       method: 'PUT',
       body: JSON.stringify(payload),
@@ -40,5 +40,9 @@ export const petService = {
 
   remove(id: string): Promise<{ message: string }> {
     return request(`/pets/${id}`, { method: 'DELETE' })
+  },
+
+  getLifeStage(species: string, weightGrams: number): Promise<{ data: { life_stage: string } }> {
+    return request(`/pets/life-stage?species=${encodeURIComponent(species)}&weight_grams=${weightGrams}`)
   },
 }

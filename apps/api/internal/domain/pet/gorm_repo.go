@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"gorm.io/gorm"
 
@@ -20,33 +21,27 @@ func NewGormRepo(db *gorm.DB) Repository {
 	return &gormRepo{db: db}
 }
 
-func (r *gormRepo) GetAll(ctx context.Context) ([]models.Pet, error) {
-	var pets []models.Pet
-	if result := r.db.WithContext(ctx).Order("id").Find(&pets); result.Error != nil {
-		return nil, fmt.Errorf("pet.GetAll: %w", result.Error)
-	}
-	return pets, nil
-}
-
-func (r *gormRepo) GetPaginated(ctx context.Context, page, perPage int) ([]models.Pet, int64, error) {
+func (r *gormRepo) GetPaginated(ctx context.Context, ownerID string, page, perPage int) ([]models.Pet, int64, error) {
 	var pets []models.Pet
 	var total int64
 
-	if err := r.db.WithContext(ctx).Model(&models.Pet{}).Count(&total).Error; err != nil {
+	base := r.db.WithContext(ctx).Model(&models.Pet{}).Where("owner_id = ?", ownerID)
+
+	if err := base.Count(&total).Error; err != nil {
 		return nil, 0, fmt.Errorf("pet.GetPaginated count: %w", err)
 	}
 
 	offset := (page - 1) * perPage
-	if err := r.db.WithContext(ctx).Order("id").Limit(perPage).Offset(offset).Find(&pets).Error; err != nil {
+	if err := base.Order("created_at DESC").Limit(perPage).Offset(offset).Find(&pets).Error; err != nil {
 		return nil, 0, fmt.Errorf("pet.GetPaginated: %w", err)
 	}
 
 	return pets, total, nil
 }
 
-func (r *gormRepo) GetByID(ctx context.Context, id string) (models.Pet, error) {
+func (r *gormRepo) GetByID(ctx context.Context, id, ownerID string) (models.Pet, error) {
 	var p models.Pet
-	result := r.db.WithContext(ctx).First(&p, "id = ?", id)
+	result := r.db.WithContext(ctx).Where("id = ? AND owner_id = ?", id, ownerID).First(&p)
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 		return models.Pet{}, ErrNotFound
 	}
@@ -56,23 +51,32 @@ func (r *gormRepo) GetByID(ctx context.Context, id string) (models.Pet, error) {
 	return p, nil
 }
 
-func (r *gormRepo) Create(ctx context.Context, payload PetPayload) (models.Pet, error) {
-	p := models.Pet{
-		Name:    payload.Name,
-		Species: payload.Species,
-		Breed:   payload.Breed,
-		Age:     payload.Age,
-		Owner:   payload.Owner,
+func (r *gormRepo) Create(ctx context.Context, ownerID string, payload CreatePetPayload) (models.Pet, error) {
+	birthDate, err := time.Parse("2006-01-02", payload.BirthDate)
+	if err != nil {
+		return models.Pet{}, fmt.Errorf("pet.Create: invalid birth_date format: %w", err)
 	}
+
+	p := models.Pet{
+		OwnerID:        ownerID,
+		Name:           payload.Name,
+		Species:        payload.Species,
+		Breed:          payload.Breed,
+		BirthDate:      birthDate,
+		BirthDateExact: payload.BirthDateExact,
+		WeightGrams:    payload.WeightGrams,
+		LifeStage:      payload.LifeStage,
+	}
+
 	if result := r.db.WithContext(ctx).Create(&p); result.Error != nil {
 		return models.Pet{}, fmt.Errorf("pet.Create: %w", result.Error)
 	}
 	return p, nil
 }
 
-func (r *gormRepo) Update(ctx context.Context, id string, payload PetPayload) (models.Pet, error) {
+func (r *gormRepo) Update(ctx context.Context, id, ownerID string, payload UpdatePetPayload) (models.Pet, error) {
 	var p models.Pet
-	result := r.db.WithContext(ctx).First(&p, "id = ?", id)
+	result := r.db.WithContext(ctx).Where("id = ? AND owner_id = ?", id, ownerID).First(&p)
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 		return models.Pet{}, ErrNotFound
 	}
@@ -80,11 +84,17 @@ func (r *gormRepo) Update(ctx context.Context, id string, payload PetPayload) (m
 		return models.Pet{}, fmt.Errorf("pet.Update: %w", result.Error)
 	}
 
+	birthDate, err := time.Parse("2006-01-02", payload.BirthDate)
+	if err != nil {
+		return models.Pet{}, fmt.Errorf("pet.Update: invalid birth_date format: %w", err)
+	}
+
 	p.Name = payload.Name
 	p.Species = payload.Species
 	p.Breed = payload.Breed
-	p.Age = payload.Age
-	p.Owner = payload.Owner
+	p.BirthDate = birthDate
+	p.BirthDateExact = payload.BirthDateExact
+	// WeightGrams and LifeStage are intentionally not updated here.
 
 	if result := r.db.WithContext(ctx).Save(&p); result.Error != nil {
 		return models.Pet{}, fmt.Errorf("pet.Update: %w", result.Error)
@@ -92,8 +102,8 @@ func (r *gormRepo) Update(ctx context.Context, id string, payload PetPayload) (m
 	return p, nil
 }
 
-func (r *gormRepo) Delete(ctx context.Context, id string) error {
-	result := r.db.WithContext(ctx).Delete(&models.Pet{}, "id = ?", id)
+func (r *gormRepo) Delete(ctx context.Context, id, ownerID string) error {
+	result := r.db.WithContext(ctx).Where("id = ? AND owner_id = ?", id, ownerID).Delete(&models.Pet{})
 	if result.Error != nil {
 		return fmt.Errorf("pet.Delete: %w", result.Error)
 	}
