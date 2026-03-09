@@ -7,7 +7,7 @@ import PetFormModal from '@/components/pets/PetFormModal.vue'
 import PetEmptyState from '@/components/pets/PetEmptyState.vue'
 import type { Pet } from '@/types/pet'
 
-const { data: pets, isLoading, isError, error, refetch, isFetching } = useGetPets()
+const { data: pets, isLoading, isError, error, refresh, isFetching } = useGetPets()
 const deletePet = useDeletePet()
 
 const showModal = ref(false)
@@ -65,7 +65,7 @@ async function handleDelete(id: string) {
           class="btn-refresh"
           title="Refrescar"
           :disabled="isFetching"
-          @click="() => refetch()"
+          @click="refresh"
         >
           <IconRefresh :size="16" :stroke-width="2" :class="{ spinning: isFetching }" />
           <span>Refrescar</span>
@@ -103,7 +103,7 @@ async function handleDelete(id: string) {
     <div v-else-if="isError" class="feedback-state feedback-state--error">
       <IconAlertCircle :size="40" :stroke-width="1.5" />
       <p>{{ error?.message ?? 'Error al cargar mascotas' }}</p>
-      <button class="btn-retry" @click="() => refetch()">Reintentar</button>
+      <button class="btn-retry" @click="refresh">Reintentar</button>
     </div>
 
     <!-- Empty (no pets at all) -->

@@ -3,12 +3,25 @@ import { petService } from '@/services/petService'
 import type { PetPayload } from '@/types/pet'
 
 const PETS_KEY = ['pets'] as const
+const PETS_STALE_TIME = 60_000 // 60 s — debe coincidir con defaultOptions en main.ts
 
 export function useGetPets() {
-  return useQuery({
+  const queryClient = useQueryClient()
+  const query = useQuery({
     queryKey: PETS_KEY,
     queryFn: () => petService.getAll().then((r) => r.data),
   })
+
+  // Respeta el caché: solo va a la API si los datos tienen más de PETS_STALE_TIME
+  function refresh() {
+    void queryClient.fetchQuery({
+      queryKey: PETS_KEY,
+      queryFn: () => petService.getAll().then((r) => r.data),
+      staleTime: PETS_STALE_TIME,
+    })
+  }
+
+  return { ...query, refresh }
 }
 
 export function useGetPet(id: string) {

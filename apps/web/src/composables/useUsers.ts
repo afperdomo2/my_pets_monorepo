@@ -3,12 +3,25 @@ import { userService } from '@/services/userService'
 import type { CreateUserPayload, UpdateUserPayload } from '@/types/user'
 
 const USERS_KEY = ['users'] as const
+const USERS_STALE_TIME = 60_000 // 60 s — debe coincidir con defaultOptions en main.ts
 
 export function useGetUsers() {
-  return useQuery({
+  const queryClient = useQueryClient()
+  const query = useQuery({
     queryKey: USERS_KEY,
     queryFn: () => userService.getAll().then((r) => r.data),
   })
+
+  // Respeta el caché: solo va a la API si los datos tienen más de USERS_STALE_TIME
+  function refresh() {
+    void queryClient.fetchQuery({
+      queryKey: USERS_KEY,
+      queryFn: () => userService.getAll().then((r) => r.data),
+      staleTime: USERS_STALE_TIME,
+    })
+  }
+
+  return { ...query, refresh }
 }
 
 export function useGetUser(id: string) {

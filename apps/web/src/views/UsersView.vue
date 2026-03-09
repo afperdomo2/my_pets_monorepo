@@ -16,7 +16,7 @@ import { useGetUsers, useCreateUser, useUpdateUser, useDeleteUser } from '@/comp
 import type { User } from '@/types/user'
 import { createUserSchema, updateUserSchema } from '@/schemas/user'
 
-const { data: users, isLoading, isError, error: fetchError, refetch, isFetching } = useGetUsers()
+const { data: users, isLoading, isError, error: fetchError, refresh, isFetching } = useGetUsers()
 const createUser = useCreateUser()
 const updateUser = useUpdateUser()
 const deleteUser = useDeleteUser()
@@ -156,7 +156,7 @@ function closeModal() {
           class="btn-refresh"
           title="Refrescar"
           :disabled="isFetching"
-          @click="() => refetch()"
+          @click="refresh"
         >
           <IconRefresh :size="16" :stroke-width="2" :class="{ spinning: isFetching }" />
           <span>Refrescar</span>
@@ -190,7 +190,7 @@ function closeModal() {
     <div v-else-if="isError" class="empty-state empty-state--error">
       <IconAlertCircle :size="40" :stroke-width="1.5" />
       <p>{{ fetchError?.message }}</p>
-      <button class="btn-secondary" @click="() => refetch()">Reintentar</button>
+      <button class="btn-secondary" @click="refresh">Reintentar</button>
     </div>
 
     <!-- Empty search -->
