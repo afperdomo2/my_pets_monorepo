@@ -122,6 +122,13 @@ func (h *Handler) CreatePet(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": validation.Translate(err)})
 		return
 	}
+
+	// Calculate life stage automatically if applicable
+	if payload.WeightGrams != nil && (payload.Species == "dog" || payload.Species == "cat") {
+		stage := CalculateLifeStage(payload.Species, *payload.WeightGrams)
+		payload.LifeStage = &stage
+	}
+
 	created, err := h.repo.Create(c.Request.Context(), ownerID(c), payload)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create pet"})
@@ -195,39 +202,4 @@ func (h *Handler) DeletePet(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "pet deleted"})
-}
-
-// GetLifeStage handles GET /api/v1/pets/life-stage
-//
-//	@Summary	Calcular etapa de vida para perro o gato según su peso
-//	@Tags		pets
-//	@Produce	json
-//	@Security	CookieAuth
-//	@Param		species			query		string	true	"Especie de la mascota (dog o cat)"
-//	@Param		weight_grams	query		int		true	"Peso en gramos"
-//	@Success	200	{object}	map[string]string	"life_stage: string"
-//	@Failure	400	{object}	map[string]string	"parámetros faltantes o inválidos"
-//	@Failure	401	{object}	map[string]string	"autenticación requerida"
-//	@Router		/api/v1/pets/life-stage [get]
-func (h *Handler) GetLifeStage(c *gin.Context) {
-	species := c.Query("species")
-	if species == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "species is required"})
-		return
-	}
-
-	weightStr := c.Query("weight_grams")
-	if weightStr == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "weight_grams is required"})
-		return
-	}
-
-	weightGrams, err := strconv.Atoi(weightStr)
-	if err != nil || weightGrams < 1 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "weight_grams must be a positive integer"})
-		return
-	}
-
-	stage := CalculateLifeStage(species, weightGrams)
-	c.JSON(http.StatusOK, gin.H{"life_stage": stage})
 }

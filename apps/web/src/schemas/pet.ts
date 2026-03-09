@@ -17,14 +17,13 @@ const basePetSchema = z.object({
   birth_date_exact: z.boolean(),
 })
 
-// Schema para crear mascota — incluye peso y etapa de vida
+// Schema para crear mascota — incluye peso
 export const createPetSchema = basePetSchema.extend({
   weight_grams: z
     .number({ invalid_type_error: 'El peso debe ser un número' })
     .int('El peso debe ser un número entero')
     .min(1, 'El peso debe ser mayor a 0')
     .optional(),
-  life_stage: z.string().optional(),
 })
 
 // Schema para editar mascota — sin peso ni etapa de vida

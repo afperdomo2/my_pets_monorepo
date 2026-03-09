@@ -118,26 +118,3 @@ export function useDeletePet() {
     },
   })
 }
-
-/**
- * Query que obtiene la etapa de vida sugerida para una especie + peso dados.
- * Se activa solo cuando species es dog/cat y weightGrams > 0.
- */
-export function useGetLifeStage(species: Ref<string>, weightGrams: Ref<number | null>) {
-  const enabled = computed(
-    () =>
-      (species.value === 'dog' || species.value === 'cat') &&
-      weightGrams.value !== null &&
-      weightGrams.value > 0,
-  )
-
-  return useQuery({
-    queryKey: computed(() => ['life-stage', species.value, weightGrams.value]),
-    queryFn: () =>
-      petService
-        .getLifeStage(species.value, weightGrams.value!)
-        .then((r) => r.data.life_stage),
-    enabled,
-    staleTime: Infinity, // resultado determinístico — no necesita revalidar
-  })
-}

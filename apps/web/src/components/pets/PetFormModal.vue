@@ -3,9 +3,9 @@ import { ref, computed, watch } from 'vue'
 import { useForm } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'
 import { IconX } from '@tabler/icons-vue'
-import { useCreatePet, useUpdatePet, useGetLifeStage } from '@/composables/usePets'
+import { useCreatePet, useUpdatePet } from '@/composables/usePets'
 import { createPetSchema } from '@/schemas/pet'
-import { estimatedBirthDate, lifeStageLabel, toGrams } from '@/utils/pet'
+import { estimatedBirthDate, toGrams } from '@/utils/pet'
 import type { Pet } from '@/types/pet'
 import type { CreatePetFormValues } from '@/schemas/pet'
 
@@ -37,14 +37,13 @@ const ageMonths = ref(0)
 const weightUnit = ref<'kg' | 'g'>('kg')
 const weightInput = ref<number | ''>('')
 
-// Computed weight in grams for life-stage lookup
+// Computed weight in grams for sending to backend
 const weightGrams = computed<number | null>(() => {
   if (weightInput.value === '' || weightInput.value <= 0) return null
   return toGrams(Number(weightInput.value), weightUnit.value)
 })
 
 // ── Form ─────────────────────────────────────────────────────────────────────
-// We always use createPetSchema (the superset) — on edit, extra fields are ignored in submit.
 const { defineField, handleSubmit, errors, resetForm, setErrors, setFieldValue, values } = useForm({
   validationSchema: toTypedSchema(createPetSchema),
   initialValues: {
@@ -54,7 +53,6 @@ const { defineField, handleSubmit, errors, resetForm, setErrors, setFieldValue, 
     birth_date: estimatedBirthDate(0, 0),
     birth_date_exact: false,
     weight_grams: undefined,
-    life_stage: undefined,
   } satisfies Partial<CreatePetFormValues>,
 })
 
@@ -62,20 +60,6 @@ const [name, nameAttrs] = defineField('name')
 const [species, speciesAttrs] = defineField('species')
 const [breed, breedAttrs] = defineField('breed')
 const [birthDate, birthDateAttrs] = defineField('birth_date')
-
-// ── Life stage query ─────────────────────────────────────────────────────────
-const speciesRef = computed(() => values.species as string ?? '')
-const lifeStageQuery = useGetLifeStage(speciesRef, weightGrams)
-
-// Override life_stage when query resolves (create mode only)
-watch(
-  () => lifeStageQuery.data.value,
-  (stage) => {
-    if (props.mode === 'create' && stage) {
-      setFieldValue('life_stage', stage)
-    }
-  },
-)
 
 // Sync dateMode toggle → birth_date_exact field
 watch(dateMode, (mode) => {
@@ -111,7 +95,6 @@ watch(
           birth_date: pet.birth_date.slice(0, 10),
           birth_date_exact: pet.birth_date_exact,
           weight_grams: undefined,
-          life_stage: undefined,
         },
       })
     } else {
@@ -128,7 +111,6 @@ watch(
           birth_date: estimatedBirthDate(0, 0),
           birth_date_exact: false,
           weight_grams: undefined,
-          life_stage: undefined,
         },
       })
     }
@@ -167,20 +149,6 @@ const handleSave = handleSubmit(async (formValues) => {
 
 function close() {
   emit('update:modelValue', false)
-}
-
-// ── Life stage display ───────────────────────────────────────────────────────
-const LIFE_STAGE_COLORS: Record<string, { bg: string; text: string }> = {
-  puppy:    { bg: '#fef9c3', text: '#854d0e' },
-  kitten:   { bg: '#fef9c3', text: '#854d0e' },
-  junior:   { bg: '#dcfce7', text: '#166534' },
-  adult:    { bg: '#dbeafe', text: '#1e40af' },
-  senior:   { bg: '#ede9fe', text: '#5b21b6' },
-  geriatric:{ bg: '#fee2e2', text: '#991b1b' },
-}
-
-function lifeStageStyle(stage: string) {
-  return LIFE_STAGE_COLORS[stage] ?? { bg: 'var(--color-bg-alt)', text: 'var(--color-text-secondary)' }
 }
 </script>
 
@@ -255,10 +223,14 @@ function lifeStageStyle(stage: string) {
 
             <!-- Fecha de nacimiento -->
             <div class="field">
-              <label class="field-label">Fecha de nacimiento <span class="required">*</span></label>
+              <label class="field-label">
+                Fecha de nacimiento
+                <span v-if="mode === 'edit' && !values.birth_date_exact" class="field-hint">(estimada)</span>
+                <span class="required">*</span>
+              </label>
 
-              <!-- Toggle: Exacta / Por edad -->
-              <div class="date-toggle">
+              <!-- Toggle: Exacta / Por edad (solo en create) -->
+              <div v-if="mode === 'create'" class="date-toggle">
                 <button
                   type="button"
                   class="toggle-btn"
@@ -277,20 +249,19 @@ function lifeStageStyle(stage: string) {
                 </button>
               </div>
 
-              <!-- Exact date input -->
-              <template v-if="dateMode === 'exact'">
-                <input
-                  v-model="birthDate"
-                  v-bind="birthDateAttrs"
-                  class="field-input"
-                  :class="{ 'field-input--error': errors.birth_date }"
-                  type="date"
-                  :max="new Date().toISOString().slice(0, 10)"
-                />
-              </template>
+              <!-- Date input: show in edit mode or create with exact date -->
+              <input
+                v-if="mode === 'edit' || (mode === 'create' && dateMode === 'exact')"
+                v-model="birthDate"
+                v-bind="birthDateAttrs"
+                class="field-input"
+                :class="{ 'field-input--error': errors.birth_date }"
+                type="date"
+                :max="new Date().toISOString().slice(0, 10)"
+              />
 
-              <!-- Age inputs -->
-              <template v-else>
+              <!-- Age inputs - only in create mode with age mode -->
+              <template v-if="mode === 'create' && dateMode === 'age'">
                 <div class="age-inputs">
                   <div class="age-field">
                     <input
@@ -325,14 +296,14 @@ function lifeStageStyle(stage: string) {
               <div class="field">
                 <label class="field-label">Peso <span class="field-hint">(opcional)</span></label>
                 <div class="weight-row">
-                  <input
-                    v-model.number="weightInput"
-                    class="field-input weight-input"
-                    type="number"
-                    min="0"
-                    step="any"
-                    placeholder="0"
-                  />
+                   <input
+                     v-model.number="weightInput"
+                     class="field-input weight-input"
+                     type="number"
+                     min="0"
+                     step="any"
+                     placeholder="0"
+                   />
                   <div class="unit-toggle">
                     <button
                       type="button"
@@ -347,20 +318,6 @@ function lifeStageStyle(stage: string) {
                       @click="weightUnit = 'g'"
                     >g</button>
                   </div>
-                </div>
-
-                <!-- Life stage badge -->
-                <div v-if="lifeStageQuery.data.value" class="life-stage-row">
-                  <span class="life-stage-label">Etapa de vida:</span>
-                  <span
-                    class="life-stage-badge"
-                    :style="{
-                      background: lifeStageStyle(lifeStageQuery.data.value).bg,
-                      color: lifeStageStyle(lifeStageQuery.data.value).text,
-                    }"
-                  >
-                    {{ lifeStageLabel(lifeStageQuery.data.value) }}
-                  </span>
                 </div>
               </div>
             </template>
@@ -640,30 +597,6 @@ function lifeStageStyle(stage: string) {
   background: var(--color-accent);
   color: var(--color-text-on-accent);
   font-weight: 600;
-}
-
-/* ── Life stage badge ─────────────────── */
-.life-stage-row {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  margin-top: var(--space-1);
-}
-
-.life-stage-label {
-  font-size: var(--text-xs);
-  color: var(--color-text-tertiary);
-  font-weight: 500;
-}
-
-.life-stage-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px var(--space-2);
-  border-radius: var(--radius-full);
-  font-size: var(--text-xs);
-  font-weight: 600;
-  letter-spacing: 0.02em;
 }
 
 /* ── Actions ──────────────────────────── */

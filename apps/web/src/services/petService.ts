@@ -41,8 +41,4 @@ export const petService = {
   remove(id: string): Promise<{ message: string }> {
     return request(`/pets/${id}`, { method: 'DELETE' })
   },
-
-  getLifeStage(species: string, weightGrams: number): Promise<{ data: { life_stage: string } }> {
-    return request(`/pets/life-stage?species=${encodeURIComponent(species)}&weight_grams=${weightGrams}`)
-  },
 }
