@@ -2,7 +2,9 @@ package user
 
 import (
 	"errors"
+	"math"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/my-pets/api/internal/validation"
@@ -43,11 +45,13 @@ func canModifyUser(c *gin.Context, targetID string) bool {
 // GetUsers handles GET /api/v1/users
 // Only system users may list all users.
 //
-//	@Summary	List all users (system user only)
+//	@Summary	List users (paginated, system user only)
 //	@Tags		users
 //	@Produce	json
 //	@Security	CookieAuth
-//	@Success	200	{object}	map[string]interface{}	"data: []User, total: int"
+//	@Param		page		query		int						false	"Page number (default 1)"
+//	@Param		per_page	query		int						false	"Items per page (default 10)"
+//	@Success	200	{object}	map[string]interface{}	"data: []User, total: int, page: int, per_page: int, total_pages: int"
 //	@Failure	401	{object}	map[string]string		"authentication required"
 //	@Failure	403	{object}	map[string]string		"forbidden"
 //	@Failure	500	{object}	map[string]string		"error message"
@@ -58,12 +62,30 @@ func (h *Handler) GetUsers(c *gin.Context) {
 		c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
 		return
 	}
-	users, err := h.repo.GetAll(c.Request.Context())
+
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	perPage, _ := strconv.Atoi(c.DefaultQuery("per_page", "10"))
+	if page < 1 {
+		page = 1
+	}
+	if perPage < 1 {
+		perPage = 10
+	}
+
+	users, total, err := h.repo.GetPaginated(c.Request.Context(), page, perPage)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch users"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"data": users, "total": len(users)})
+
+	totalPages := int(math.Ceil(float64(total) / float64(perPage)))
+	c.JSON(http.StatusOK, gin.H{
+		"data":        users,
+		"total":       total,
+		"page":        page,
+		"per_page":    perPage,
+		"total_pages": totalPages,
+	})
 }
 
 // GetUser handles GET /api/v1/users/:id

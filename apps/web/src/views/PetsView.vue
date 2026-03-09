@@ -7,7 +7,8 @@ import PetFormModal from '@/components/pets/PetFormModal.vue'
 import PetEmptyState from '@/components/pets/PetEmptyState.vue'
 import type { Pet } from '@/types/pet'
 
-const { data: pets, isLoading, isError, error, refresh, isFetching } = useGetPets()
+const { data, allPets, total, hasMore, isLoading, isError, error, refresh, isFetching, loadMore } =
+  useGetPets()
 const deletePet = useDeletePet()
 
 const showModal = ref(false)
@@ -16,8 +17,9 @@ const editingPet = ref<Pet | undefined>(undefined)
 const deletingId = ref<string | null>(null)
 const search = ref('')
 
+// Filtrar sobre los datos acumulados (no va a la BD)
 const filteredPets = computed(() => {
-  const list = pets.value ?? []
+  const list = data.value ?? []
   const q = search.value.toLowerCase().trim()
   if (!q) return list
   return list.filter(
@@ -88,13 +90,13 @@ async function handleDelete(id: string) {
         />
       </div>
       <div v-if="!isLoading && !isError" class="stats-pill">
-        <span class="stats-num">{{ (pets ?? []).length }}</span>
-        <span class="stats-label">{{ (pets ?? []).length === 1 ? 'mascota' : 'mascotas' }}</span>
+        <span class="stats-num">{{ total }}</span>
+        <span class="stats-label">{{ total === 1 ? 'mascota' : 'mascotas' }}</span>
       </div>
     </div>
 
-    <!-- Loading -->
-    <div v-if="isLoading" class="feedback-state">
+    <!-- Loading inicial -->
+    <div v-if="isLoading && allPets.length === 0" class="feedback-state">
       <div class="spinner" />
       <p>Cargando mascotas…</p>
     </div>
@@ -106,7 +108,7 @@ async function handleDelete(id: string) {
       <button class="btn-retry" @click="refresh">Reintentar</button>
     </div>
 
-    <!-- Empty (no pets at all) -->
+    <!-- Empty (sin mascotas) -->
     <PetEmptyState
       v-else-if="!filteredPets.length && !search"
       @add="openCreate"
@@ -129,6 +131,14 @@ async function handleDelete(id: string) {
         @edit="openEdit"
         @delete="handleDelete"
       />
+    </div>
+
+    <!-- Load more -->
+    <div v-if="hasMore && !search && !isError" class="load-more-bar">
+      <button class="btn-load-more" :disabled="isFetching" @click="loadMore">
+        <div v-if="isFetching" class="spinner spinner--sm" />
+        <span v-else>Ver más mascotas</span>
+      </button>
     </div>
 
     <!-- Modal -->
@@ -200,29 +210,6 @@ async function handleDelete(id: string) {
   align-items: center;
   gap: var(--space-2);
   flex-shrink: 0;
-}
-
-.btn-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border: 1.5px solid var(--color-border-light);
-  border-radius: var(--radius-md);
-  background: var(--color-surface);
-  color: var(--color-text-tertiary);
-  cursor: pointer;
-  transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
-}
-.btn-icon:hover:not(:disabled) {
-  background: var(--color-bg-alt);
-  border-color: var(--color-border);
-  color: var(--color-text-primary);
-}
-.btn-icon:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
 }
 
 .btn-refresh {
@@ -348,6 +335,39 @@ async function handleDelete(id: string) {
   gap: var(--space-4);
 }
 
+/* ── Load more ───────────────────────── */
+.load-more-bar {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-2) 0 var(--space-4);
+}
+
+.btn-load-more {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-6);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+}
+
+.btn-load-more:hover:not(:disabled) {
+  background: var(--color-accent-light);
+  border-color: var(--color-accent-muted);
+  color: var(--color-accent-dark);
+}
+
+.btn-load-more:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 /* ── Feedback states ─────────────────── */
 .feedback-state {
   display: flex;
@@ -388,6 +408,12 @@ async function handleDelete(id: string) {
   animation: spin 0.7s linear infinite;
 }
 
+.spinner--sm {
+  width: 16px;
+  height: 16px;
+  border-width: 2px;
+}
+
 .spinning {
   animation: spin 0.7s linear infinite;
 }
@@ -396,3 +422,4 @@ async function handleDelete(id: string) {
   to { transform: rotate(360deg); }
 }
 </style>
+

@@ -1,11 +1,7 @@
 import type { User, CreateUserPayload, UpdateUserPayload } from '@/types/user'
+import type { ApiResponse, PaginatedResponse } from '@/types/pet'
 
 const BASE_URL = '/api/v1'
-
-interface ApiResponse<T> {
-  data: T
-  total?: number
-}
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE_URL}${url}`, {
@@ -21,8 +17,8 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
 }
 
 export const userService = {
-  getAll(): Promise<ApiResponse<User[]>> {
-    return request('/users')
+  getAll(page = 1, perPage = 10): Promise<PaginatedResponse<User>> {
+    return request(`/users?page=${page}&per_page=${perPage}`)
   },
 
   getById(id: string): Promise<ApiResponse<User>> {

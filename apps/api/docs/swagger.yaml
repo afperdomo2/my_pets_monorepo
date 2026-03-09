@@ -210,11 +210,21 @@ paths:
       - auth
   /api/v1/pets:
     get:
+      parameters:
+      - description: Page number (default 1)
+        in: query
+        name: page
+        type: integer
+      - description: Items per page (default 10)
+        in: query
+        name: per_page
+        type: integer
       produces:
       - application/json
       responses:
         "200":
-          description: 'data: []Pet, total: int'
+          description: 'data: []Pet, total: int, page: int, per_page: int, total_pages:
+            int'
           schema:
             additionalProperties: true
             type: object
@@ -232,7 +242,7 @@ paths:
             type: object
       security:
       - CookieAuth: []
-      summary: List all pets
+      summary: List pets (paginated)
       tags:
       - pets
     post:
@@ -474,11 +484,21 @@ paths:
       - setup
   /api/v1/users:
     get:
+      parameters:
+      - description: Page number (default 1)
+        in: query
+        name: page
+        type: integer
+      - description: Items per page (default 10)
+        in: query
+        name: per_page
+        type: integer
       produces:
       - application/json
       responses:
         "200":
-          description: 'data: []User, total: int'
+          description: 'data: []User, total: int, page: int, per_page: int, total_pages:
+            int'
           schema:
             additionalProperties: true
             type: object
@@ -502,7 +522,7 @@ paths:
             type: object
       security:
       - CookieAuth: []
-      summary: List all users (system user only)
+      summary: List users (paginated, system user only)
       tags:
       - users
     post:

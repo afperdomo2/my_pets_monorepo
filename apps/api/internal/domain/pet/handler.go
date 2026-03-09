@@ -2,7 +2,9 @@ package pet
 
 import (
 	"errors"
+	"math"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/my-pets/api/internal/validation"
@@ -31,21 +33,40 @@ func parseID(c *gin.Context) (string, bool) {
 
 // GetPets handles GET /api/v1/pets
 //
-//	@Summary	List all pets
+//	@Summary	List pets (paginated)
 //	@Tags		pets
 //	@Produce	json
 //	@Security	CookieAuth
-//	@Success	200	{object}	map[string]interface{}	"data: []Pet, total: int"
+//	@Param		page		query		int						false	"Page number (default 1)"
+//	@Param		per_page	query		int						false	"Items per page (default 10)"
+//	@Success	200	{object}	map[string]interface{}	"data: []Pet, total: int, page: int, per_page: int, total_pages: int"
 //	@Failure	401	{object}	map[string]string		"authentication required"
 //	@Failure	500	{object}	map[string]string		"error message"
 //	@Router		/api/v1/pets [get]
 func (h *Handler) GetPets(c *gin.Context) {
-	pets, err := h.repo.GetAll(c.Request.Context())
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	perPage, _ := strconv.Atoi(c.DefaultQuery("per_page", "10"))
+	if page < 1 {
+		page = 1
+	}
+	if perPage < 1 {
+		perPage = 10
+	}
+
+	pets, total, err := h.repo.GetPaginated(c.Request.Context(), page, perPage)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch pets"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"data": pets, "total": len(pets)})
+
+	totalPages := int(math.Ceil(float64(total) / float64(perPage)))
+	c.JSON(http.StatusOK, gin.H{
+		"data":        pets,
+		"total":       total,
+		"page":        page,
+		"per_page":    perPage,
+		"total_pages": totalPages,
+	})
 }
 
 // GetPet handles GET /api/v1/pets/:id

@@ -1,4 +1,4 @@
-import type { Pet, PetPayload, ApiResponse } from '@/types/pet'
+import type { Pet, PetPayload, ApiResponse, PaginatedResponse } from '@/types/pet'
 
 const BASE_URL = '/api/v1'
 
@@ -16,8 +16,8 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
 }
 
 export const petService = {
-  getAll(): Promise<ApiResponse<Pet[]>> {
-    return request('/pets')
+  getAll(page = 1, perPage = 10): Promise<PaginatedResponse<Pet>> {
+    return request(`/pets?page=${page}&per_page=${perPage}`)
   },
 
   getById(id: string): Promise<ApiResponse<Pet>> {

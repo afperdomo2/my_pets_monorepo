@@ -20,6 +20,8 @@ var ErrWrongProvider = errors.New("account registered with a different login met
 // All methods accept a context to support cancellation and timeouts.
 type Repository interface {
 	GetAll(ctx context.Context) ([]models.User, error)
+	// GetPaginated returns a page of users and the total count.
+	GetPaginated(ctx context.Context, page, perPage int) ([]models.User, int64, error)
 	GetByID(ctx context.Context, id string) (models.User, error)
 	GetByEmail(ctx context.Context, email string) (models.User, error)
 	Create(ctx context.Context, payload CreateUserPayload, isSystemUser bool) (models.User, error)

@@ -29,6 +29,22 @@ func (r *gormRepo) GetAll(ctx context.Context) ([]models.User, error) {
 	return users, nil
 }
 
+func (r *gormRepo) GetPaginated(ctx context.Context, page, perPage int) ([]models.User, int64, error) {
+	var users []models.User
+	var total int64
+
+	if err := r.db.WithContext(ctx).Model(&models.User{}).Count(&total).Error; err != nil {
+		return nil, 0, fmt.Errorf("user.GetPaginated count: %w", err)
+	}
+
+	offset := (page - 1) * perPage
+	if err := r.db.WithContext(ctx).Order("id").Limit(perPage).Offset(offset).Find(&users).Error; err != nil {
+		return nil, 0, fmt.Errorf("user.GetPaginated: %w", err)
+	}
+
+	return users, total, nil
+}
+
 func (r *gormRepo) GetByID(ctx context.Context, id string) (models.User, error) {
 	var u models.User
 	result := r.db.WithContext(ctx).First(&u, "id = ?", id)

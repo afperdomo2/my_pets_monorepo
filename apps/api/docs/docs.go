@@ -214,10 +214,24 @@ const docTemplate = `{
                 "tags": [
                     "pets"
                 ],
-                "summary": "List all pets",
+                "summary": "List pets (paginated)",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number (default 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Items per page (default 10)",
+                        "name": "per_page",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "data: []Pet, total: int",
+                        "description": "data: []Pet, total: int, page: int, per_page: int, total_pages: int",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -624,10 +638,24 @@ const docTemplate = `{
                 "tags": [
                     "users"
                 ],
-                "summary": "List all users (system user only)",
+                "summary": "List users (paginated, system user only)",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number (default 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Items per page (default 10)",
+                        "name": "per_page",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "data: []User, total: int",
+                        "description": "data: []User, total: int, page: int, per_page: int, total_pages: int",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
