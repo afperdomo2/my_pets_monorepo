@@ -203,10 +203,19 @@ watch(search, () => {
 /* ── Layout ────────────────────────────────────────────── */
 .users-view {
   width: 100%;
+  max-width: 100%;
   padding: var(--space-8) var(--space-10);
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+@media (max-width: 1024px) {
+  .users-view {
+    padding: var(--space-6) var(--space-6);
+  }
 }
 
 @media (max-width: 768px) {
@@ -233,6 +242,10 @@ watch(search, () => {
 
   .header-actions {
     width: 100%;
+  }
+
+  .btn-refresh span {
+    display: none;
   }
 
   .btn-create {
@@ -326,6 +339,22 @@ watch(search, () => {
   position: relative;
   flex: 1;
   max-width: 360px;
+  min-width: 0;
+}
+
+@media (max-width: 480px) {
+  .toolbar {
+    flex-wrap: wrap;
+  }
+
+  .search-box {
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .stats-pill {
+    margin-left: 0;
+  }
 }
 
 .search-icon {
@@ -385,10 +414,12 @@ watch(search, () => {
   overflow: hidden;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+  width: 100%;
 }
 
 .users-table {
   width: 100%;
+  min-width: 560px;
   border-collapse: collapse;
 }
 

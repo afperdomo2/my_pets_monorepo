@@ -132,6 +132,7 @@ function formatDate(iso: string): string {
   display: flex;
   align-items: center;
   gap: var(--space-3);
+  min-width: 160px;
 }
 
 .avatar {

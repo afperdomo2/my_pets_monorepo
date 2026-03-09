@@ -310,6 +310,109 @@ Errores                              → { error: string }
 
 ---
 
+## TanStack Vue Query — comportamiento interno crítico
+
+El frontend usa **TanStack Vue Query** (`@tanstack/vue-query`) para data fetching. Hay comportamientos internos no obvios que hay que conocer para evitar bugs difíciles de diagnosticar:
+
+### Cómo funciona `useBaseQuery` internamente
+
+- `watch(defaultedOptions, updater)` es el watcher interno que sincroniza cambios de `queryKey` con el observer. Cada vez que el `queryKey` reactivo cambia, Vue llama a `updater()` → `observer.setOptions(newOptions)`.
+- `refetch()` de la instancia llama `updater()` + `observer.refetch()` — adopta el `queryKey` actual antes de hacer fetch.
+- `shouldFetchOptionally` controla si el observer hace un fetch automático al cambiar de key: devuelve `true` si la nueva query está **stale**. Si la query ya está en caché y no está stale, no hay fetch reactivo automático.
+
+### Problema: doble request al refrescar desde página > 1
+
+Si se invalida el caché **antes** de cambiar `page.value`, la query de página 1 queda stale → al cambiar `page.value = 1` el observer detecta el nuevo key stale → `shouldFetchOptionally` devuelve `true` → fetch reactivo automático → luego `refetch()` hace otro → **2 requests**.
+
+### Solución: patrón de 3 pasos para `refresh()` con paginación
+
+```ts
+async function refresh() {
+  if (refreshing) return
+  refreshing = true          // flag JS síncrono — bloquea clics adicionales inmediatamente
+  try {
+    page.value = 1           // 1. cambiar página SIN invalidar — la query de pág 1 no está stale,
+                             //    shouldFetchOptionally → false, cero fetch reactivo
+    await nextTick()         // 2. esperar a que Vue flush el watcher interno (watch(defaultedOptions, updater))
+                             //    El observer ya apunta a página 1 sin haber hecho fetch
+    await queryClient.invalidateQueries({
+      queryKey: ['users'],
+      refetchType: 'active', // 3. marca stale TODO el caché de ['users'] y refetchea solo el
+    })                       //    observer activo (página 1) = exactamente UN request
+  } finally {
+    refreshing = false
+  }
+}
+```
+
+### Semántica de `refetchType` en `invalidateQueries`
+
+| `refetchType`  | Efecto                                                                 |
+|----------------|------------------------------------------------------------------------|
+| `'active'`     | Refetchea solo observers activos en ese momento (default)             |
+| `'inactive'`   | Refetchea solo observers inactivos                                    |
+| `'all'`        | Refetchea todos los observers                                         |
+| `'none'`       | Marca stale pero NO dispara ningún refetch automático                 |
+
+> `refetchType: 'none'` **no** suprime el fetch que dispara `shouldFetchOptionally` cuando el `queryKey` cambia. Solo suprime el refetch que `invalidateQueries` haría por sí mismo.
+
+### Patrón load-more acumulativo (mascotas)
+
+Para "Ver más" que acumula resultados en lugar de reemplazarlos, usar un array local separado del resultado de la query:
+
+```ts
+const allPets = ref<Pet[]>([])   // acumulador local
+const page = ref(1)
+
+watch(queryData, (newData) => {
+  if (page.value === 1) allPets.value = newData  // reset en refresh
+  else allPets.value = [...allPets.value, ...newData]  // acumular
+})
+```
+
+El flag síncrono para bloquear el botón de refresh mientras está en curso:
+
+```ts
+let refreshing = false   // JS puro, NO ref — síncrono, no necesita reactividad
+```
+
+---
+
+## Paginación — convenciones
+
+### Respuesta paginada del backend
+
+```json
+{ "data": [...], "total": N, "page": 1, "per_page": 10, "total_pages": 3 }
+```
+
+Los handlers de `GET /api/v1/pets` y `GET /api/v1/users` aceptan query params `page` y `per_page`. Valor por defecto: `page=1`, `per_page=10`.
+
+### Tipo `PaginatedResponse<T>` en frontend
+
+```ts
+export interface PaginatedResponse<T> {
+  data: T[]
+  total: number
+  page: number
+  per_page: number
+  total_pages: number
+}
+```
+
+Definido en `apps/web/src/types/pet.ts`.
+
+### Persistencia de `perPage` en usuarios
+
+El store `apps/web/src/stores/ui.ts` expone `usersPerPage` (valores: 10, 25, 50) persistido en `localStorage` directamente, sin plugins externos.
+
+### Componentes de paginación
+
+- `components/ui/AppPagination.vue` — paginador clásico con ellipsis (`...`), máximo 5 páginas visibles, botones primera/anterior/siguiente/última.
+- `components/ui/PerPageSelector.vue` — selector "Mostrar X por página".
+
+---
+
 ## Notas importantes para agentes
 
 1. **PostgreSQL** — credenciales en `apps/api/.env` (no commitear). Las migraciones de `pets` y `users` corren automáticamente al arrancar via `database.Migrate()` (GORM AutoMigrate).
@@ -318,3 +421,4 @@ Errores                              → { error: string }
 4. **oxlint corre antes que ESLint** — no saltarse ninguno de los dos pasos de lint.
 5. **`pnpm type-check` es obligatorio** — correrlo siempre tras cambios en TypeScript/Vue.
 6. **Cookies HttpOnly** — el frontend usa `credentials: 'include'` en todos los fetch; nunca guardar tokens en localStorage.
+7. **TanStack Query + paginación** — al implementar refresh con cambio de página, seguir el patrón de 3 pasos documentado arriba para evitar doble request. Ver sección "TanStack Vue Query — comportamiento interno crítico".
