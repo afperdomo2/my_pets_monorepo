@@ -61,15 +61,15 @@ const docTemplate = `{
                 "tags": [
                     "auth"
                 ],
-                "summary": "Login with email and password",
+                "summary": "Iniciar sesión con email y contraseña",
                 "parameters": [
                     {
-                        "description": "Login credentials",
+                        "description": "Credenciales de acceso",
                         "name": "credentials",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/auth.LoginPayload"
+                            "$ref": "#/definitions/internal_domain_auth.LoginPayload"
                         }
                     }
                 ],
@@ -82,7 +82,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "validation error",
+                        "description": "error de validación",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -91,7 +91,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "invalid credentials",
+                        "description": "credenciales inválidas",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -115,7 +115,7 @@ const docTemplate = `{
                 "tags": [
                     "auth"
                 ],
-                "summary": "Logout — clears auth cookies",
+                "summary": "Cerrar sesión — limpia las cookies de autenticación",
                 "responses": {
                     "200": {
                         "description": "message: logged out",
@@ -127,7 +127,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "authentication required",
+                        "description": "autenticación requerida",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -151,7 +151,7 @@ const docTemplate = `{
                 "tags": [
                     "auth"
                 ],
-                "summary": "Get the currently authenticated user",
+                "summary": "Obtener el usuario actualmente autenticado",
                 "responses": {
                     "200": {
                         "description": "data: User",
@@ -161,7 +161,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "unauthorized",
+                        "description": "no autorizado",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -180,7 +180,7 @@ const docTemplate = `{
                 "tags": [
                     "auth"
                 ],
-                "summary": "Refresh access token using the refresh cookie",
+                "summary": "Renovar token de acceso usando la cookie de refresh",
                 "responses": {
                     "200": {
                         "description": "data: User",
@@ -190,7 +190,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "invalid or expired refresh token",
+                        "description": "token de refresh inválido o expirado",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -214,17 +214,17 @@ const docTemplate = `{
                 "tags": [
                     "pets"
                 ],
-                "summary": "List pets (paginated)",
+                "summary": "Listar mascotas del usuario autenticado (paginado)",
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "Page number (default 1)",
+                        "description": "Número de página (por defecto 1)",
                         "name": "page",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "Items per page (default 10)",
+                        "description": "Elementos por página (por defecto 10)",
                         "name": "per_page",
                         "in": "query"
                     }
@@ -238,7 +238,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "authentication required",
+                        "description": "autenticación requerida",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -247,7 +247,7 @@ const docTemplate = `{
                         }
                     },
                     "500": {
-                        "description": "error message",
+                        "description": "mensaje de error",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -272,15 +272,15 @@ const docTemplate = `{
                 "tags": [
                     "pets"
                 ],
-                "summary": "Create a new pet",
+                "summary": "Crear una nueva mascota para el usuario autenticado",
                 "parameters": [
                     {
-                        "description": "Pet data",
+                        "description": "Datos de la mascota",
                         "name": "pet",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/pet.PetPayload"
+                            "$ref": "#/definitions/internal_domain_pet.CreatePetPayload"
                         }
                     }
                 ],
@@ -293,7 +293,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "validation error",
+                        "description": "error de validación",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -302,7 +302,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "authentication required",
+                        "description": "autenticación requerida",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -311,7 +311,68 @@ const docTemplate = `{
                         }
                     },
                     "500": {
-                        "description": "error message",
+                        "description": "mensaje de error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/pets/life-stage": {
+            "get": {
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "pets"
+                ],
+                "summary": "Calcular etapa de vida para perro o gato según su peso",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Especie de la mascota (dog o cat)",
+                        "name": "species",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Peso en gramos",
+                        "name": "weight_grams",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "life_stage: string",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "parámetros faltantes o inválidos",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "autenticación requerida",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -335,11 +396,11 @@ const docTemplate = `{
                 "tags": [
                     "pets"
                 ],
-                "summary": "Get a pet by ID",
+                "summary": "Obtener una mascota por ID (debe pertenecer al usuario autenticado)",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Pet ID",
+                        "description": "ID de la mascota",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -354,7 +415,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "invalid id",
+                        "description": "id inválido",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -363,7 +424,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "authentication required",
+                        "description": "autenticación requerida",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -372,7 +433,7 @@ const docTemplate = `{
                         }
                     },
                     "404": {
-                        "description": "pet not found",
+                        "description": "mascota no encontrada",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -381,7 +442,7 @@ const docTemplate = `{
                         }
                     },
                     "500": {
-                        "description": "error message",
+                        "description": "mensaje de error",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -406,22 +467,22 @@ const docTemplate = `{
                 "tags": [
                     "pets"
                 ],
-                "summary": "Update an existing pet",
+                "summary": "Actualizar una mascota (debe pertenecer al usuario autenticado)",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Pet ID",
+                        "description": "ID de la mascota",
                         "name": "id",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "Pet data",
+                        "description": "Datos de la mascota",
                         "name": "pet",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/pet.PetPayload"
+                            "$ref": "#/definitions/internal_domain_pet.UpdatePetPayload"
                         }
                     }
                 ],
@@ -434,7 +495,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "invalid id or validation error",
+                        "description": "id inválido o error de validación",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -443,7 +504,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "authentication required",
+                        "description": "autenticación requerida",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -452,7 +513,7 @@ const docTemplate = `{
                         }
                     },
                     "404": {
-                        "description": "pet not found",
+                        "description": "mascota no encontrada",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -461,7 +522,7 @@ const docTemplate = `{
                         }
                     },
                     "500": {
-                        "description": "error message",
+                        "description": "mensaje de error",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -483,11 +544,11 @@ const docTemplate = `{
                 "tags": [
                     "pets"
                 ],
-                "summary": "Delete a pet",
+                "summary": "Eliminar una mascota (debe pertenecer al usuario autenticado)",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Pet ID",
+                        "description": "ID de la mascota",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -504,7 +565,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "invalid id",
+                        "description": "id inválido",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -513,7 +574,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "authentication required",
+                        "description": "autenticación requerida",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -522,7 +583,7 @@ const docTemplate = `{
                         }
                     },
                     "404": {
-                        "description": "pet not found",
+                        "description": "mascota no encontrada",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -531,7 +592,7 @@ const docTemplate = `{
                         }
                     },
                     "500": {
-                        "description": "error message",
+                        "description": "mensaje de error",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -553,15 +614,15 @@ const docTemplate = `{
                 "tags": [
                     "setup"
                 ],
-                "summary": "Create the first system user",
+                "summary": "Crear el primer usuario sistema",
                 "parameters": [
                     {
-                        "description": "First user data",
+                        "description": " Datos del primer usuario",
                         "name": "user",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/setup.SetupPayload"
+                            "$ref": "#/definitions/internal_domain_setup.SetupPayload"
                         }
                     }
                 ],
@@ -574,7 +635,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "validation error",
+                        "description": "error de validación",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -583,7 +644,7 @@ const docTemplate = `{
                         }
                     },
                     "409": {
-                        "description": "system already initialized",
+                        "description": "sistema ya inicializado",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -592,7 +653,7 @@ const docTemplate = `{
                         }
                     },
                     "500": {
-                        "description": "error message",
+                        "description": "mensaje de error",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -611,10 +672,10 @@ const docTemplate = `{
                 "tags": [
                     "setup"
                 ],
-                "summary": "Check setup status",
+                "summary": "Verificar estado del setup",
                 "responses": {
                     "200": {
-                        "description": "needs_setup: true if no users exist",
+                        "description": "needs_setup: true si no existen usuarios",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -638,17 +699,17 @@ const docTemplate = `{
                 "tags": [
                     "users"
                 ],
-                "summary": "List users (paginated, system user only)",
+                "summary": "Listar usuarios (paginado, solo usuario sistema)",
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "Page number (default 1)",
+                        "description": "Número de página (por defecto 1)",
                         "name": "page",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "Items per page (default 10)",
+                        "description": "Elementos por página (por defecto 10)",
                         "name": "per_page",
                         "in": "query"
                     }
@@ -662,7 +723,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "authentication required",
+                        "description": "autenticación requerida",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -671,7 +732,7 @@ const docTemplate = `{
                         }
                     },
                     "403": {
-                        "description": "forbidden",
+                        "description": "prohibido",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -680,7 +741,7 @@ const docTemplate = `{
                         }
                     },
                     "500": {
-                        "description": "error message",
+                        "description": "mensaje de error",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -696,7 +757,7 @@ const docTemplate = `{
                         "CookieAuth": []
                     }
                 ],
-                "description": "Only a user with is_system_user=true may call this endpoint.",
+                "description": "Solo un usuario con is_system_user=true puede llamar a este endpoint.",
                 "consumes": [
                     "application/json"
                 ],
@@ -706,15 +767,15 @@ const docTemplate = `{
                 "tags": [
                     "users"
                 ],
-                "summary": "Create a new user (system user only)",
+                "summary": "Crear un nuevo usuario (solo usuario sistema)",
                 "parameters": [
                     {
-                        "description": "User data",
+                        "description": "Datos del usuario",
                         "name": "user",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/user.CreateUserPayload"
+                            "$ref": "#/definitions/internal_domain_user.CreateUserPayload"
                         }
                     }
                 ],
@@ -727,7 +788,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "validation error",
+                        "description": "error de validación",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -736,7 +797,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "authentication required",
+                        "description": "autenticación requerida",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -745,7 +806,7 @@ const docTemplate = `{
                         }
                     },
                     "403": {
-                        "description": "forbidden",
+                        "description": "prohibido",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -754,7 +815,7 @@ const docTemplate = `{
                         }
                     },
                     "409": {
-                        "description": "email already in use",
+                        "description": "email ya en uso",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -763,7 +824,7 @@ const docTemplate = `{
                         }
                     },
                     "500": {
-                        "description": "error message",
+                        "description": "mensaje de error",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -787,11 +848,11 @@ const docTemplate = `{
                 "tags": [
                     "users"
                 ],
-                "summary": "Get a user by ID (system user only)",
+                "summary": "Obtener un usuario por ID (solo usuario sistema)",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "User ID",
+                        "description": "ID del usuario",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -806,7 +867,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "invalid id",
+                        "description": "id inválido",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -815,7 +876,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "authentication required",
+                        "description": "autenticación requerida",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -824,7 +885,7 @@ const docTemplate = `{
                         }
                     },
                     "403": {
-                        "description": "forbidden",
+                        "description": "prohibido",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -833,7 +894,7 @@ const docTemplate = `{
                         }
                     },
                     "404": {
-                        "description": "user not found",
+                        "description": "usuario no encontrado",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -842,7 +903,7 @@ const docTemplate = `{
                         }
                     },
                     "500": {
-                        "description": "error message",
+                        "description": "mensaje de error",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -867,22 +928,22 @@ const docTemplate = `{
                 "tags": [
                     "users"
                 ],
-                "summary": "Update an existing user",
+                "summary": "Actualizar un usuario existente",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "User ID",
+                        "description": "ID del usuario",
                         "name": "id",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "User data",
+                        "description": "Datos del usuario",
                         "name": "user",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/user.UpdateUserPayload"
+                            "$ref": "#/definitions/internal_domain_user.UpdateUserPayload"
                         }
                     }
                 ],
@@ -895,7 +956,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "invalid id or validation error",
+                        "description": "id inválido o error de validación",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -904,7 +965,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "authentication required",
+                        "description": "autenticación requerida",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -913,7 +974,7 @@ const docTemplate = `{
                         }
                     },
                     "403": {
-                        "description": "forbidden",
+                        "description": "prohibido",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -922,7 +983,7 @@ const docTemplate = `{
                         }
                     },
                     "404": {
-                        "description": "user not found",
+                        "description": "usuario no encontrado",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -931,7 +992,7 @@ const docTemplate = `{
                         }
                     },
                     "409": {
-                        "description": "email already in use",
+                        "description": "email ya en uso",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -940,7 +1001,7 @@ const docTemplate = `{
                         }
                     },
                     "500": {
-                        "description": "error message",
+                        "description": "mensaje de error",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -962,11 +1023,11 @@ const docTemplate = `{
                 "tags": [
                     "users"
                 ],
-                "summary": "Delete a user",
+                "summary": "Eliminar un usuario",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "User ID",
+                        "description": "ID del usuario",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -983,7 +1044,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "invalid id",
+                        "description": "id inválido",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -992,7 +1053,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "authentication required",
+                        "description": "autenticación requerida",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -1001,7 +1062,7 @@ const docTemplate = `{
                         }
                     },
                     "403": {
-                        "description": "forbidden",
+                        "description": "prohibido",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -1010,7 +1071,7 @@ const docTemplate = `{
                         }
                     },
                     "404": {
-                        "description": "user not found",
+                        "description": "usuario no encontrado",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -1019,7 +1080,7 @@ const docTemplate = `{
                         }
                     },
                     "500": {
-                        "description": "error message",
+                        "description": "mensaje de error",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -1038,7 +1099,7 @@ const docTemplate = `{
                 "tags": [
                     "health"
                 ],
-                "summary": "Health check",
+                "summary": "Verificación de salud",
                 "responses": {
                     "200": {
                         "description": "ok",
@@ -1054,7 +1115,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "auth.LoginPayload": {
+        "internal_domain_auth.LoginPayload": {
             "type": "object",
             "required": [
                 "email",
@@ -1070,17 +1131,62 @@ const docTemplate = `{
                 }
             }
         },
-        "pet.PetPayload": {
+        "internal_domain_pet.CreatePetPayload": {
             "type": "object",
             "required": [
+                "birth_date",
                 "name",
                 "species"
             ],
             "properties": {
-                "age": {
+                "birth_date": {
+                    "type": "string"
+                },
+                "birth_date_exact": {
+                    "type": "boolean"
+                },
+                "breed": {
+                    "type": "string",
+                    "maxLength": 100
+                },
+                "life_stage": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 1
+                },
+                "species": {
+                    "type": "string",
+                    "enum": [
+                        "dog",
+                        "cat",
+                        "bird",
+                        "rabbit",
+                        "fish",
+                        "other"
+                    ]
+                },
+                "weight_grams": {
                     "type": "integer",
-                    "maximum": 100,
-                    "minimum": 0
+                    "minimum": 1
+                }
+            }
+        },
+        "internal_domain_pet.UpdatePetPayload": {
+            "type": "object",
+            "required": [
+                "birth_date",
+                "name",
+                "species"
+            ],
+            "properties": {
+                "birth_date": {
+                    "type": "string"
+                },
+                "birth_date_exact": {
+                    "type": "boolean"
                 },
                 "breed": {
                     "type": "string",
@@ -1090,10 +1196,6 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 100,
                     "minLength": 1
-                },
-                "owner": {
-                    "type": "string",
-                    "maxLength": 100
                 },
                 "species": {
                     "type": "string",
@@ -1108,7 +1210,7 @@ const docTemplate = `{
                 }
             }
         },
-        "setup.SetupPayload": {
+        "internal_domain_setup.SetupPayload": {
             "type": "object",
             "required": [
                 "email",
@@ -1128,7 +1230,7 @@ const docTemplate = `{
                 }
             }
         },
-        "user.CreateUserPayload": {
+        "internal_domain_user.CreateUserPayload": {
             "type": "object",
             "required": [
                 "email",
@@ -1151,7 +1253,7 @@ const docTemplate = `{
                 }
             }
         },
-        "user.UpdateUserPayload": {
+        "internal_domain_user.UpdateUserPayload": {
             "type": "object",
             "required": [
                 "email",

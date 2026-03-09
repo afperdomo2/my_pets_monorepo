@@ -37,15 +37,15 @@ func ownerID(c *gin.Context) string {
 
 // GetPets handles GET /api/v1/pets
 //
-//	@Summary	List pets for the authenticated user (paginated)
+//	@Summary	Listar mascotas del usuario autenticado (paginado)
 //	@Tags		pets
 //	@Produce	json
 //	@Security	CookieAuth
-//	@Param		page		query		int						false	"Page number (default 1)"
-//	@Param		per_page	query		int						false	"Items per page (default 10)"
+//	@Param		page		query		int						false	"Número de página (por defecto 1)"
+//	@Param		per_page	query		int						false	"Elementos por página (por defecto 10)"
 //	@Success	200	{object}	map[string]interface{}	"data: []Pet, total: int, page: int, per_page: int, total_pages: int"
-//	@Failure	401	{object}	map[string]string		"authentication required"
-//	@Failure	500	{object}	map[string]string		"error message"
+//	@Failure	401	{object}	map[string]string		"autenticación requerida"
+//	@Failure	500	{object}	map[string]string		"mensaje de error"
 //	@Router		/api/v1/pets [get]
 func (h *Handler) GetPets(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
@@ -75,16 +75,16 @@ func (h *Handler) GetPets(c *gin.Context) {
 
 // GetPet handles GET /api/v1/pets/:id
 //
-//	@Summary	Get a pet by ID (must belong to the authenticated user)
+//	@Summary	Obtener una mascota por ID (debe pertenecer al usuario autenticado)
 //	@Tags		pets
 //	@Produce	json
 //	@Security	CookieAuth
-//	@Param		id	path		string					true	"Pet ID"
+//	@Param		id	path		string					true	"ID de la mascota"
 //	@Success	200	{object}	map[string]interface{}	"data: Pet"
-//	@Failure	400	{object}	map[string]string		"invalid id"
-//	@Failure	401	{object}	map[string]string		"authentication required"
-//	@Failure	404	{object}	map[string]string		"pet not found"
-//	@Failure	500	{object}	map[string]string		"error message"
+//	@Failure	400	{object}	map[string]string		"id inválido"
+//	@Failure	401	{object}	map[string]string		"autenticación requerida"
+//	@Failure	404	{object}	map[string]string		"mascota no encontrada"
+//	@Failure	500	{object}	map[string]string		"mensaje de error"
 //	@Router		/api/v1/pets/{id} [get]
 func (h *Handler) GetPet(c *gin.Context) {
 	id, ok := parseID(c)
@@ -105,16 +105,16 @@ func (h *Handler) GetPet(c *gin.Context) {
 
 // CreatePet handles POST /api/v1/pets
 //
-//	@Summary	Create a new pet for the authenticated user
+//	@Summary	Crear una nueva mascota para el usuario autenticado
 //	@Tags		pets
 //	@Accept		json
 //	@Produce	json
 //	@Security	CookieAuth
-//	@Param		pet	body		CreatePetPayload		true	"Pet data"
+//	@Param		pet	body		CreatePetPayload		true	"Datos de la mascota"
 //	@Success	201	{object}	map[string]interface{}	"data: Pet"
-//	@Failure	400	{object}	map[string]string		"validation error"
-//	@Failure	401	{object}	map[string]string		"authentication required"
-//	@Failure	500	{object}	map[string]string		"error message"
+//	@Failure	400	{object}	map[string]string		"error de validación"
+//	@Failure	401	{object}	map[string]string		"autenticación requerida"
+//	@Failure	500	{object}	map[string]string		"mensaje de error"
 //	@Router		/api/v1/pets [post]
 func (h *Handler) CreatePet(c *gin.Context) {
 	var payload CreatePetPayload
@@ -132,18 +132,18 @@ func (h *Handler) CreatePet(c *gin.Context) {
 
 // UpdatePet handles PUT /api/v1/pets/:id
 //
-//	@Summary	Update a pet (must belong to the authenticated user)
+//	@Summary	Actualizar una mascota (debe pertenecer al usuario autenticado)
 //	@Tags		pets
 //	@Accept		json
 //	@Produce	json
 //	@Security	CookieAuth
-//	@Param		id	path		string					true	"Pet ID"
-//	@Param		pet	body		UpdatePetPayload		true	"Pet data"
+//	@Param		id	path		string					true	"ID de la mascota"
+//	@Param		pet	body		UpdatePetPayload		true	"Datos de la mascota"
 //	@Success	200	{object}	map[string]interface{}	"data: Pet"
-//	@Failure	400	{object}	map[string]string		"invalid id or validation error"
-//	@Failure	401	{object}	map[string]string		"authentication required"
-//	@Failure	404	{object}	map[string]string		"pet not found"
-//	@Failure	500	{object}	map[string]string		"error message"
+//	@Failure	400	{object}	map[string]string		"id inválido o error de validación"
+//	@Failure	401	{object}	map[string]string		"autenticación requerida"
+//	@Failure	404	{object}	map[string]string		"mascota no encontrada"
+//	@Failure	500	{object}	map[string]string		"mensaje de error"
 //	@Router		/api/v1/pets/{id} [put]
 func (h *Handler) UpdatePet(c *gin.Context) {
 	id, ok := parseID(c)
@@ -169,16 +169,16 @@ func (h *Handler) UpdatePet(c *gin.Context) {
 
 // DeletePet handles DELETE /api/v1/pets/:id
 //
-//	@Summary	Delete a pet (must belong to the authenticated user)
+//	@Summary	Eliminar una mascota (debe pertenecer al usuario autenticado)
 //	@Tags		pets
 //	@Produce	json
 //	@Security	CookieAuth
-//	@Param		id	path		string				true	"Pet ID"
+//	@Param		id	path		string				true	"ID de la mascota"
 //	@Success	200	{object}	map[string]string	"message: pet deleted"
-//	@Failure	400	{object}	map[string]string	"invalid id"
-//	@Failure	401	{object}	map[string]string	"authentication required"
-//	@Failure	404	{object}	map[string]string	"pet not found"
-//	@Failure	500	{object}	map[string]string	"error message"
+//	@Failure	400	{object}	map[string]string	"id inválido"
+//	@Failure	401	{object}	map[string]string	"autenticación requerida"
+//	@Failure	404	{object}	map[string]string	"mascota no encontrada"
+//	@Failure	500	{object}	map[string]string	"mensaje de error"
 //	@Router		/api/v1/pets/{id} [delete]
 func (h *Handler) DeletePet(c *gin.Context) {
 	id, ok := parseID(c)
@@ -199,15 +199,15 @@ func (h *Handler) DeletePet(c *gin.Context) {
 
 // GetLifeStage handles GET /api/v1/pets/life-stage
 //
-//	@Summary	Calculate life stage for a dog or cat based on weight
+//	@Summary	Calcular etapa de vida para perro o gato según su peso
 //	@Tags		pets
 //	@Produce	json
 //	@Security	CookieAuth
-//	@Param		species			query		string	true	"Pet species (dog or cat)"
-//	@Param		weight_grams	query		int		true	"Weight in grams"
+//	@Param		species			query		string	true	"Especie de la mascota (dog o cat)"
+//	@Param		weight_grams	query		int		true	"Peso en gramos"
 //	@Success	200	{object}	map[string]string	"life_stage: string"
-//	@Failure	400	{object}	map[string]string	"missing or invalid parameters"
-//	@Failure	401	{object}	map[string]string	"authentication required"
+//	@Failure	400	{object}	map[string]string	"parámetros faltantes o inválidos"
+//	@Failure	401	{object}	map[string]string	"autenticación requerida"
 //	@Router		/api/v1/pets/life-stage [get]
 func (h *Handler) GetLifeStage(c *gin.Context) {
 	species := c.Query("species")

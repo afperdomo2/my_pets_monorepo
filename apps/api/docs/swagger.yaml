@@ -1,6 +1,6 @@
 basePath: /
 definitions:
-  auth.LoginPayload:
+  internal_domain_auth.LoginPayload:
     properties:
       email:
         type: string
@@ -11,21 +11,50 @@ definitions:
     - email
     - password
     type: object
-  pet.PetPayload:
+  internal_domain_pet.CreatePetPayload:
     properties:
-      age:
-        maximum: 100
-        minimum: 0
+      birth_date:
+        type: string
+      birth_date_exact:
+        type: boolean
+      breed:
+        maxLength: 100
+        type: string
+      life_stage:
+        type: string
+      name:
+        maxLength: 100
+        minLength: 1
+        type: string
+      species:
+        enum:
+        - dog
+        - cat
+        - bird
+        - rabbit
+        - fish
+        - other
+        type: string
+      weight_grams:
+        minimum: 1
         type: integer
+    required:
+    - birth_date
+    - name
+    - species
+    type: object
+  internal_domain_pet.UpdatePetPayload:
+    properties:
+      birth_date:
+        type: string
+      birth_date_exact:
+        type: boolean
       breed:
         maxLength: 100
         type: string
       name:
         maxLength: 100
         minLength: 1
-        type: string
-      owner:
-        maxLength: 100
         type: string
       species:
         enum:
@@ -37,10 +66,11 @@ definitions:
         - other
         type: string
     required:
+    - birth_date
     - name
     - species
     type: object
-  setup.SetupPayload:
+  internal_domain_setup.SetupPayload:
     properties:
       email:
         type: string
@@ -54,7 +84,7 @@ definitions:
     - name
     - password
     type: object
-  user.CreateUserPayload:
+  internal_domain_user.CreateUserPayload:
     properties:
       email:
         type: string
@@ -71,7 +101,7 @@ definitions:
     - name
     - password
     type: object
-  user.UpdateUserPayload:
+  internal_domain_user.UpdateUserPayload:
     properties:
       email:
         type: string
@@ -117,12 +147,12 @@ paths:
       consumes:
       - application/json
       parameters:
-      - description: Login credentials
+      - description: Credenciales de acceso
         in: body
         name: credentials
         required: true
         schema:
-          $ref: '#/definitions/auth.LoginPayload'
+          $ref: '#/definitions/internal_domain_auth.LoginPayload'
       produces:
       - application/json
       responses:
@@ -132,18 +162,18 @@ paths:
             additionalProperties: true
             type: object
         "400":
-          description: validation error
+          description: error de validación
           schema:
             additionalProperties:
               type: string
             type: object
         "401":
-          description: invalid credentials
+          description: credenciales inválidas
           schema:
             additionalProperties:
               type: string
             type: object
-      summary: Login with email and password
+      summary: Iniciar sesión con email y contraseña
       tags:
       - auth
   /api/v1/auth/logout:
@@ -158,14 +188,14 @@ paths:
               type: string
             type: object
         "401":
-          description: authentication required
+          description: autenticación requerida
           schema:
             additionalProperties:
               type: string
             type: object
       security:
       - CookieAuth: []
-      summary: Logout — clears auth cookies
+      summary: Cerrar sesión — limpia las cookies de autenticación
       tags:
       - auth
   /api/v1/auth/me:
@@ -179,14 +209,14 @@ paths:
             additionalProperties: true
             type: object
         "401":
-          description: unauthorized
+          description: no autorizado
           schema:
             additionalProperties:
               type: string
             type: object
       security:
       - CookieAuth: []
-      summary: Get the currently authenticated user
+      summary: Obtener el usuario actualmente autenticado
       tags:
       - auth
   /api/v1/auth/refresh:
@@ -200,22 +230,22 @@ paths:
             additionalProperties: true
             type: object
         "401":
-          description: invalid or expired refresh token
+          description: token de refresh inválido o expirado
           schema:
             additionalProperties:
               type: string
             type: object
-      summary: Refresh access token using the refresh cookie
+      summary: Renovar token de acceso usando la cookie de refresh
       tags:
       - auth
   /api/v1/pets:
     get:
       parameters:
-      - description: Page number (default 1)
+      - description: Número de página (por defecto 1)
         in: query
         name: page
         type: integer
-      - description: Items per page (default 10)
+      - description: Elementos por página (por defecto 10)
         in: query
         name: per_page
         type: integer
@@ -229,32 +259,32 @@ paths:
             additionalProperties: true
             type: object
         "401":
-          description: authentication required
+          description: autenticación requerida
           schema:
             additionalProperties:
               type: string
             type: object
         "500":
-          description: error message
+          description: mensaje de error
           schema:
             additionalProperties:
               type: string
             type: object
       security:
       - CookieAuth: []
-      summary: List pets (paginated)
+      summary: Listar mascotas del usuario autenticado (paginado)
       tags:
       - pets
     post:
       consumes:
       - application/json
       parameters:
-      - description: Pet data
+      - description: Datos de la mascota
         in: body
         name: pet
         required: true
         schema:
-          $ref: '#/definitions/pet.PetPayload'
+          $ref: '#/definitions/internal_domain_pet.CreatePetPayload'
       produces:
       - application/json
       responses:
@@ -264,32 +294,32 @@ paths:
             additionalProperties: true
             type: object
         "400":
-          description: validation error
+          description: error de validación
           schema:
             additionalProperties:
               type: string
             type: object
         "401":
-          description: authentication required
+          description: autenticación requerida
           schema:
             additionalProperties:
               type: string
             type: object
         "500":
-          description: error message
+          description: mensaje de error
           schema:
             additionalProperties:
               type: string
             type: object
       security:
       - CookieAuth: []
-      summary: Create a new pet
+      summary: Crear una nueva mascota para el usuario autenticado
       tags:
       - pets
   /api/v1/pets/{id}:
     delete:
       parameters:
-      - description: Pet ID
+      - description: ID de la mascota
         in: path
         name: id
         required: true
@@ -304,37 +334,37 @@ paths:
               type: string
             type: object
         "400":
-          description: invalid id
+          description: id inválido
           schema:
             additionalProperties:
               type: string
             type: object
         "401":
-          description: authentication required
+          description: autenticación requerida
           schema:
             additionalProperties:
               type: string
             type: object
         "404":
-          description: pet not found
+          description: mascota no encontrada
           schema:
             additionalProperties:
               type: string
             type: object
         "500":
-          description: error message
+          description: mensaje de error
           schema:
             additionalProperties:
               type: string
             type: object
       security:
       - CookieAuth: []
-      summary: Delete a pet
+      summary: Eliminar una mascota (debe pertenecer al usuario autenticado)
       tags:
       - pets
     get:
       parameters:
-      - description: Pet ID
+      - description: ID de la mascota
         in: path
         name: id
         required: true
@@ -348,49 +378,49 @@ paths:
             additionalProperties: true
             type: object
         "400":
-          description: invalid id
+          description: id inválido
           schema:
             additionalProperties:
               type: string
             type: object
         "401":
-          description: authentication required
+          description: autenticación requerida
           schema:
             additionalProperties:
               type: string
             type: object
         "404":
-          description: pet not found
+          description: mascota no encontrada
           schema:
             additionalProperties:
               type: string
             type: object
         "500":
-          description: error message
+          description: mensaje de error
           schema:
             additionalProperties:
               type: string
             type: object
       security:
       - CookieAuth: []
-      summary: Get a pet by ID
+      summary: Obtener una mascota por ID (debe pertenecer al usuario autenticado)
       tags:
       - pets
     put:
       consumes:
       - application/json
       parameters:
-      - description: Pet ID
+      - description: ID de la mascota
         in: path
         name: id
         required: true
         type: string
-      - description: Pet data
+      - description: Datos de la mascota
         in: body
         name: pet
         required: true
         schema:
-          $ref: '#/definitions/pet.PetPayload'
+          $ref: '#/definitions/internal_domain_pet.UpdatePetPayload'
       produces:
       - application/json
       responses:
@@ -400,32 +430,71 @@ paths:
             additionalProperties: true
             type: object
         "400":
-          description: invalid id or validation error
+          description: id inválido o error de validación
           schema:
             additionalProperties:
               type: string
             type: object
         "401":
-          description: authentication required
+          description: autenticación requerida
           schema:
             additionalProperties:
               type: string
             type: object
         "404":
-          description: pet not found
+          description: mascota no encontrada
           schema:
             additionalProperties:
               type: string
             type: object
         "500":
-          description: error message
+          description: mensaje de error
           schema:
             additionalProperties:
               type: string
             type: object
       security:
       - CookieAuth: []
-      summary: Update an existing pet
+      summary: Actualizar una mascota (debe pertenecer al usuario autenticado)
+      tags:
+      - pets
+  /api/v1/pets/life-stage:
+    get:
+      parameters:
+      - description: Especie de la mascota (dog o cat)
+        in: query
+        name: species
+        required: true
+        type: string
+      - description: Peso en gramos
+        in: query
+        name: weight_grams
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'life_stage: string'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: parámetros faltantes o inválidos
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: autenticación requerida
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - CookieAuth: []
+      summary: Calcular etapa de vida para perro o gato según su peso
       tags:
       - pets
   /api/v1/setup:
@@ -433,12 +502,12 @@ paths:
       consumes:
       - application/json
       parameters:
-      - description: First user data
+      - description: ' Datos del primer usuario'
         in: body
         name: user
         required: true
         schema:
-          $ref: '#/definitions/setup.SetupPayload'
+          $ref: '#/definitions/internal_domain_setup.SetupPayload'
       produces:
       - application/json
       responses:
@@ -448,24 +517,24 @@ paths:
             additionalProperties: true
             type: object
         "400":
-          description: validation error
+          description: error de validación
           schema:
             additionalProperties:
               type: string
             type: object
         "409":
-          description: system already initialized
+          description: sistema ya inicializado
           schema:
             additionalProperties:
               type: string
             type: object
         "500":
-          description: error message
+          description: mensaje de error
           schema:
             additionalProperties:
               type: string
             type: object
-      summary: Create the first system user
+      summary: Crear el primer usuario sistema
       tags:
       - setup
   /api/v1/setup/status:
@@ -474,22 +543,22 @@ paths:
       - application/json
       responses:
         "200":
-          description: 'needs_setup: true if no users exist'
+          description: 'needs_setup: true si no existen usuarios'
           schema:
             additionalProperties:
               type: boolean
             type: object
-      summary: Check setup status
+      summary: Verificar estado del setup
       tags:
       - setup
   /api/v1/users:
     get:
       parameters:
-      - description: Page number (default 1)
+      - description: Número de página (por defecto 1)
         in: query
         name: page
         type: integer
-      - description: Items per page (default 10)
+      - description: Elementos por página (por defecto 10)
         in: query
         name: per_page
         type: integer
@@ -503,39 +572,39 @@ paths:
             additionalProperties: true
             type: object
         "401":
-          description: authentication required
+          description: autenticación requerida
           schema:
             additionalProperties:
               type: string
             type: object
         "403":
-          description: forbidden
+          description: prohibido
           schema:
             additionalProperties:
               type: string
             type: object
         "500":
-          description: error message
+          description: mensaje de error
           schema:
             additionalProperties:
               type: string
             type: object
       security:
       - CookieAuth: []
-      summary: List users (paginated, system user only)
+      summary: Listar usuarios (paginado, solo usuario sistema)
       tags:
       - users
     post:
       consumes:
       - application/json
-      description: Only a user with is_system_user=true may call this endpoint.
+      description: Solo un usuario con is_system_user=true puede llamar a este endpoint.
       parameters:
-      - description: User data
+      - description: Datos del usuario
         in: body
         name: user
         required: true
         schema:
-          $ref: '#/definitions/user.CreateUserPayload'
+          $ref: '#/definitions/internal_domain_user.CreateUserPayload'
       produces:
       - application/json
       responses:
@@ -545,44 +614,44 @@ paths:
             additionalProperties: true
             type: object
         "400":
-          description: validation error
+          description: error de validación
           schema:
             additionalProperties:
               type: string
             type: object
         "401":
-          description: authentication required
+          description: autenticación requerida
           schema:
             additionalProperties:
               type: string
             type: object
         "403":
-          description: forbidden
+          description: prohibido
           schema:
             additionalProperties:
               type: string
             type: object
         "409":
-          description: email already in use
+          description: email ya en uso
           schema:
             additionalProperties:
               type: string
             type: object
         "500":
-          description: error message
+          description: mensaje de error
           schema:
             additionalProperties:
               type: string
             type: object
       security:
       - CookieAuth: []
-      summary: Create a new user (system user only)
+      summary: Crear un nuevo usuario (solo usuario sistema)
       tags:
       - users
   /api/v1/users/{id}:
     delete:
       parameters:
-      - description: User ID
+      - description: ID del usuario
         in: path
         name: id
         required: true
@@ -597,43 +666,43 @@ paths:
               type: string
             type: object
         "400":
-          description: invalid id
+          description: id inválido
           schema:
             additionalProperties:
               type: string
             type: object
         "401":
-          description: authentication required
+          description: autenticación requerida
           schema:
             additionalProperties:
               type: string
             type: object
         "403":
-          description: forbidden
+          description: prohibido
           schema:
             additionalProperties:
               type: string
             type: object
         "404":
-          description: user not found
+          description: usuario no encontrado
           schema:
             additionalProperties:
               type: string
             type: object
         "500":
-          description: error message
+          description: mensaje de error
           schema:
             additionalProperties:
               type: string
             type: object
       security:
       - CookieAuth: []
-      summary: Delete a user
+      summary: Eliminar un usuario
       tags:
       - users
     get:
       parameters:
-      - description: User ID
+      - description: ID del usuario
         in: path
         name: id
         required: true
@@ -647,55 +716,55 @@ paths:
             additionalProperties: true
             type: object
         "400":
-          description: invalid id
+          description: id inválido
           schema:
             additionalProperties:
               type: string
             type: object
         "401":
-          description: authentication required
+          description: autenticación requerida
           schema:
             additionalProperties:
               type: string
             type: object
         "403":
-          description: forbidden
+          description: prohibido
           schema:
             additionalProperties:
               type: string
             type: object
         "404":
-          description: user not found
+          description: usuario no encontrado
           schema:
             additionalProperties:
               type: string
             type: object
         "500":
-          description: error message
+          description: mensaje de error
           schema:
             additionalProperties:
               type: string
             type: object
       security:
       - CookieAuth: []
-      summary: Get a user by ID (system user only)
+      summary: Obtener un usuario por ID (solo usuario sistema)
       tags:
       - users
     put:
       consumes:
       - application/json
       parameters:
-      - description: User ID
+      - description: ID del usuario
         in: path
         name: id
         required: true
         type: string
-      - description: User data
+      - description: Datos del usuario
         in: body
         name: user
         required: true
         schema:
-          $ref: '#/definitions/user.UpdateUserPayload'
+          $ref: '#/definitions/internal_domain_user.UpdateUserPayload'
       produces:
       - application/json
       responses:
@@ -705,44 +774,44 @@ paths:
             additionalProperties: true
             type: object
         "400":
-          description: invalid id or validation error
+          description: id inválido o error de validación
           schema:
             additionalProperties:
               type: string
             type: object
         "401":
-          description: authentication required
+          description: autenticación requerida
           schema:
             additionalProperties:
               type: string
             type: object
         "403":
-          description: forbidden
+          description: prohibido
           schema:
             additionalProperties:
               type: string
             type: object
         "404":
-          description: user not found
+          description: usuario no encontrado
           schema:
             additionalProperties:
               type: string
             type: object
         "409":
-          description: email already in use
+          description: email ya en uso
           schema:
             additionalProperties:
               type: string
             type: object
         "500":
-          description: error message
+          description: mensaje de error
           schema:
             additionalProperties:
               type: string
             type: object
       security:
       - CookieAuth: []
-      summary: Update an existing user
+      summary: Actualizar un usuario existente
       tags:
       - users
   /health:
@@ -756,7 +825,7 @@ paths:
             additionalProperties:
               type: string
             type: object
-      summary: Health check
+      summary: Verificación de salud
       tags:
       - health
 securityDefinitions:

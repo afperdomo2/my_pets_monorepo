@@ -43,18 +43,18 @@ func canModifyUser(c *gin.Context, targetID string) bool {
 }
 
 // GetUsers handles GET /api/v1/users
-// Only system users may list all users.
+// Solo usuarios sistema pueden listar todos los usuarios.
 //
-//	@Summary	List users (paginated, system user only)
+//	@Summary	Listar usuarios (paginado, solo usuario sistema)
 //	@Tags		users
 //	@Produce	json
 //	@Security	CookieAuth
-//	@Param		page		query		int						false	"Page number (default 1)"
-//	@Param		per_page	query		int						false	"Items per page (default 10)"
+//	@Param		page		query		int						false	"Número de página (por defecto 1)"
+//	@Param		per_page	query		int						false	"Elementos por página (por defecto 10)"
 //	@Success	200	{object}	map[string]interface{}	"data: []User, total: int, page: int, per_page: int, total_pages: int"
-//	@Failure	401	{object}	map[string]string		"authentication required"
-//	@Failure	403	{object}	map[string]string		"forbidden"
-//	@Failure	500	{object}	map[string]string		"error message"
+//	@Failure	401	{object}	map[string]string		"autenticación requerida"
+//	@Failure	403	{object}	map[string]string		"prohibido"
+//	@Failure	500	{object}	map[string]string		"mensaje de error"
 //	@Router		/api/v1/users [get]
 func (h *Handler) GetUsers(c *gin.Context) {
 	isSystemUser, _ := c.Get("isSystemUser")
@@ -89,19 +89,19 @@ func (h *Handler) GetUsers(c *gin.Context) {
 }
 
 // GetUser handles GET /api/v1/users/:id
-// Only system users may retrieve a user by ID.
+// Solo usuarios sistema pueden obtener un usuario por ID.
 //
-//	@Summary	Get a user by ID (system user only)
+//	@Summary	Obtener un usuario por ID (solo usuario sistema)
 //	@Tags		users
 //	@Produce	json
 //	@Security	CookieAuth
-//	@Param		id	path		string					true	"User ID"
+//	@Param		id	path		string					true	"ID del usuario"
 //	@Success	200	{object}	map[string]interface{}	"data: User"
-//	@Failure	400	{object}	map[string]string		"invalid id"
-//	@Failure	401	{object}	map[string]string		"authentication required"
-//	@Failure	403	{object}	map[string]string		"forbidden"
-//	@Failure	404	{object}	map[string]string		"user not found"
-//	@Failure	500	{object}	map[string]string		"error message"
+//	@Failure	400	{object}	map[string]string		"id inválido"
+//	@Failure	401	{object}	map[string]string		"autenticación requerida"
+//	@Failure	403	{object}	map[string]string		"prohibido"
+//	@Failure	404	{object}	map[string]string		"usuario no encontrado"
+//	@Failure	500	{object}	map[string]string		"mensaje de error"
 //	@Router		/api/v1/users/{id} [get]
 func (h *Handler) GetUser(c *gin.Context) {
 	isSystemUser, _ := c.Get("isSystemUser")
@@ -126,21 +126,21 @@ func (h *Handler) GetUser(c *gin.Context) {
 }
 
 // CreateUser handles POST /api/v1/users
-// Only system users may create new users.
+// Solo usuarios sistema pueden crear nuevos usuarios.
 //
-//	@Summary	Create a new user (system user only)
-//	@Description	Only a user with is_system_user=true may call this endpoint.
+//	@Summary	Crear un nuevo usuario (solo usuario sistema)
+//	@Description	Solo un usuario con is_system_user=true puede llamar a este endpoint.
 //	@Tags		users
 //	@Accept		json
 //	@Produce	json
 //	@Security	CookieAuth
-//	@Param		user	body		CreateUserPayload		true	"User data"
+//	@Param		user	body		CreateUserPayload		true	"Datos del usuario"
 //	@Success	201		{object}	map[string]interface{}	"data: User"
-//	@Failure	400		{object}	map[string]string		"validation error"
-//	@Failure	401		{object}	map[string]string		"authentication required"
-//	@Failure	403		{object}	map[string]string		"forbidden"
-//	@Failure	409		{object}	map[string]string		"email already in use"
-//	@Failure	500		{object}	map[string]string		"error message"
+//	@Failure	400		{object}	map[string]string		"error de validación"
+//	@Failure	401		{object}	map[string]string		"autenticación requerida"
+//	@Failure	403		{object}	map[string]string		"prohibido"
+//	@Failure	409		{object}	map[string]string		"email ya en uso"
+//	@Failure	500		{object}	map[string]string		"mensaje de error"
 //	@Router		/api/v1/users [post]
 func (h *Handler) CreateUser(c *gin.Context) {
 	callerIsSystemUser, _ := c.Get("isSystemUser")
@@ -176,22 +176,22 @@ func (h *Handler) CreateUser(c *gin.Context) {
 }
 
 // UpdateUser handles PUT /api/v1/users/:id
-// Only the user themselves or a system user may update a user.
+// Solo el propio usuario o un usuario sistema pueden actualizar un usuario.
 //
-//	@Summary	Update an existing user
+//	@Summary	Actualizar un usuario existente
 //	@Tags		users
 //	@Accept		json
 //	@Produce	json
 //	@Security	CookieAuth
-//	@Param		id		path		string					true	"User ID"
-//	@Param		user	body		UpdateUserPayload		true	"User data"
+//	@Param		id		path		string					true	"ID del usuario"
+//	@Param		user	body		UpdateUserPayload		true	"Datos del usuario"
 //	@Success	200		{object}	map[string]interface{}	"data: User"
-//	@Failure	400		{object}	map[string]string		"invalid id or validation error"
-//	@Failure	401		{object}	map[string]string		"authentication required"
-//	@Failure	403		{object}	map[string]string		"forbidden"
-//	@Failure	404		{object}	map[string]string		"user not found"
-//	@Failure	409		{object}	map[string]string		"email already in use"
-//	@Failure	500		{object}	map[string]string		"error message"
+//	@Failure	400		{object}	map[string]string		"id inválido o error de validación"
+//	@Failure	401		{object}	map[string]string		"autenticación requerida"
+//	@Failure	403		{object}	map[string]string		"prohibido"
+//	@Failure	404		{object}	map[string]string		"usuario no encontrado"
+//	@Failure	409		{object}	map[string]string		"email ya en uso"
+//	@Failure	500		{object}	map[string]string		"mensaje de error"
 //	@Router		/api/v1/users/{id} [put]
 func (h *Handler) UpdateUser(c *gin.Context) {
 	id, ok := parseID(c)
@@ -224,20 +224,20 @@ func (h *Handler) UpdateUser(c *gin.Context) {
 }
 
 // DeleteUser handles DELETE /api/v1/users/:id
-// Only the user themselves or a system user may delete a user.
-// System users cannot be deleted.
+// Solo el propio usuario o un usuario sistema pueden eliminar un usuario.
+// Usuarios sistema no pueden ser eliminados.
 //
-//	@Summary	Delete a user
+//	@Summary	Eliminar un usuario
 //	@Tags		users
 //	@Produce	json
 //	@Security	CookieAuth
-//	@Param		id	path		string				true	"User ID"
+//	@Param		id	path		string				true	"ID del usuario"
 //	@Success	200	{object}	map[string]string	"message: user deleted"
-//	@Failure	400	{object}	map[string]string	"invalid id"
-//	@Failure	401	{object}	map[string]string	"authentication required"
-//	@Failure	403	{object}	map[string]string	"forbidden"
-//	@Failure	404	{object}	map[string]string	"user not found"
-//	@Failure	500	{object}	map[string]string	"error message"
+//	@Failure	400	{object}	map[string]string	"id inválido"
+//	@Failure	401	{object}	map[string]string	"autenticación requerida"
+//	@Failure	403	{object}	map[string]string	"prohibido"
+//	@Failure	404	{object}	map[string]string	"usuario no encontrado"
+//	@Failure	500	{object}	map[string]string	"mensaje de error"
 //	@Router		/api/v1/users/{id} [delete]
 func (h *Handler) DeleteUser(c *gin.Context) {
 	id, ok := parseID(c)

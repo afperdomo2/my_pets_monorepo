@@ -8,7 +8,7 @@ import (
 
 // Handler returns a simple liveness response.
 //
-//	@Summary	Health check
+//	@Summary	Verificación de salud
 //	@Tags		health
 //	@Produce	json
 //	@Success	200	{object}	map[string]string	"ok"

@@ -75,14 +75,14 @@ func clearAuthCookies(c *gin.Context) {
 
 // Login handles POST /api/v1/auth/login
 //
-//	@Summary	Login with email and password
+//	@Summary	Iniciar sesión con email y contraseña
 //	@Tags		auth
 //	@Accept		json
 //	@Produce	json
-//	@Param		credentials	body		LoginPayload			true	"Login credentials"
+//	@Param		credentials	body		LoginPayload			true	"Credenciales de acceso"
 //	@Success	200			{object}	map[string]interface{}	"data: User"
-//	@Failure	400			{object}	map[string]string		"validation error"
-//	@Failure	401			{object}	map[string]string		"invalid credentials"
+//	@Failure	400			{object}	map[string]string		"error de validación"
+//	@Failure	401			{object}	map[string]string		"credenciales inválidas"
 //	@Router		/api/v1/auth/login [post]
 func (h *Handler) Login(c *gin.Context) {
 	var payload LoginPayload
@@ -120,12 +120,12 @@ func (h *Handler) Login(c *gin.Context) {
 
 // Logout handles POST /api/v1/auth/logout
 //
-//	@Summary	Logout — clears auth cookies
+//	@Summary	Cerrar sesión — limpia las cookies de autenticación
 //	@Tags		auth
 //	@Produce	json
 //	@Security	CookieAuth
 //	@Success	200	{object}	map[string]string	"message: logged out"
-//	@Failure	401	{object}	map[string]string	"authentication required"
+//	@Failure	401	{object}	map[string]string	"autenticación requerida"
 //	@Router		/api/v1/auth/logout [post]
 func (h *Handler) Logout(c *gin.Context) {
 	clearAuthCookies(c)
@@ -134,11 +134,11 @@ func (h *Handler) Logout(c *gin.Context) {
 
 // Refresh handles POST /api/v1/auth/refresh
 //
-//	@Summary	Refresh access token using the refresh cookie
+//	@Summary	Renovar token de acceso usando la cookie de refresh
 //	@Tags		auth
 //	@Produce	json
 //	@Success	200	{object}	map[string]interface{}	"data: User"
-//	@Failure	401	{object}	map[string]string		"invalid or expired refresh token"
+//	@Failure	401	{object}	map[string]string		"token de refresh inválido o expirado"
 //	@Router		/api/v1/auth/refresh [post]
 func (h *Handler) Refresh(c *gin.Context) {
 	cookie, err := c.Cookie("refresh_token")
@@ -165,12 +165,12 @@ func (h *Handler) Refresh(c *gin.Context) {
 
 // Me handles GET /api/v1/auth/me
 //
-//	@Summary	Get the currently authenticated user
+//	@Summary	Obtener el usuario actualmente autenticado
 //	@Tags		auth
 //	@Produce	json
 //	@Security	CookieAuth
 //	@Success	200	{object}	map[string]interface{}	"data: User"
-//	@Failure	401	{object}	map[string]string		"unauthorized"
+//	@Failure	401	{object}	map[string]string		"no autorizado"
 //	@Router		/api/v1/auth/me [get]
 func (h *Handler) Me(c *gin.Context) {
 	userID, _ := c.Get("userID")

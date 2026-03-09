@@ -27,12 +27,12 @@ type SetupPayload struct {
 }
 
 // Status handles GET /api/v1/setup/status
-// Returns whether the system has been initialized (at least one user exists).
+// Retorna si el sistema ha sido inicializado (existe al menos un usuario).
 //
-//	@Summary	Check setup status
+//	@Summary	Verificar estado del setup
 //	@Tags		setup
 //	@Produce	json
-//	@Success	200	{object}	map[string]bool	"needs_setup: true if no users exist"
+//	@Success	200	{object}	map[string]bool	"needs_setup: true si no existen usuarios"
 //	@Router		/api/v1/setup/status [get]
 func (h *Handler) Status(c *gin.Context) {
 	hasUsers, err := h.userRepo.HasUsers(c.Request.Context())
@@ -44,17 +44,17 @@ func (h *Handler) Status(c *gin.Context) {
 }
 
 // Create handles POST /api/v1/setup
-// Creates the first system user. Returns 409 if users already exist.
+// Crea el primer usuario sistema. Retorna 409 si ya existen usuarios.
 //
-//	@Summary	Create the first system user
+//	@Summary	Crear el primer usuario sistema
 //	@Tags		setup
 //	@Accept		json
 //	@Produce	json
-//	@Param		user	body		SetupPayload			true	"First user data"
+//	@Param		user	body		SetupPayload			true	" Datos del primer usuario"
 //	@Success	201		{object}	map[string]interface{}	"data: User"
-//	@Failure	400		{object}	map[string]string		"validation error"
-//	@Failure	409		{object}	map[string]string		"system already initialized"
-//	@Failure	500		{object}	map[string]string		"error message"
+//	@Failure	400		{object}	map[string]string		"error de validación"
+//	@Failure	409		{object}	map[string]string		"sistema ya inicializado"
+//	@Failure	500		{object}	map[string]string		"mensaje de error"
 //	@Router		/api/v1/setup [post]
 func (h *Handler) Create(c *gin.Context) {
 	ctx := c.Request.Context()
