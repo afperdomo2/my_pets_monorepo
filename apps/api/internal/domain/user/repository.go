@@ -36,4 +36,8 @@ type Repository interface {
 	GetPasswordByEmail(ctx context.Context, email string) (hash string, err error)
 	// UpsertByGoogleID creates or updates a user authenticated via Google OAuth.
 	UpsertByGoogleID(ctx context.Context, info GoogleUserInfo, isSystemUser bool) (models.User, error)
+	// UpdatePassword replaces the stored bcrypt hash for a local-auth user.
+	// Returns ErrNotFound if the user does not exist, ErrWrongProvider if the
+	// user authenticates via an external provider (no local password to update).
+	UpdatePassword(ctx context.Context, id string, newHash string) error
 }

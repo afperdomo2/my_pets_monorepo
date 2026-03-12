@@ -1,6 +1,6 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
-import type { User } from '@/types/user'
+import type { User, UpdateProfilePayload } from '@/types/user'
 import { authService } from '@/services/authService'
 
 export const useAuthStore = defineStore('auth', () => {
@@ -51,6 +51,24 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   /**
+   * Updates the current user's name and email via PUT /api/v1/auth/profile.
+   * On success, refreshes the local user state so the sidebar reflects changes immediately.
+   */
+  async function updateProfile(payload: UpdateProfilePayload): Promise<void> {
+    loading.value = true
+    error.value = null
+    try {
+      const res = await authService.updateProfile(payload)
+      user.value = res.data
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : 'Failed to update profile'
+      throw e
+    } finally {
+      loading.value = false
+    }
+  }
+
+  /**
    * Called once on app startup to restore session from the access_token cookie.
    * If the cookie is expired, attempts a silent refresh before giving up.
    * Resolves `sessionReady` when done so the router guard can proceed safely.
@@ -83,6 +101,7 @@ export const useAuthStore = defineStore('auth', () => {
     login,
     logout,
     fetchMe,
+    updateProfile,
     initSession,
   }
 })

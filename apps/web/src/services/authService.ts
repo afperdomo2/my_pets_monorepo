@@ -1,4 +1,4 @@
-import type { User, LoginPayload, AuthResponse } from '@/types/user'
+import type { User, LoginPayload, AuthResponse, UpdateProfilePayload, ChangePasswordPayload } from '@/types/user'
 
 const BASE_URL = '/api/v1'
 
@@ -40,5 +40,19 @@ export const authService = {
     // Use a relative URL so the Vite dev proxy forwards it to the API,
     // and in production the same domain serves the API.
     window.location.href = '/api/v1/auth/google'
+  },
+
+  updateProfile(payload: UpdateProfilePayload): Promise<{ data: User }> {
+    return request('/auth/profile', {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    })
+  },
+
+  changePassword(payload: ChangePasswordPayload): Promise<{ message: string }> {
+    return request('/auth/password', {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    })
   },
 }

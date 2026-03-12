@@ -26,6 +26,17 @@ export interface UpdateUserPayload {
   pet_limit?: number
 }
 
+export interface UpdateProfilePayload {
+  name: string
+  email: string
+}
+
+export interface ChangePasswordPayload {
+  current_password: string
+  new_password: string
+  confirm_password: string
+}
+
 export interface LoginPayload {
   email: string
   password: string

@@ -201,6 +201,26 @@ func (r *gormRepo) UpsertByGoogleID(ctx context.Context, info GoogleUserInfo, is
 	return u, nil
 }
 
+func (r *gormRepo) UpdatePassword(ctx context.Context, id string, newHash string) error {
+	result := r.db.WithContext(ctx).
+		Model(&models.User{}).
+		Where("id = ? AND auth_provider = ?", id, models.AuthProviderLocal).
+		Update("password", newHash)
+	if result.Error != nil {
+		return fmt.Errorf("user.UpdatePassword: %w", result.Error)
+	}
+	if result.RowsAffected == 0 {
+		// Either the user does not exist or is not a local-auth user.
+		var count int64
+		r.db.WithContext(ctx).Model(&models.User{}).Where("id = ?", id).Count(&count)
+		if count == 0 {
+			return ErrNotFound
+		}
+		return ErrWrongProvider
+	}
+	return nil
+}
+
 // isUniqueViolation detects PostgreSQL unique constraint violations (SQLSTATE 23505).
 // pgx errors implement the SQLState() method.
 type sqlstateErr interface {

@@ -33,5 +33,7 @@ func RegisterProtectedRoutes(rg *gin.RouterGroup, h *Handler) {
 	{
 		auth.POST("/logout", h.Logout)
 		auth.GET("/me", h.Me)
+		auth.PUT("/profile", h.UpdateProfile)
+		auth.PUT("/password", h.ChangePassword)
 	}
 }

@@ -141,16 +141,16 @@ function isActive(itemName: string): boolean {
       </nav>
 
       <!-- User profile -->
-      <div class="sidebar-user">
+      <RouterLink to="/profile" class="sidebar-user" :class="{ 'sidebar-user--active': isActive('profile') }">
         <div class="user-avatar">{{ userInitials }}</div>
         <div class="user-info">
           <span class="user-name">{{ authStore.user?.name ?? '—' }}</span>
           <span class="user-role">{{ userRole }}</span>
         </div>
-        <button class="user-logout" title="Cerrar sesión" @click="handleLogout">
+        <button class="user-logout" title="Cerrar sesión" @click.prevent="handleLogout">
           <IconLogout :size="16" :stroke-width="1.75" />
         </button>
-      </div>
+      </RouterLink>
     </div>
   </aside>
 </template>
@@ -316,10 +316,24 @@ function isActive(itemName: string): boolean {
   margin: 0 var(--space-3);
   border-radius: var(--radius-md);
   transition: background var(--transition-fast);
+  text-decoration: none;
+  cursor: pointer;
 }
 
 .sidebar-user:hover {
   background: var(--sidebar-item-hover-bg);
+}
+
+.sidebar-user--active {
+  background: var(--sidebar-item-active-bg);
+}
+
+.sidebar-user--active .user-name {
+  color: var(--sidebar-item-active-text);
+}
+
+.sidebar-user--active .user-role {
+  color: var(--color-accent-muted);
 }
 
 .user-avatar {

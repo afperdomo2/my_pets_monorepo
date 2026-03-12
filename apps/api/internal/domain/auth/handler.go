@@ -182,6 +182,120 @@ func (h *Handler) Me(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": u})
 }
 
+// UpdateProfile handles PUT /api/v1/auth/profile
+//
+//	@Summary	Actualizar nombre y email del usuario autenticado
+//	@Tags		auth
+//	@Accept		json
+//	@Produce	json
+//	@Security	CookieAuth
+//	@Param		payload	body		UpdateProfilePayload	true	"Datos a actualizar"
+//	@Success	200		{object}	map[string]interface{}	"data: User"
+//	@Failure	400		{object}	map[string]string		"error de validación"
+//	@Failure	409		{object}	map[string]string		"email ya en uso"
+//	@Failure	401		{object}	map[string]string		"no autorizado"
+//	@Router		/api/v1/auth/profile [put]
+func (h *Handler) UpdateProfile(c *gin.Context) {
+	userID, _ := c.Get("userID")
+
+	var payload UpdateProfilePayload
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": validation.Translate(err)})
+		return
+	}
+
+	ctx := c.Request.Context()
+
+	updated, err := h.userRepo.Update(ctx, userID.(string), user.UpdateUserPayload{
+		Name:  payload.Name,
+		Email: payload.Email,
+	})
+	if errors.Is(err, user.ErrNotFound) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+		return
+	}
+	if errors.Is(err, user.ErrEmailTaken) {
+		c.JSON(http.StatusConflict, gin.H{"error": "email already in use"})
+		return
+	}
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update profile"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": updated})
+}
+
+// ChangePassword handles PUT /api/v1/auth/password
+//
+//	@Summary	Cambiar la contraseña del usuario autenticado
+//	@Tags		auth
+//	@Accept		json
+//	@Produce	json
+//	@Security	CookieAuth
+//	@Param		payload	body		ChangePasswordPayload	true	"Datos de cambio de contraseña"
+//	@Success	200		{object}	map[string]string		"message: password updated"
+//	@Failure	400		{object}	map[string]string		"error de validación o proveedor incorrecto"
+//	@Failure	401		{object}	map[string]string		"no autorizado o contraseña actual incorrecta"
+//	@Router		/api/v1/auth/password [put]
+func (h *Handler) ChangePassword(c *gin.Context) {
+	userID, _ := c.Get("userID")
+	email, _ := c.Get("email")
+
+	var payload ChangePasswordPayload
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": validation.Translate(err)})
+		return
+	}
+
+	if payload.NewPassword != payload.ConfirmPassword {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "new password and confirmation do not match"})
+		return
+	}
+
+	ctx := c.Request.Context()
+
+	// Verify that the user is a local-auth user and fetch their current hash.
+	currentHash, err := h.userRepo.GetPasswordByEmail(ctx, email.(string))
+	if errors.Is(err, user.ErrWrongProvider) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "password change is not available for accounts using external login providers"})
+		return
+	}
+	if errors.Is(err, user.ErrNotFound) {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "user not found"})
+		return
+	}
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to change password"})
+		return
+	}
+
+	// Verify the current password matches.
+	if err := bcrypt.CompareHashAndPassword([]byte(currentHash), []byte(payload.CurrentPassword)); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "current password is incorrect"})
+		return
+	}
+
+	// Reject if new password is the same as current.
+	if err := bcrypt.CompareHashAndPassword([]byte(currentHash), []byte(payload.NewPassword)); err == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "new password must be different from the current password"})
+		return
+	}
+
+	newHash, err := bcrypt.GenerateFromPassword([]byte(payload.NewPassword), bcrypt.DefaultCost)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to change password"})
+		return
+	}
+
+	if err := h.userRepo.UpdatePassword(ctx, userID.(string), string(newHash)); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to change password"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "password updated successfully"})
+}
+
 // issueTokensAndRespond generates both tokens, sets cookies, and returns the user.
 func (h *Handler) issueTokensAndRespond(c *gin.Context, u models.User) {
 	access, err := GenerateAccessToken(h.cfg, u)
