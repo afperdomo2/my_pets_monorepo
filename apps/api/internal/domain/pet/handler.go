@@ -170,9 +170,19 @@ func (h *Handler) CreatePet(c *gin.Context) {
 		}
 		stage := CalculateDogLifeStage(birthDate, SizeCategory(*payload.Size))
 		payload.LifeStage = &stage
-	} else if payload.Species == "cat" && payload.WeightGrams != nil {
-		// Cats: life stage based on weight
-		stage := CalculateCatLifeStage(*payload.WeightGrams)
+	} else if payload.Species == "cat" || payload.Species == "rabbit" {
+		// Cats and rabbits: life stage based on age (birth date already present in payload)
+		birthDate, err := time.Parse("2006-01-02", payload.BirthDate)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "formato de fecha inválido"})
+			return
+		}
+		var stage string
+		if payload.Species == "cat" {
+			stage = CalculateCatLifeStage(birthDate)
+		} else {
+			stage = CalculateRabbitLifeStage(birthDate)
+		}
 		payload.LifeStage = &stage
 	}
 
@@ -224,15 +234,22 @@ func (h *Handler) UpdatePet(c *gin.Context) {
 		payload.Size = nil
 	}
 
-	// Recalculate life stage for dogs (birth date or size may have changed).
-	// For other species we don't recalculate on update (cats need weight, which is immutable here).
-	if payload.Species == "dog" {
+	// Recalculate life stage when birth date or size may have changed.
+	if payload.Species == "dog" || payload.Species == "cat" || payload.Species == "rabbit" {
 		birthDate, err := time.Parse("2006-01-02", payload.BirthDate)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "formato de fecha inválido"})
 			return
 		}
-		stage := CalculateDogLifeStage(birthDate, SizeCategory(*payload.Size))
+		var stage string
+		switch payload.Species {
+		case "dog":
+			stage = CalculateDogLifeStage(birthDate, SizeCategory(*payload.Size))
+		case "cat":
+			stage = CalculateCatLifeStage(birthDate)
+		case "rabbit":
+			stage = CalculateRabbitLifeStage(birthDate)
+		}
 		payload.LifeStage = &stage
 	}
 

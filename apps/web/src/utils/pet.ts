@@ -113,12 +113,21 @@ export function formatBirthDate(birthDateIso: string): string {
 }
 
 const LIFE_STAGE_LABEL: Record<string, string> = {
+  // Perro
   puppy: 'Cachorro',
-  kitten: 'Gatito',
   junior: 'Joven',
   adult: 'Adulto',
   senior: 'Senior',
   geriatric: 'Geriátrico',
+  // Gato
+  kitten: 'Gatito',
+  young_adult: 'Joven Adulto',
+  mature_adult: 'Adulto Maduro',
+  end_of_life: 'Fin de Vida',
+  // Conejo
+  infant: 'Infancia',
+  juvenile: 'Juvenil',
+  teenager: 'Adolescente',
 }
 
 export function lifeStageLabel(stage: string): string {

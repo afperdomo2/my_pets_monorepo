@@ -6,15 +6,25 @@ import "time"
 type LifeStage string
 
 const (
+	// Dog life stages
 	LifeStagePuppy  LifeStage = "puppy"  // dog: cachorro (< 9 meses)
 	LifeStageJunior LifeStage = "junior" // dog: joven adulto (9 meses – 4 años)
 	LifeStageAdult  LifeStage = "adult"  // dog: adulto maduro (4 años – umbral senior)
 	LifeStageSenior LifeStage = "senior" // dog: senior (umbral según tamaño de raza)
 
-	LifeStageKitten    LifeStage = "kitten" // cat: gatito  (≤ 1 000 g)
-	LifeStageAdultCat  LifeStage = "adult"  // cat: adulto  (2 500 – 5 999 g)
-	LifeStageSeniorCat LifeStage = "senior" // cat: senior  (≥ 6 000 g)
-	LifeStageJuniorCat LifeStage = "junior" // cat: joven   (1 001 – 2 499 g)
+	// Cat life stages (based on age)
+	LifeStageKitten      LifeStage = "kitten"       // cat: gatito (nacimiento – 1 año)
+	LifeStageYoungAdult  LifeStage = "young_adult"  // cat: joven adulto (1 – 6 años)
+	LifeStageMatureAdult LifeStage = "mature_adult" // cat: adulto maduro (7 – 10 años)
+	LifeStageSeniorCat   LifeStage = "senior"       // cat: senior (> 10 años)
+	LifeStageEndOfLife   LifeStage = "end_of_life"  // cat/any: fin de vida (cualquier edad, evaluación clínica)
+
+	// Rabbit life stages (based on age)
+	LifeStageRabbitInfant   LifeStage = "infant"   // rabbit: infancia (nacimiento – 3 meses)
+	LifeStageRabbitJuvenile LifeStage = "juvenile" // rabbit: juvenil/adolescente (3 – 6 meses)
+	LifeStageRabbitTeenager LifeStage = "teenager" // rabbit: teenager (6 – 12 meses)
+	LifeStageRabbitAdult    LifeStage = "adult"    // rabbit: adulto (1 – 5 años)
+	LifeStageRabbitSenior   LifeStage = "senior"   // rabbit: senior (> 5 años)
 )
 
 // seniorThreshold maps dog size to the age (in years) at which they become senior.
@@ -51,26 +61,55 @@ func CalculateDogLifeStage(birthDate time.Time, size SizeCategory) string {
 	return string(LifeStageAdult)
 }
 
-// CalculateCatLifeStage returns the life stage for a cat based on weight in grams.
-func CalculateCatLifeStage(weightGrams int) string {
+// CalculateCatLifeStage returns the life stage for a cat based on age.
+//
+// Stages (fuente: datos clínicos felinos):
+//   - kitten:       nacimiento – 1 año
+//   - young_adult:  1 – 6 años
+//   - mature_adult: 7 – 10 años
+//   - senior:       > 10 años
+func CalculateCatLifeStage(birthDate time.Time) string {
+	age := time.Since(birthDate).Hours() / 24 / 365.25
+
 	switch {
-	case weightGrams <= 1000:
+	case age < 1.0:
 		return string(LifeStageKitten)
-	case weightGrams <= 2499:
-		return string(LifeStageJuniorCat)
-	case weightGrams <= 5999:
-		return string(LifeStageAdultCat)
+	case age < 7.0:
+		return string(LifeStageYoungAdult)
+	case age <= 10.0:
+		return string(LifeStageMatureAdult)
 	default:
 		return string(LifeStageSeniorCat)
 	}
 }
 
-// CalculateLifeStage is kept for backward compatibility.
-// For dogs it now requires birthDate and size; for cats it uses weightGrams.
-// Deprecated: use CalculateDogLifeStage or CalculateCatLifeStage directly.
-func CalculateLifeStage(species string, weightGrams int) string {
-	if species == "cat" {
-		return CalculateCatLifeStage(weightGrams)
+// CalculateRabbitLifeStage returns the life stage for a rabbit based on age.
+//
+// Stages (fuente: datos nutricionales/clínicos lagomorfos):
+//   - infant:   nacimiento – 3 meses
+//   - juvenile: 3 – 6 meses
+//   - teenager: 6 – 12 meses
+//   - adult:    1 – 5 años
+//   - senior:   > 5 años
+func CalculateRabbitLifeStage(birthDate time.Time) string {
+	age := time.Since(birthDate).Hours() / 24 / 365.25
+
+	switch {
+	case age < 0.25: // ~3 meses
+		return string(LifeStageRabbitInfant)
+	case age < 0.5: // ~6 meses
+		return string(LifeStageRabbitJuvenile)
+	case age < 1.0: // ~12 meses
+		return string(LifeStageRabbitTeenager)
+	case age <= 5.0:
+		return string(LifeStageRabbitAdult)
+	default:
+		return string(LifeStageRabbitSenior)
 	}
+}
+
+// CalculateLifeStage is kept for backward compatibility.
+// Deprecated: use CalculateDogLifeStage, CalculateCatLifeStage or CalculateRabbitLifeStage directly.
+func CalculateLifeStage(species string, weightGrams int) string {
 	return ""
 }

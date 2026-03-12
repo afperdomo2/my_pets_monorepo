@@ -47,12 +47,21 @@ const isBirthday = computed(
 )
 
 const LIFE_STAGE_COLORS: Record<string, { bg: string; text: string }> = {
-  puppy:    { bg: '#fef9c3', text: '#854d0e' },
-  kitten:   { bg: '#fef9c3', text: '#854d0e' },
-  junior:   { bg: '#dcfce7', text: '#166534' },
-  adult:    { bg: '#dbeafe', text: '#1e40af' },
-  senior:   { bg: '#ede9fe', text: '#5b21b6' },
-  geriatric:{ bg: '#fee2e2', text: '#991b1b' },
+  // Perro
+  puppy:        { bg: '#fef9c3', text: '#854d0e' },
+  junior:       { bg: '#dcfce7', text: '#166534' },
+  adult:        { bg: '#dbeafe', text: '#1e40af' },
+  senior:       { bg: '#ede9fe', text: '#5b21b6' },
+  geriatric:    { bg: '#fee2e2', text: '#991b1b' },
+  // Gato
+  kitten:       { bg: '#fef9c3', text: '#854d0e' },
+  young_adult:  { bg: '#dcfce7', text: '#166534' },
+  mature_adult: { bg: '#dbeafe', text: '#1e40af' },
+  end_of_life:  { bg: '#fee2e2', text: '#991b1b' },
+  // Conejo
+  infant:       { bg: '#fef9c3', text: '#854d0e' },
+  juvenile:     { bg: '#dcfce7', text: '#166534' },
+  teenager:     { bg: '#d1fae5', text: '#065f46' },
 }
 
 function lifeStageStyle(stage: string) {
