@@ -1,6 +1,6 @@
 export interface Pet {
   id: string
-  owner_id: string
+  user_id: string
   name: string
   species: string
   breed: string

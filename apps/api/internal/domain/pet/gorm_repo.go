@@ -21,11 +21,11 @@ func NewGormRepo(db *gorm.DB) Repository {
 	return &gormRepo{db: db}
 }
 
-func (r *gormRepo) GetPaginated(ctx context.Context, ownerID string, page, perPage int) ([]models.Pet, int64, error) {
+func (r *gormRepo) GetPaginated(ctx context.Context, userID string, page, perPage int) ([]models.Pet, int64, error) {
 	var pets []models.Pet
 	var total int64
 
-	base := r.db.WithContext(ctx).Model(&models.Pet{}).Where("owner_id = ?", ownerID)
+	base := r.db.WithContext(ctx).Model(&models.Pet{}).Where("user_id = ?", userID)
 
 	if err := base.Count(&total).Error; err != nil {
 		return nil, 0, fmt.Errorf("pet.GetPaginated count: %w", err)
@@ -39,9 +39,9 @@ func (r *gormRepo) GetPaginated(ctx context.Context, ownerID string, page, perPa
 	return pets, total, nil
 }
 
-func (r *gormRepo) GetByID(ctx context.Context, id, ownerID string) (models.Pet, error) {
+func (r *gormRepo) GetByID(ctx context.Context, id, userID string) (models.Pet, error) {
 	var p models.Pet
-	result := r.db.WithContext(ctx).Where("id = ? AND owner_id = ?", id, ownerID).First(&p)
+	result := r.db.WithContext(ctx).Where("id = ? AND user_id = ?", id, userID).First(&p)
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 		return models.Pet{}, ErrNotFound
 	}
@@ -51,14 +51,14 @@ func (r *gormRepo) GetByID(ctx context.Context, id, ownerID string) (models.Pet,
 	return p, nil
 }
 
-func (r *gormRepo) Create(ctx context.Context, ownerID string, payload CreatePetPayload) (models.Pet, error) {
+func (r *gormRepo) Create(ctx context.Context, userID string, payload CreatePetPayload) (models.Pet, error) {
 	birthDate, err := time.Parse("2006-01-02", payload.BirthDate)
 	if err != nil {
 		return models.Pet{}, fmt.Errorf("pet.Create: invalid birth_date format: %w", err)
 	}
 
 	p := models.Pet{
-		OwnerID:        ownerID,
+		UserID:         userID,
 		Name:           payload.Name,
 		Species:        payload.Species,
 		Breed:          payload.Breed,
@@ -74,9 +74,9 @@ func (r *gormRepo) Create(ctx context.Context, ownerID string, payload CreatePet
 	return p, nil
 }
 
-func (r *gormRepo) Update(ctx context.Context, id, ownerID string, payload UpdatePetPayload) (models.Pet, error) {
+func (r *gormRepo) Update(ctx context.Context, id, userID string, payload UpdatePetPayload) (models.Pet, error) {
 	var p models.Pet
-	result := r.db.WithContext(ctx).Where("id = ? AND owner_id = ?", id, ownerID).First(&p)
+	result := r.db.WithContext(ctx).Where("id = ? AND user_id = ?", id, userID).First(&p)
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 		return models.Pet{}, ErrNotFound
 	}
@@ -102,8 +102,8 @@ func (r *gormRepo) Update(ctx context.Context, id, ownerID string, payload Updat
 	return p, nil
 }
 
-func (r *gormRepo) Delete(ctx context.Context, id, ownerID string) error {
-	result := r.db.WithContext(ctx).Where("id = ? AND owner_id = ?", id, ownerID).Delete(&models.Pet{})
+func (r *gormRepo) Delete(ctx context.Context, id, userID string) error {
+	result := r.db.WithContext(ctx).Where("id = ? AND user_id = ?", id, userID).Delete(&models.Pet{})
 	if result.Error != nil {
 		return fmt.Errorf("pet.Delete: %w", result.Error)
 	}
@@ -113,9 +113,9 @@ func (r *gormRepo) Delete(ctx context.Context, id, ownerID string) error {
 	return nil
 }
 
-func (r *gormRepo) CountByOwner(ctx context.Context, ownerID string) (int64, error) {
+func (r *gormRepo) CountByOwner(ctx context.Context, userID string) (int64, error) {
 	var count int64
-	if err := r.db.WithContext(ctx).Model(&models.Pet{}).Where("owner_id = ?", ownerID).Count(&count).Error; err != nil {
+	if err := r.db.WithContext(ctx).Model(&models.Pet{}).Where("user_id = ?", userID).Count(&count).Error; err != nil {
 		return 0, fmt.Errorf("pet.CountByOwner: %w", err)
 	}
 	return count, nil
