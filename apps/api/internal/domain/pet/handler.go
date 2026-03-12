@@ -7,17 +7,19 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/my-pets/api/internal/domain/user"
 	"github.com/my-pets/api/internal/validation"
 )
 
 // Handler holds the dependencies for pet HTTP handlers.
 type Handler struct {
-	repo Repository
+	repo     Repository
+	userRepo user.Repository
 }
 
 // NewHandler constructs a Handler with the given Repository.
-func NewHandler(repo Repository) *Handler {
-	return &Handler{repo: repo}
+func NewHandler(repo Repository, userRepo user.Repository) *Handler {
+	return &Handler{repo: repo, userRepo: userRepo}
 }
 
 // parseID extracts and validates the :id path parameter.
@@ -114,6 +116,7 @@ func (h *Handler) GetPet(c *gin.Context) {
 //	@Success	201	{object}	map[string]interface{}	"data: Pet"
 //	@Failure	400	{object}	map[string]string		"error de validación"
 //	@Failure	401	{object}	map[string]string		"autenticación requerida"
+//	@Failure	403	{object}	map[string]string		"límite de mascotas alcanzado"
 //	@Failure	500	{object}	map[string]string		"mensaje de error"
 //	@Router		/api/v1/pets [post]
 func (h *Handler) CreatePet(c *gin.Context) {
@@ -123,13 +126,32 @@ func (h *Handler) CreatePet(c *gin.Context) {
 		return
 	}
 
+	uid := ownerID(c)
+
+	currentUser, err := h.userRepo.GetByID(c.Request.Context(), uid)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch user"})
+		return
+	}
+
+	count, err := h.repo.CountByOwner(c.Request.Context(), uid)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to count pets"})
+		return
+	}
+
+	if count >= int64(currentUser.PetLimit) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "pet limit reached"})
+		return
+	}
+
 	// Calculate life stage automatically if applicable
 	if payload.WeightGrams != nil && (payload.Species == "dog" || payload.Species == "cat") {
 		stage := CalculateLifeStage(payload.Species, *payload.WeightGrams)
 		payload.LifeStage = &stage
 	}
 
-	created, err := h.repo.Create(c.Request.Context(), ownerID(c), payload)
+	created, err := h.repo.Create(c.Request.Context(), uid, payload)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create pet"})
 		return

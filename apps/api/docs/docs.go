@@ -69,7 +69,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_domain_auth.LoginPayload"
+                            "$ref": "#/definitions/auth.LoginPayload"
                         }
                     }
                 ],
@@ -280,7 +280,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_domain_pet.CreatePetPayload"
+                            "$ref": "#/definitions/pet.CreatePetPayload"
                         }
                     }
                 ],
@@ -310,69 +310,17 @@ const docTemplate = `{
                             }
                         }
                     },
+                    "403": {
+                        "description": "límite de mascotas alcanzado",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
                     "500": {
                         "description": "mensaje de error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/pets/life-stage": {
-            "get": {
-                "security": [
-                    {
-                        "CookieAuth": []
-                    }
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "pets"
-                ],
-                "summary": "Calcular etapa de vida para perro o gato según su peso",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Especie de la mascota (dog o cat)",
-                        "name": "species",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Peso en gramos",
-                        "name": "weight_grams",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "life_stage: string",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "parámetros faltantes o inválidos",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "autenticación requerida",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -482,7 +430,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_domain_pet.UpdatePetPayload"
+                            "$ref": "#/definitions/pet.UpdatePetPayload"
                         }
                     }
                 ],
@@ -622,7 +570,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_domain_setup.SetupPayload"
+                            "$ref": "#/definitions/setup.SetupPayload"
                         }
                     }
                 ],
@@ -775,7 +723,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_domain_user.CreateUserPayload"
+                            "$ref": "#/definitions/user.CreateUserPayload"
                         }
                     }
                 ],
@@ -943,7 +891,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_domain_user.UpdateUserPayload"
+                            "$ref": "#/definitions/user.UpdateUserPayload"
                         }
                     }
                 ],
@@ -1115,7 +1063,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "internal_domain_auth.LoginPayload": {
+        "auth.LoginPayload": {
             "type": "object",
             "required": [
                 "email",
@@ -1131,7 +1079,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_domain_pet.CreatePetPayload": {
+        "pet.CreatePetPayload": {
             "type": "object",
             "required": [
                 "birth_date",
@@ -1174,7 +1122,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_domain_pet.UpdatePetPayload": {
+        "pet.UpdatePetPayload": {
             "type": "object",
             "required": [
                 "birth_date",
@@ -1210,7 +1158,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_domain_setup.SetupPayload": {
+        "setup.SetupPayload": {
             "type": "object",
             "required": [
                 "email",
@@ -1230,7 +1178,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_domain_user.CreateUserPayload": {
+        "user.CreateUserPayload": {
             "type": "object",
             "required": [
                 "email",
@@ -1250,10 +1198,14 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 72,
                     "minLength": 8
+                },
+                "pet_limit": {
+                    "type": "integer",
+                    "minimum": 0
                 }
             }
         },
-        "internal_domain_user.UpdateUserPayload": {
+        "user.UpdateUserPayload": {
             "type": "object",
             "required": [
                 "email",
@@ -1267,6 +1219,10 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 100,
                     "minLength": 2
+                },
+                "pet_limit": {
+                    "type": "integer",
+                    "minimum": 0
                 }
             }
         }

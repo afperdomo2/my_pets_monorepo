@@ -2,7 +2,6 @@ import { petService } from '@/services/petService'
 import type { Pet, CreatePetPayload, UpdatePetPayload } from '@/types/pet'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
-import type { Ref } from 'vue'
 
 const PETS_STALE_TIME = 30 * 60_000
 const PET_STALE_TIME = 30 * 60_000

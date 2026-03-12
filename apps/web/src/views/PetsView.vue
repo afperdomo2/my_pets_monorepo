@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue'
 import { IconPlus, IconRefresh, IconSearch, IconAlertCircle } from '@tabler/icons-vue'
 import { useGetPets, useDeletePet } from '@/composables/usePets'
+import { useAuthStore } from '@/stores/auth'
 import PetCard from '@/components/pets/PetCard.vue'
 import PetFormModal from '@/components/pets/PetFormModal.vue'
 import PetEmptyState from '@/components/pets/PetEmptyState.vue'
@@ -10,6 +11,11 @@ import type { Pet } from '@/types/pet'
 const { data, allPets, total, hasMore, isLoading, isError, error, refresh, isFetching, loadMore } =
   useGetPets()
 const deletePet = useDeletePet()
+const authStore = useAuthStore()
+
+const petLimit = computed(() => authStore.user?.pet_limit ?? 5)
+const petCount = computed(() => total.value ?? 0)
+const atLimit = computed(() => petCount.value >= petLimit.value)
 
 const showModal = ref(false)
 const modalMode = ref<'create' | 'edit'>('create')
@@ -71,7 +77,12 @@ async function handleDelete(id: string) {
           <IconRefresh :size="16" :stroke-width="2" :class="{ spinning: isFetching }" />
           <span>Refrescar</span>
         </button>
-        <button class="btn-create" @click="openCreate">
+        <button
+          class="btn-create"
+          :disabled="atLimit"
+          :title="atLimit ? 'Has alcanzado el límite de mascotas' : 'Nueva mascota'"
+          @click="openCreate"
+        >
           <IconPlus :size="16" :stroke-width="2.5" />
           Nueva mascota
         </button>
@@ -89,8 +100,8 @@ async function handleDelete(id: string) {
         />
       </div>
       <div v-if="!isLoading && !isError" class="stats-pill">
-        <span class="stats-num">{{ total }}</span>
-        <span class="stats-label">{{ total === 1 ? 'mascota' : 'mascotas' }}</span>
+        <span class="stats-num">{{ petCount }} / {{ petLimit }}</span>
+        <span class="stats-label">{{ petCount === 1 ? 'mascota' : 'mascotas' }}</span>
       </div>
     </div>
 
@@ -252,9 +263,14 @@ async function handleDelete(id: string) {
   transition: background var(--transition-fast), transform var(--transition-fast);
   white-space: nowrap;
 }
-.btn-create:hover {
+.btn-create:hover:not(:disabled) {
   background: var(--color-accent-hover);
   transform: translateY(-1px);
+}
+.btn-create:disabled {
+  background: var(--color-border);
+  color: var(--color-text-tertiary);
+  cursor: not-allowed;
 }
 
 /* ── Toolbar ─────────────────────────── */

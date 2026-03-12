@@ -21,6 +21,7 @@ type User struct {
 	IsSystemUser bool         `json:"is_system_user" gorm:"not null;default:false"`
 	AuthProvider AuthProvider `json:"auth_provider"  gorm:"type:varchar(20);not null;default:'local'"`
 	GoogleID     *string      `json:"-"              gorm:"type:varchar(255);uniqueIndex:users_google_id_key"`
+	PetLimit     int          `json:"pet_limit"      gorm:"not null;default:5"`
 	CreatedAt    time.Time    `json:"created_at"`
 	UpdatedAt    time.Time    `json:"updated_at"`
 }

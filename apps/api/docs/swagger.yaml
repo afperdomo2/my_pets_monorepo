@@ -1,6 +1,6 @@
 basePath: /
 definitions:
-  internal_domain_auth.LoginPayload:
+  auth.LoginPayload:
     properties:
       email:
         type: string
@@ -11,7 +11,7 @@ definitions:
     - email
     - password
     type: object
-  internal_domain_pet.CreatePetPayload:
+  pet.CreatePetPayload:
     properties:
       birth_date:
         type: string
@@ -43,7 +43,7 @@ definitions:
     - name
     - species
     type: object
-  internal_domain_pet.UpdatePetPayload:
+  pet.UpdatePetPayload:
     properties:
       birth_date:
         type: string
@@ -70,7 +70,7 @@ definitions:
     - name
     - species
     type: object
-  internal_domain_setup.SetupPayload:
+  setup.SetupPayload:
     properties:
       email:
         type: string
@@ -84,7 +84,7 @@ definitions:
     - name
     - password
     type: object
-  internal_domain_user.CreateUserPayload:
+  user.CreateUserPayload:
     properties:
       email:
         type: string
@@ -96,12 +96,15 @@ definitions:
         maxLength: 72
         minLength: 8
         type: string
+      pet_limit:
+        minimum: 0
+        type: integer
     required:
     - email
     - name
     - password
     type: object
-  internal_domain_user.UpdateUserPayload:
+  user.UpdateUserPayload:
     properties:
       email:
         type: string
@@ -109,6 +112,9 @@ definitions:
         maxLength: 100
         minLength: 2
         type: string
+      pet_limit:
+        minimum: 0
+        type: integer
     required:
     - email
     - name
@@ -152,7 +158,7 @@ paths:
         name: credentials
         required: true
         schema:
-          $ref: '#/definitions/internal_domain_auth.LoginPayload'
+          $ref: '#/definitions/auth.LoginPayload'
       produces:
       - application/json
       responses:
@@ -284,7 +290,7 @@ paths:
         name: pet
         required: true
         schema:
-          $ref: '#/definitions/internal_domain_pet.CreatePetPayload'
+          $ref: '#/definitions/pet.CreatePetPayload'
       produces:
       - application/json
       responses:
@@ -301,6 +307,12 @@ paths:
             type: object
         "401":
           description: autenticación requerida
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: límite de mascotas alcanzado
           schema:
             additionalProperties:
               type: string
@@ -420,7 +432,7 @@ paths:
         name: pet
         required: true
         schema:
-          $ref: '#/definitions/internal_domain_pet.UpdatePetPayload'
+          $ref: '#/definitions/pet.UpdatePetPayload'
       produces:
       - application/json
       responses:
@@ -458,45 +470,6 @@ paths:
       summary: Actualizar una mascota (debe pertenecer al usuario autenticado)
       tags:
       - pets
-  /api/v1/pets/life-stage:
-    get:
-      parameters:
-      - description: Especie de la mascota (dog o cat)
-        in: query
-        name: species
-        required: true
-        type: string
-      - description: Peso en gramos
-        in: query
-        name: weight_grams
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 'life_stage: string'
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "400":
-          description: parámetros faltantes o inválidos
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "401":
-          description: autenticación requerida
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      security:
-      - CookieAuth: []
-      summary: Calcular etapa de vida para perro o gato según su peso
-      tags:
-      - pets
   /api/v1/setup:
     post:
       consumes:
@@ -507,7 +480,7 @@ paths:
         name: user
         required: true
         schema:
-          $ref: '#/definitions/internal_domain_setup.SetupPayload'
+          $ref: '#/definitions/setup.SetupPayload'
       produces:
       - application/json
       responses:
@@ -604,7 +577,7 @@ paths:
         name: user
         required: true
         schema:
-          $ref: '#/definitions/internal_domain_user.CreateUserPayload'
+          $ref: '#/definitions/user.CreateUserPayload'
       produces:
       - application/json
       responses:
@@ -764,7 +737,7 @@ paths:
         name: user
         required: true
         schema:
-          $ref: '#/definitions/internal_domain_user.UpdateUserPayload'
+          $ref: '#/definitions/user.UpdateUserPayload'
       produces:
       - application/json
       responses:

@@ -3,7 +3,7 @@ import { ref, watch } from 'vue'
 import { IconPlus, IconSearch, IconAlertCircle, IconRefresh } from '@tabler/icons-vue'
 import { useGetUsers, useDeleteUser } from '@/composables/useUsers'
 import { useUIStore } from '@/stores/ui'
-import type { User } from '@/types/user'
+import type { UserWithPetCount } from '@/types/user'
 import UserFormModal from '@/components/users/UserFormModal.vue'
 import UserTableRow from '@/components/users/UserTableRow.vue'
 import AppPagination from '@/components/ui/AppPagination.vue'
@@ -32,7 +32,7 @@ const search = ref('')
 type ModalMode = 'create' | 'edit'
 const showModal = ref(false)
 const modalMode = ref<ModalMode>('create')
-const editingUser = ref<User | null>(null)
+const editingUser = ref<UserWithPetCount | null>(null)
 
 function openCreate() {
   modalMode.value = 'create'
@@ -40,7 +40,7 @@ function openCreate() {
   showModal.value = true
 }
 
-function openEdit(user: User) {
+function openEdit(user: UserWithPetCount) {
   modalMode.value = 'edit'
   editingUser.value = user
   showModal.value = true
@@ -53,7 +53,7 @@ function closeModal() {
 // ── Delete ───────────────────────────────────────────────────
 const deletingId = ref<string | null>(null)
 
-async function handleDelete(user: User) {
+async function handleDelete(user: UserWithPetCount) {
   if (!confirm(`¿Eliminar a ${user.name}? Esta acción no se puede deshacer.`)) return
   deletingId.value = user.id
   try {
@@ -66,7 +66,7 @@ async function handleDelete(user: User) {
 }
 
 // ── Derived ──────────────────────────────────────────────────
-const users = ref<User[]>([])
+const users = ref<UserWithPetCount[]>([])
 const total = ref(0)
 const totalPages = ref(1)
 
@@ -155,6 +155,7 @@ watch(search, () => {
           <tr>
             <th>Usuario</th>
             <th class="th-center">Rol</th>
+            <th class="th-center">Mascotas</th>
             <th class="th-center">Acceso</th>
             <th class="th-center">Creado</th>
             <th class="th-center">Acciones</th>

@@ -1,4 +1,4 @@
-import type { User, CreateUserPayload, UpdateUserPayload } from '@/types/user'
+import type { User, UserWithPetCount, CreateUserPayload, UpdateUserPayload } from '@/types/user'
 import type { ApiResponse, PaginatedResponse } from '@/types/pet'
 
 const BASE_URL = '/api/v1'
@@ -17,11 +17,11 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
 }
 
 export const userService = {
-  getAll(page = 1, perPage = 10): Promise<PaginatedResponse<User>> {
+  getAll(page = 1, perPage = 10): Promise<PaginatedResponse<UserWithPetCount>> {
     return request(`/users?page=${page}&per_page=${perPage}`)
   },
 
-  getById(id: string): Promise<ApiResponse<User>> {
+  getById(id: string): Promise<ApiResponse<UserWithPetCount>> {
     return request(`/users/${id}`)
   },
 

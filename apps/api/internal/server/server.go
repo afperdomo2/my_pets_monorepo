@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"log"
 	"net/http"
 
@@ -65,11 +66,14 @@ func Run(cfg *config.Config, db *gorm.DB) {
 
 		// Pet domain
 		petRepo := domainPet.NewGormRepo(db)
-		petHandler := domainPet.NewHandler(petRepo)
+		petHandler := domainPet.NewHandler(petRepo, userRepo)
 		domainPet.RegisterRoutes(protected, petHandler)
 
 		// User domain
-		userHandler := domainUser.NewHandler(userRepo)
+		petCountFn := func(ctx context.Context, ownerID string) (int64, error) {
+			return petRepo.CountByOwner(ctx, ownerID)
+		}
+		userHandler := domainUser.NewHandler(userRepo, petCountFn)
 		domainUser.RegisterRoutes(protected, userHandler)
 	}
 

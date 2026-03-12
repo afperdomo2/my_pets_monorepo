@@ -33,6 +33,7 @@ export const createUserSchema = z.object({
     .pipe(z.string().min(1, 'El correo electrónico es obligatorio').email('El correo electrónico no es válido')),
   password: str
     .pipe(z.string().min(1, 'La contraseña es obligatoria').min(8, 'La contraseña debe tener al menos 8 caracteres')),
+  pet_limit: z.number().min(0).optional(),
 })
 
 export const updateUserSchema = z.object({
@@ -40,6 +41,7 @@ export const updateUserSchema = z.object({
     .pipe(z.string().min(1, 'El nombre es obligatorio')),
   email: str
     .pipe(z.string().min(1, 'El correo electrónico es obligatorio').email('El correo electrónico no es válido')),
+  pet_limit: z.number().min(0).optional(),
 })
 
 export type LoginFormValues = z.infer<typeof loginSchema>

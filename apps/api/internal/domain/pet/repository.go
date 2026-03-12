@@ -19,4 +19,5 @@ type Repository interface {
 	Create(ctx context.Context, ownerID string, payload CreatePetPayload) (models.Pet, error)
 	Update(ctx context.Context, id, ownerID string, payload UpdatePetPayload) (models.Pet, error)
 	Delete(ctx context.Context, id, ownerID string) error
+	CountByOwner(ctx context.Context, ownerID string) (int64, error)
 }

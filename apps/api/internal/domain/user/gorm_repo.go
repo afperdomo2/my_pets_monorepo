@@ -85,6 +85,10 @@ func (r *gormRepo) Create(ctx context.Context, payload CreateUserPayload, isSyst
 		AuthProvider: provider,
 	}
 
+	if payload.PetLimit != nil && *payload.PetLimit > 0 {
+		u.PetLimit = *payload.PetLimit
+	}
+
 	if result := r.db.WithContext(ctx).Create(&u); result.Error != nil {
 		if isUniqueViolation(result.Error) {
 			return models.User{}, ErrEmailTaken
@@ -106,6 +110,10 @@ func (r *gormRepo) Update(ctx context.Context, id string, payload UpdateUserPayl
 
 	u.Name = payload.Name
 	u.Email = payload.Email
+
+	if payload.PetLimit != nil {
+		u.PetLimit = *payload.PetLimit
+	}
 
 	if result := r.db.WithContext(ctx).Save(&u); result.Error != nil {
 		if isUniqueViolation(result.Error) {
@@ -177,6 +185,7 @@ func (r *gormRepo) UpsertByGoogleID(ctx context.Context, info GoogleUserInfo, is
 			GoogleID:     &info.GoogleID,
 			AuthProvider: provider,
 			IsSystemUser: isSystemUser,
+			PetLimit:     5,
 		}
 		if createResult := r.db.WithContext(ctx).Create(&u); createResult.Error != nil {
 			return models.User{}, fmt.Errorf("user.UpsertByGoogleID: create: %w", createResult.Error)

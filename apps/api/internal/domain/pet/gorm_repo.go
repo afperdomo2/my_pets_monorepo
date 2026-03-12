@@ -112,3 +112,11 @@ func (r *gormRepo) Delete(ctx context.Context, id, ownerID string) error {
 	}
 	return nil
 }
+
+func (r *gormRepo) CountByOwner(ctx context.Context, ownerID string) (int64, error) {
+	var count int64
+	if err := r.db.WithContext(ctx).Model(&models.Pet{}).Where("owner_id = ?", ownerID).Count(&count).Error; err != nil {
+		return 0, fmt.Errorf("pet.CountByOwner: %w", err)
+	}
+	return count, nil
+}

@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useForm } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'
 import { IconX } from '@tabler/icons-vue'
 import { useCreateUser, useUpdateUser } from '@/composables/useUsers'
-import type { User } from '@/types/user'
+import { useAuthStore } from '@/stores/auth'
+import type { User, CreateUserPayload } from '@/types/user'
 import { createUserSchema, updateUserSchema } from '@/schemas/user'
 
 const props = defineProps<{
@@ -17,6 +18,9 @@ const emit = defineEmits<{
   saved: []
 }>()
 
+const authStore = useAuthStore()
+const isSystemUser = computed(() => authStore.user?.is_system_user ?? false)
+
 const submitError = ref<string | null>(null)
 const createUser = useCreateUser()
 const updateUser = useUpdateUser()
@@ -28,17 +32,26 @@ const {
   errors: createErrors,
 } = useForm({
   validationSchema: toTypedSchema(createUserSchema),
-  initialValues: { name: '', email: '', password: '' },
+  initialValues: { name: '', email: '', password: '', pet_limit: 5 },
 })
 
 const [createName, createNameAttrs] = defineCreateField('name')
 const [createEmail, createEmailAttrs] = defineCreateField('email')
 const [createPassword, createPasswordAttrs] = defineCreateField('password')
+const [createPetLimit, createPetLimitAttrs] = defineCreateField('pet_limit')
 
 const handleCreate = handleCreateSubmit(async (values) => {
   submitError.value = null
   try {
-    await createUser.mutateAsync(values)
+    const payload: CreateUserPayload = {
+      name: values.name,
+      email: values.email,
+      password: values.password,
+    }
+    if (isSystemUser.value && values.pet_limit !== undefined) {
+      payload.pet_limit = values.pet_limit
+    }
+    await createUser.mutateAsync(payload)
     emit('saved')
   } catch (e) {
     submitError.value = e instanceof Error ? e.message : 'Error al crear usuario'
@@ -52,17 +65,26 @@ const {
   errors: editErrors,
 } = useForm({
   validationSchema: toTypedSchema(updateUserSchema),
-  initialValues: { name: props.user?.name ?? '', email: props.user?.email ?? '' },
+  initialValues: { 
+    name: props.user?.name ?? '', 
+    email: props.user?.email ?? '',
+    pet_limit: props.user?.pet_limit ?? 5
+  },
 })
 
 const [editName, editNameAttrs] = defineEditField('name')
 const [editEmail, editEmailAttrs] = defineEditField('email')
+const [editPetLimit, editPetLimitAttrs] = defineEditField('pet_limit')
 
 const handleEdit = handleEditSubmit(async (values) => {
   if (!props.user) return
   submitError.value = null
   try {
-    await updateUser.mutateAsync({ id: props.user.id, payload: values })
+    const payload = { ...values }
+    if (!isSystemUser.value) {
+      delete payload.pet_limit
+    }
+    await updateUser.mutateAsync({ id: props.user.id, payload })
     emit('saved')
   } catch (e) {
     submitError.value = e instanceof Error ? e.message : 'Error al actualizar usuario'
@@ -128,6 +150,22 @@ const handleEdit = handleEditSubmit(async (values) => {
             </p>
           </div>
 
+          <div v-if="isSystemUser" class="field">
+            <label class="field-label">Límite de mascotas</label>
+            <input
+              v-model="createPetLimit"
+              v-bind="createPetLimitAttrs"
+              class="field-input"
+              :class="{ 'field-input--error': createErrors['pet_limit'] }"
+              type="number"
+              min="0"
+              placeholder="5"
+            />
+            <p v-if="createErrors['pet_limit']" class="field-error">
+              {{ createErrors['pet_limit'] }}
+            </p>
+          </div>
+
           <p v-if="submitError" class="submit-error">{{ submitError }}</p>
 
           <div class="modal-actions">
@@ -166,6 +204,22 @@ const handleEdit = handleEditSubmit(async (values) => {
               autocomplete="email"
             />
             <p v-if="editErrors['email']" class="field-error">{{ editErrors['email'] }}</p>
+          </div>
+
+          <div v-if="isSystemUser" class="field">
+            <label class="field-label">Límite de mascotas</label>
+            <input
+              v-model="editPetLimit"
+              v-bind="editPetLimitAttrs"
+              class="field-input"
+              :class="{ 'field-input--error': editErrors['pet_limit'] }"
+              type="number"
+              min="0"
+              placeholder="5"
+            />
+            <p v-if="editErrors['pet_limit']" class="field-error">
+              {{ editErrors['pet_limit'] }}
+            </p>
           </div>
 
           <p v-if="submitError" class="submit-error">{{ submitError }}</p>

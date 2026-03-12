@@ -1,23 +1,33 @@
 package user
 
 import (
+	"context"
 	"errors"
 	"math"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/my-pets/api/internal/models"
 	"github.com/my-pets/api/internal/validation"
 )
 
+type PetCountFn func(ctx context.Context, ownerID string) (int64, error)
+
+type UserWithPetCount struct {
+	models.User
+	PetCount int64 `json:"pet_count"`
+}
+
 // Handler holds the dependencies for user HTTP handlers.
 type Handler struct {
-	repo Repository
+	repo       Repository
+	petCountFn PetCountFn
 }
 
 // NewHandler constructs a Handler with the given Repository.
-func NewHandler(repo Repository) *Handler {
-	return &Handler{repo: repo}
+func NewHandler(repo Repository, petCountFn PetCountFn) *Handler {
+	return &Handler{repo: repo, petCountFn: petCountFn}
 }
 
 // parseID extracts and validates the :id path parameter.
@@ -78,9 +88,18 @@ func (h *Handler) GetUsers(c *gin.Context) {
 		return
 	}
 
+	usersWithCount := make([]UserWithPetCount, len(users))
+	for i, u := range users {
+		petCount, _ := h.petCountFn(c.Request.Context(), u.ID)
+		usersWithCount[i] = UserWithPetCount{
+			User:     u,
+			PetCount: petCount,
+		}
+	}
+
 	totalPages := int(math.Ceil(float64(total) / float64(perPage)))
 	c.JSON(http.StatusOK, gin.H{
-		"data":        users,
+		"data":        usersWithCount,
 		"total":       total,
 		"page":        page,
 		"per_page":    perPage,
@@ -122,7 +141,13 @@ func (h *Handler) GetUser(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch user"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"data": u})
+
+	petCount, _ := h.petCountFn(c.Request.Context(), u.ID)
+	userWithCount := UserWithPetCount{
+		User:     u,
+		PetCount: petCount,
+	}
+	c.JSON(http.StatusOK, gin.H{"data": userWithCount})
 }
 
 // CreateUser handles POST /api/v1/users
@@ -207,6 +232,12 @@ func (h *Handler) UpdateUser(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": validation.Translate(err)})
 		return
 	}
+
+	callerIsSystemUser, _ := c.Get("isSystemUser")
+	if callerIsSystemUser != true {
+		payload.PetLimit = nil
+	}
+
 	updated, err := h.repo.Update(c.Request.Context(), id, payload)
 	if errors.Is(err, ErrNotFound) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
