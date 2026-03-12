@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { IconEdit, IconTrash, IconLock } from '@tabler/icons-vue'
 import type { UserWithPetCount } from '@/types/user'
+import ResourceProgress from '@/components/ui/ResourceProgress.vue'
 
 defineProps<{
   user: UserWithPetCount
@@ -52,9 +53,11 @@ function formatDate(iso: string): string {
 
     <!-- Pets count -->
     <td class="td-center">
-      <span class="pet-count" :class="user.pet_count >= user.pet_limit ? 'pet-count--full' : ''">
-        {{ user.pet_count }} / {{ user.pet_limit }}
-      </span>
+      <ResourceProgress
+        :current="user.pet_count"
+        :limit="user.pet_limit"
+        show-label="bottom"
+      />
     </td>
 
     <!-- Auth provider -->
@@ -192,16 +195,6 @@ function formatDate(iso: string): string {
 
 .badge--admin { background: #fef3c7; color: #b45309; }
 .badge--user { background: #f0fdf4; color: #15803d; }
-
-.pet-count {
-  font-size: var(--text-xs);
-  font-weight: 600;
-  color: var(--color-text-secondary);
-}
-
-.pet-count--full {
-  color: var(--color-error);
-}
 
 .provider {
   display: inline-flex;

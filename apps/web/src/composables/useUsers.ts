@@ -3,8 +3,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/vue-query";
 import { userService } from "@/services/userService";
 import type { CreateUserPayload, UpdateUserPayload } from "@/types/user";
 
-const USERS_STALE_TIME = 30 * 60_000;
-const USER_STALE_TIME = 30 * 60_000;
+const USERS_STALE_TIME = 1 * 60_000;
+const USER_STALE_TIME = 1 * 60_000;
 
 export function useGetUsers(page: Ref<number>, perPage: Ref<number>) {
   const queryClient = useQueryClient();
