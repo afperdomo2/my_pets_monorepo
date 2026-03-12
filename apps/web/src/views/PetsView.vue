@@ -6,6 +6,7 @@ import { useAuthStore } from '@/stores/auth'
 import PetCard from '@/components/pets/PetCard.vue'
 import PetFormModal from '@/components/pets/PetFormModal.vue'
 import PetEmptyState from '@/components/pets/PetEmptyState.vue'
+import ConfirmDeleteModal from '@/components/pets/ConfirmDeleteModal.vue'
 import type { Pet } from '@/types/pet'
 
 const { data, allPets, total, hasMore, isLoading, isError, error, refresh, isFetching, loadMore } =
@@ -22,6 +23,9 @@ const modalMode = ref<'create' | 'edit'>('create')
 const editingPet = ref<Pet | undefined>(undefined)
 const deletingId = ref<string | null>(null)
 const search = ref('')
+
+const showConfirmDelete = ref(false)
+const petToDelete = ref<Pet | null>(null)
 
 // Filtrar sobre los datos acumulados (no va a la BD)
 const filteredPets = computed(() => {
@@ -48,11 +52,23 @@ function openEdit(pet: Pet) {
   showModal.value = true
 }
 
-async function handleDelete(id: string) {
-  if (!confirm('¿Eliminar esta mascota?')) return
-  deletingId.value = id
+function openDeleteConfirm(pet: Pet) {
+  petToDelete.value = pet
+  showConfirmDelete.value = true
+}
+
+function handleDeleteRequest(id: string) {
+  const pet = filteredPets.value.find((p) => p.id === id) ?? allPets.value.find((p) => p.id === id)
+  if (pet) openDeleteConfirm(pet)
+}
+
+async function handleDelete() {
+  if (!petToDelete.value) return
+  deletingId.value = petToDelete.value.id
   try {
-    await deletePet.mutateAsync(id)
+    await deletePet.mutateAsync(petToDelete.value.id)
+    showConfirmDelete.value = false
+    petToDelete.value = null
   } finally {
     deletingId.value = null
   }
@@ -139,7 +155,7 @@ async function handleDelete(id: string) {
         :pet="pet"
         :deleting="deletingId === pet.id"
         @edit="openEdit"
-        @delete="handleDelete"
+        @delete="handleDeleteRequest"
       />
     </div>
 
@@ -151,11 +167,19 @@ async function handleDelete(id: string) {
       </button>
     </div>
 
-    <!-- Modal -->
+    <!-- Modal crear/editar -->
     <PetFormModal
       v-model="showModal"
       :mode="modalMode"
       :pet="editingPet"
+    />
+
+    <!-- Modal confirmar eliminación -->
+    <ConfirmDeleteModal
+      v-model="showConfirmDelete"
+      :pet="petToDelete"
+      :deleting="deletingId !== null"
+      @confirm="handleDelete"
     />
   </div>
 </template>
