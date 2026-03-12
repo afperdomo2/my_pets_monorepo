@@ -4,9 +4,11 @@ import { useForm } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'
 import { IconX } from '@tabler/icons-vue'
 import { useCreatePet, useUpdatePet } from '@/composables/usePets'
-import { createPetSchema } from '@/schemas/pet'
+import { createPetSchema, updatePetSchema } from '@/schemas/pet'
 import { estimatedBirthDate, toGrams } from '@/utils/pet'
+import { PET_SIZE_VALUES, PET_SIZE_LABELS, PET_SIZE_DESCRIPTIONS, PET_SIZE_ICONS } from '@/constants/petSize'
 import type { Pet } from '@/types/pet'
+import type { PetSize } from '@/constants/petSize'
 import type { CreatePetFormValues } from '@/schemas/pet'
 
 const props = defineProps<{
@@ -44,8 +46,10 @@ const weightGrams = computed<number | null>(() => {
 })
 
 // ── Form ─────────────────────────────────────────────────────────────────────
-const { defineField, handleSubmit, errors, resetForm, setErrors, setFieldValue, values } = useForm({
-  validationSchema: toTypedSchema(createPetSchema),
+const { defineField, handleSubmit, errors, resetForm, setErrors, setFieldValue, values } = useForm<CreatePetFormValues>({
+  validationSchema: computed(() =>
+    toTypedSchema(props.mode === 'create' ? createPetSchema : updatePetSchema),
+  ),
   initialValues: {
     name: '',
     species: '',
@@ -53,7 +57,8 @@ const { defineField, handleSubmit, errors, resetForm, setErrors, setFieldValue, 
     birth_date: estimatedBirthDate(0, 0),
     birth_date_exact: false,
     weight_grams: undefined,
-  } satisfies Partial<CreatePetFormValues>,
+    size: undefined,
+  },
 })
 
 const [name, nameAttrs] = defineField('name')
@@ -61,6 +66,12 @@ const [species, speciesAttrs] = defineField('species')
 const [breed, breedAttrs] = defineField('breed')
 const [birthDate, birthDateAttrs] = defineField('birth_date')
 
+// Clear size when species changes away from 'dog'
+watch(() => values.species, (newSpecies) => {
+  if (newSpecies !== 'dog') {
+    setFieldValue('size', undefined)
+  }
+})
 // Sync dateMode toggle → birth_date_exact field
 watch(dateMode, (mode) => {
   setFieldValue('birth_date_exact', mode === 'exact')
@@ -95,6 +106,7 @@ watch(
           birth_date: pet.birth_date.slice(0, 10),
           birth_date_exact: pet.birth_date_exact,
           weight_grams: undefined,
+          size: (pet.size as PetSize | undefined) ?? undefined,
         },
       })
     } else {
@@ -111,6 +123,7 @@ watch(
           birth_date: estimatedBirthDate(0, 0),
           birth_date_exact: false,
           weight_grams: undefined,
+          size: undefined,
         },
       })
     }
@@ -137,6 +150,7 @@ const handleSave = handleSubmit(async (formValues) => {
           breed: formValues.breed,
           birth_date: formValues.birth_date,
           birth_date_exact: formValues.birth_date_exact,
+          size: formValues.size,
         },
       })
     }
@@ -220,6 +234,30 @@ function close() {
                 autocomplete="off"
               />
             </div>
+
+            <!-- Tamaño (solo para perros) -->
+            <Transition name="size-fade">
+              <div v-if="values.species === 'dog'" class="field">
+                <label class="field-label">
+                  Tamaño <span class="required">*</span>
+                </label>
+                <div class="size-grid">
+                  <button
+                    v-for="sizeVal in PET_SIZE_VALUES"
+                    :key="sizeVal"
+                    type="button"
+                    class="size-card"
+                    :class="{ 'size-card--active': values.size === sizeVal }"
+                    @click="setFieldValue('size', sizeVal)"
+                  >
+                    <span class="size-card__icon">{{ PET_SIZE_ICONS[sizeVal] }}</span>
+                    <span class="size-card__label">{{ PET_SIZE_LABELS[sizeVal] }}</span>
+                    <span class="size-card__desc">{{ PET_SIZE_DESCRIPTIONS[sizeVal] }}</span>
+                  </button>
+                </div>
+                <p v-if="errors.size" class="field-error">{{ errors.size }}</p>
+              </div>
+            </Transition>
 
             <!-- Fecha de nacimiento -->
             <div class="field">
@@ -663,6 +701,73 @@ function close() {
 
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+/* ── Size selector ────────────────────── */
+.size-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-2);
+}
+
+@media (max-width: 480px) {
+  .size-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.size-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-2);
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition:
+    border-color var(--transition-fast),
+    background var(--transition-fast),
+    box-shadow var(--transition-fast);
+  text-align: center;
+}
+.size-card:hover {
+  border-color: var(--color-accent);
+  background: var(--color-bg-alt);
+}
+.size-card--active {
+  border-color: var(--color-accent);
+  background: rgba(61, 122, 95, 0.07);
+  box-shadow: 0 0 0 3px rgba(61, 122, 95, 0.15);
+}
+
+.size-card__icon {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.size-card__label {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.size-card__desc {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+  line-height: 1.3;
+}
+
+/* ── Size transition ──────────────────── */
+.size-fade-enter-active,
+.size-fade-leave-active {
+  transition: opacity var(--transition-fast), transform var(--transition-fast);
+}
+.size-fade-enter-from,
+.size-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
 }
 
 /* ── Transition ───────────────────────── */

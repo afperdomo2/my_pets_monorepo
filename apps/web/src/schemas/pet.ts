@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { PET_SIZE_VALUES } from '@/constants/petSize'
 
 // Convierte undefined/null a "" para que Zod siempre evalúe con sus propios mensajes
 const str = z.preprocess((v) => v ?? '', z.string())
@@ -15,19 +16,38 @@ const basePetSchema = z.object({
   breed: z.string().max(100).optional(),
   birth_date: str.pipe(z.string().min(1, 'La fecha de nacimiento es obligatoria')),
   birth_date_exact: z.boolean(),
+  size: z.enum(PET_SIZE_VALUES).optional(),
 })
 
-// Schema para crear mascota — incluye peso
-export const createPetSchema = basePetSchema.extend({
-  weight_grams: z
-    .number({ invalid_type_error: 'El peso debe ser un número' })
-    .int('El peso debe ser un número entero')
-    .min(1, 'El peso debe ser mayor a 0')
-    .optional(),
-})
+// Schema para crear mascota — incluye peso + validación condicional de size
+export const createPetSchema = basePetSchema
+  .extend({
+    weight_grams: z
+      .number({ invalid_type_error: 'El peso debe ser un número' })
+      .int('El peso debe ser un número entero')
+      .min(1, 'El peso debe ser mayor a 0')
+      .optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.species === 'dog' && !data.size) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'El tamaño es obligatorio para perros',
+        path: ['size'],
+      })
+    }
+  })
 
-// Schema para editar mascota — sin peso ni etapa de vida
-export const updatePetSchema = basePetSchema
+// Schema para editar mascota — sin peso ni etapa de vida, con validación condicional de size
+export const updatePetSchema = basePetSchema.superRefine((data, ctx) => {
+  if (data.species === 'dog' && !data.size) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'El tamaño es obligatorio para perros',
+      path: ['size'],
+    })
+  }
+})
 
 export type CreatePetFormValues = z.infer<typeof createPetSchema>
 export type UpdatePetFormValues = z.infer<typeof updatePetSchema>

@@ -56,6 +56,8 @@ definitions:
         maxLength: 100
         minLength: 1
         type: string
+      size:
+        type: string
       species:
         enum:
         - dog
@@ -85,6 +87,8 @@ definitions:
       name:
         maxLength: 100
         minLength: 1
+        type: string
+      size:
         type: string
       species:
         enum:

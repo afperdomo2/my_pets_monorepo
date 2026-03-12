@@ -14,6 +14,7 @@ type Pet struct {
 	BirthDateExact bool      `json:"birth_date_exact" gorm:"not null;default:false"`
 	WeightGrams    *int      `json:"weight_grams"     gorm:"default:null"`
 	LifeStage      *string   `json:"life_stage"       gorm:"type:varchar(20);default:null"`
+	Size           *string   `json:"size"             gorm:"type:varchar(20);default:null"`
 	CreatedAt      time.Time `json:"created_at"`
 	UpdatedAt      time.Time `json:"updated_at"`
 }

@@ -1,3 +1,5 @@
+import type { PetSize } from '@/constants/petSize'
+
 export interface Pet {
   id: string
   user_id: string
@@ -8,6 +10,7 @@ export interface Pet {
   birth_date_exact: boolean
   weight_grams: number | null
   life_stage: string | null // null for non-dog/cat species
+  size: PetSize | null      // null for non-dog species
   created_at: string
   updated_at: string
 }
@@ -20,6 +23,7 @@ export interface CreatePetPayload {
   birth_date_exact: boolean
   weight_grams?: number     // grams, only at creation
   life_stage?: string       // only at creation, only dog/cat
+  size?: PetSize            // required when species === 'dog'
 }
 
 export interface UpdatePetPayload {
@@ -28,6 +32,7 @@ export interface UpdatePetPayload {
   breed?: string
   birth_date: string
   birth_date_exact: boolean
+  size?: PetSize            // required when species === 'dog'; null/absent for others
   // weight_grams and life_stage intentionally excluded
 }
 

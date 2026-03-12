@@ -66,6 +66,7 @@ func (r *gormRepo) Create(ctx context.Context, userID string, payload CreatePetP
 		BirthDateExact: payload.BirthDateExact,
 		WeightGrams:    payload.WeightGrams,
 		LifeStage:      payload.LifeStage,
+		Size:           payload.Size,
 	}
 
 	if result := r.db.WithContext(ctx).Create(&p); result.Error != nil {
@@ -94,7 +95,9 @@ func (r *gormRepo) Update(ctx context.Context, id, userID string, payload Update
 	p.Breed = payload.Breed
 	p.BirthDate = birthDate
 	p.BirthDateExact = payload.BirthDateExact
-	// WeightGrams and LifeStage are intentionally not updated here.
+	p.Size = payload.Size
+	p.LifeStage = payload.LifeStage // recalculated by handler for dogs; nil for other species
+	// WeightGrams is intentionally not updated here.
 
 	if result := r.db.WithContext(ctx).Save(&p); result.Error != nil {
 		return models.Pet{}, fmt.Errorf("pet.Update: %w", result.Error)

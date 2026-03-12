@@ -5,6 +5,7 @@ import (
 	"math"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/my-pets/api/internal/domain/user"
@@ -126,6 +127,20 @@ func (h *Handler) CreatePet(c *gin.Context) {
 		return
 	}
 
+	// Conditional size validation: required for dogs, forbidden for other species.
+	if payload.Species == "dog" {
+		if payload.Size == nil || *payload.Size == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "el tamaño es obligatorio para perros"})
+			return
+		}
+		if !IsValidSizeCategory(*payload.Size) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "tamaño no válido"})
+			return
+		}
+	} else {
+		payload.Size = nil
+	}
+
 	uid := ownerID(c)
 
 	currentUser, err := h.userRepo.GetByID(c.Request.Context(), uid)
@@ -145,9 +160,19 @@ func (h *Handler) CreatePet(c *gin.Context) {
 		return
 	}
 
-	// Calculate life stage automatically if applicable
-	if payload.WeightGrams != nil && (payload.Species == "dog" || payload.Species == "cat") {
-		stage := CalculateLifeStage(payload.Species, *payload.WeightGrams)
+	// Calculate life stage automatically
+	if payload.Species == "dog" {
+		// Dogs: life stage based on age + size (birth date already validated above)
+		birthDate, err := time.Parse("2006-01-02", payload.BirthDate)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "formato de fecha inválido"})
+			return
+		}
+		stage := CalculateDogLifeStage(birthDate, SizeCategory(*payload.Size))
+		payload.LifeStage = &stage
+	} else if payload.Species == "cat" && payload.WeightGrams != nil {
+		// Cats: life stage based on weight
+		stage := CalculateCatLifeStage(*payload.WeightGrams)
 		payload.LifeStage = &stage
 	}
 
@@ -184,6 +209,33 @@ func (h *Handler) UpdatePet(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": validation.Translate(err)})
 		return
 	}
+
+	// Conditional size validation: required for dogs, forbidden for other species.
+	if payload.Species == "dog" {
+		if payload.Size == nil || *payload.Size == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "el tamaño es obligatorio para perros"})
+			return
+		}
+		if !IsValidSizeCategory(*payload.Size) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "tamaño no válido"})
+			return
+		}
+	} else {
+		payload.Size = nil
+	}
+
+	// Recalculate life stage for dogs (birth date or size may have changed).
+	// For other species we don't recalculate on update (cats need weight, which is immutable here).
+	if payload.Species == "dog" {
+		birthDate, err := time.Parse("2006-01-02", payload.BirthDate)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "formato de fecha inválido"})
+			return
+		}
+		stage := CalculateDogLifeStage(birthDate, SizeCategory(*payload.Size))
+		payload.LifeStage = &stage
+	}
+
 	updated, err := h.repo.Update(c.Request.Context(), id, ownerID(c), payload)
 	if errors.Is(err, ErrNotFound) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "pet not found"})

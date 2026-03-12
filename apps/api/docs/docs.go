@@ -1271,6 +1271,9 @@ const docTemplate = `{
                     "maxLength": 100,
                     "minLength": 1
                 },
+                "size": {
+                    "type": "string"
+                },
                 "species": {
                     "type": "string",
                     "enum": [
@@ -1310,6 +1313,9 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 100,
                     "minLength": 1
+                },
+                "size": {
+                    "type": "string"
                 },
                 "species": {
                     "type": "string",
