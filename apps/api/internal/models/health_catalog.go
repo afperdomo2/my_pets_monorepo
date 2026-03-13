@@ -18,6 +18,6 @@ type HealthCatalog struct {
 	Species         pq.StringArray `json:"species"          gorm:"type:text[]"`
 	FrequencyMonths *int           `json:"frequency_months" gorm:"default:null"`
 	IsMandatory     bool           `json:"is_mandatory"     gorm:"not null;default:false"`
-	CreatedAt       time.Time      `json:"created_at"`
-	UpdatedAt       time.Time      `json:"updated_at"`
+	CreatedAt       time.Time      `json:"created_at" gorm:"type:timestamptz;not null;default:now()"`
+	UpdatedAt       time.Time      `json:"updated_at" gorm:"type:timestamptz;not null;default:now()"`
 }

@@ -22,6 +22,6 @@ type User struct {
 	AuthProvider AuthProvider `json:"auth_provider"  gorm:"type:varchar(20);not null;default:'local'"`
 	GoogleID     *string      `json:"-"              gorm:"type:varchar(255);uniqueIndex:users_google_id_key"`
 	PetLimit     int          `json:"pet_limit"      gorm:"not null;default:5"`
-	CreatedAt    time.Time    `json:"created_at"`
-	UpdatedAt    time.Time    `json:"updated_at"`
+	CreatedAt    time.Time    `json:"created_at" gorm:"type:timestamptz;not null;default:now()"`
+	UpdatedAt    time.Time    `json:"updated_at" gorm:"type:timestamptz;not null;default:now()"`
 }
