@@ -91,13 +91,13 @@ func (r *gormRepo) Update(ctx context.Context, id, userID string, payload Update
 	}
 
 	p.Name = payload.Name
-	p.Species = payload.Species
 	p.Breed = payload.Breed
 	p.BirthDate = birthDate
 	p.BirthDateExact = payload.BirthDateExact
 	p.Size = payload.Size
 	p.LifeStage = payload.LifeStage // recalculated by handler for dogs; nil for other species
 	// WeightGrams is intentionally not updated here.
+	// Species is intentionally not updated here — it cannot be changed after creation.
 
 	if result := r.db.WithContext(ctx).Save(&p); result.Error != nil {
 		return models.Pet{}, fmt.Errorf("pet.Update: %w", result.Error)

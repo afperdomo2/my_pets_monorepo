@@ -141,12 +141,12 @@ const handleSave = handleSubmit(async (formValues) => {
       }
       await createPet.mutateAsync(payload)
     } else if (props.pet) {
-      // For edit, only send the base fields (no weight_grams / life_stage)
+      // For edit, only send the base fields (no weight_grams / life_stage / species)
+      // Species cannot be changed after creation
       await updatePet.mutateAsync({
         id: props.pet.id,
         payload: {
           name: formValues.name,
-          species: formValues.species,
           breed: formValues.breed,
           birth_date: formValues.birth_date,
           birth_date_exact: formValues.birth_date_exact,
@@ -210,11 +210,12 @@ function close() {
                   v-bind="speciesAttrs"
                   class="field-input field-select"
                   :class="{ 'field-input--error': errors.species }"
+                  :disabled="mode === 'edit'"
                 >
                   <option value="" disabled>Seleccionar…</option>
                   <option value="dog">🐕 Perro</option>
                   <option value="cat">🐈 Gato</option>
-                  <option value="bird">🦜 Ave</option>
+                  <option value="bird">🦜 Periquito</option>
                   <option value="rabbit">🐇 Conejo</option>
                   <option value="fish">🐠 Pez</option>
                   <option value="other">🐾 Otro</option>

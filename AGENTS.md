@@ -101,6 +101,11 @@ pnpm build            # type-check + vite build
 
 ## Convenciones — Go
 
+### Idioma de la documentación
+
+- **Toda la documentación en el código debe estar en español**, incluyendo comentarios, funciones de comentarios (docstrings), y comentarios en los archivos.
+- Esto incluye comentarios de funciones, explicaciones de lógica, y cualquier texto que forme parte del código fuente.
+
 ### Estructura de paquetes
 
 - `internal/domain/` agrupa todos los módulos de negocio (auth, pet, user, setup, health). Cada uno es un paquete autónomo con su propio `handler.go`, `payload.go`, `repository.go`, `gorm_repo.go` y `routes.go`.
@@ -179,6 +184,10 @@ if err != nil {
 ---
 
 ## Convenciones — TypeScript / Vue
+
+### Idioma de la documentación
+
+- **Toda la documentación en el código debe estar en español**, incluyendo comentarios, JSDoc, y cualquier texto que forme parte del código fuente.
 
 ### Componentes Vue
 

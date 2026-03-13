@@ -184,6 +184,15 @@ func (h *Handler) CreatePet(c *gin.Context) {
 			stage = CalculateRabbitLifeStage(birthDate)
 		}
 		payload.LifeStage = &stage
+	} else if payload.Species == "bird" {
+		// Birds: life stage based on age
+		birthDate, err := time.Parse("2006-01-02", payload.BirthDate)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "formato de fecha inválido"})
+			return
+		}
+		stage := CalculateBirdLifeStage(birthDate)
+		payload.LifeStage = &stage
 	}
 
 	created, err := h.repo.Create(c.Request.Context(), uid, payload)
@@ -220,8 +229,19 @@ func (h *Handler) UpdatePet(c *gin.Context) {
 		return
 	}
 
+	// Get existing pet to get species (which cannot be changed)
+	existingPet, err := h.repo.GetByID(c.Request.Context(), id, ownerID(c))
+	if errors.Is(err, ErrNotFound) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "pet not found"})
+		return
+	}
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch pet"})
+		return
+	}
+
 	// Conditional size validation: required for dogs, forbidden for other species.
-	if payload.Species == "dog" {
+	if existingPet.Species == "dog" {
 		if payload.Size == nil || *payload.Size == "" {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "el tamaño es obligatorio para perros"})
 			return
@@ -235,20 +255,22 @@ func (h *Handler) UpdatePet(c *gin.Context) {
 	}
 
 	// Recalculate life stage when birth date or size may have changed.
-	if payload.Species == "dog" || payload.Species == "cat" || payload.Species == "rabbit" {
+	if existingPet.Species == "dog" || existingPet.Species == "cat" || existingPet.Species == "rabbit" || existingPet.Species == "bird" {
 		birthDate, err := time.Parse("2006-01-02", payload.BirthDate)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "formato de fecha inválido"})
 			return
 		}
 		var stage string
-		switch payload.Species {
+		switch existingPet.Species {
 		case "dog":
 			stage = CalculateDogLifeStage(birthDate, SizeCategory(*payload.Size))
 		case "cat":
 			stage = CalculateCatLifeStage(birthDate)
 		case "rabbit":
 			stage = CalculateRabbitLifeStage(birthDate)
+		case "bird":
+			stage = CalculateBirdLifeStage(birthDate)
 		}
 		payload.LifeStage = &stage
 	}

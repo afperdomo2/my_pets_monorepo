@@ -25,6 +25,14 @@ const (
 	LifeStageRabbitTeenager LifeStage = "teenager" // rabbit: teenager (6 – 12 meses)
 	LifeStageRabbitAdult    LifeStage = "adult"    // rabbit: adulto (1 – 5 años)
 	LifeStageRabbitSenior   LifeStage = "senior"   // rabbit: senior (> 5 años)
+
+	// Bird life stages (based on age)
+	LifeStageBirdHatchling LifeStage = "hatchling" // bird: 0–2 semanas
+	LifeStageBirdNestling  LifeStage = "nestling"  // bird: 2–4 semanas
+	LifeStageBirdFledgling LifeStage = "fledgling" // bird: 4–8 semanas
+	LifeStageBirdJuvenile  LifeStage = "juvenile"  // bird: 2 meses – 1 año
+	LifeStageBirdAdult     LifeStage = "adulto"    // bird: 1 – 10+ años
+	LifeStageBirdSenior    LifeStage = "senior"    // bird: > 10–15 años
 )
 
 // seniorThreshold maps dog size to the age (in years) at which they become senior.
@@ -105,6 +113,34 @@ func CalculateRabbitLifeStage(birthDate time.Time) string {
 		return string(LifeStageRabbitAdult)
 	default:
 		return string(LifeStageRabbitSenior)
+	}
+}
+
+// CalculateBirdLifeStage returns the life stage for a bird based on age.
+//
+// Stages (based on general avian development):
+//   - hatchling:  0 – 2 semanas
+//   - nestling:   2 – 4 semanas
+//   - fledgling:  4 – 8 semanas
+//   - juvenile:   2 meses – 1 año
+//   - adulto:     1 – 10+ años
+//   - senior:     > 10 – 15 años
+func CalculateBirdLifeStage(birthDate time.Time) string {
+	age := time.Since(birthDate).Hours() / 24 / 365.25
+
+	switch {
+	case age < 0.04: // ~2 semanas
+		return string(LifeStageBirdHatchling)
+	case age < 0.08: // ~4 semanas
+		return string(LifeStageBirdNestling)
+	case age < 0.15: // ~8 semanas
+		return string(LifeStageBirdFledgling)
+	case age < 1.0: // ~1 año
+		return string(LifeStageBirdJuvenile)
+	case age <= 10.0:
+		return string(LifeStageBirdAdult)
+	default:
+		return string(LifeStageBirdSenior)
 	}
 }
 

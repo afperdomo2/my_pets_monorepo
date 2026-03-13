@@ -90,19 +90,9 @@ definitions:
         type: string
       size:
         type: string
-      species:
-        enum:
-        - dog
-        - cat
-        - bird
-        - rabbit
-        - fish
-        - other
-        type: string
     required:
     - birth_date
     - name
-    - species
     type: object
   setup.SetupPayload:
     properties:

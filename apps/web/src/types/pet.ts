@@ -28,11 +28,11 @@ export interface CreatePetPayload {
 
 export interface UpdatePetPayload {
   name: string
-  species: string
   breed?: string
   birth_date: string
   birth_date_exact: boolean
   size?: PetSize            // required when species === 'dog'; null/absent for others
+  // species intentionally excluded — cannot be changed after creation
   // weight_grams and life_stage intentionally excluded
 }
 

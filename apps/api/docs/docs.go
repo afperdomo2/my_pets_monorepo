@@ -1295,8 +1295,7 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "birth_date",
-                "name",
-                "species"
+                "name"
             ],
             "properties": {
                 "birth_date": {
@@ -1316,17 +1315,6 @@ const docTemplate = `{
                 },
                 "size": {
                     "type": "string"
-                },
-                "species": {
-                    "type": "string",
-                    "enum": [
-                        "dog",
-                        "cat",
-                        "bird",
-                        "rabbit",
-                        "fish",
-                        "other"
-                    ]
                 }
             }
         },

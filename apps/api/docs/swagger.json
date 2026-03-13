@@ -1289,8 +1289,7 @@
             "type": "object",
             "required": [
                 "birth_date",
-                "name",
-                "species"
+                "name"
             ],
             "properties": {
                 "birth_date": {
@@ -1310,17 +1309,6 @@
                 },
                 "size": {
                     "type": "string"
-                },
-                "species": {
-                    "type": "string",
-                    "enum": [
-                        "dog",
-                        "cat",
-                        "bird",
-                        "rabbit",
-                        "fish",
-                        "other"
-                    ]
                 }
             }
         },

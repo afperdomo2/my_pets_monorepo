@@ -6,13 +6,22 @@ const str = z.preprocess((v) => v ?? '', z.string())
 
 const SPECIES = ['dog', 'cat', 'bird', 'rabbit', 'fish', 'other'] as const
 
-// Schema compartido de campos comunes
+// Schema compartido de campos comunes para crear
 const basePetSchema = z.object({
   name: str.pipe(z.string().min(1, 'El nombre es obligatorio').max(100)),
   species: str.pipe(z.string().min(1, 'La especie es obligatoria')).refine(
     (v) => (SPECIES as readonly string[]).includes(v),
     { message: 'Especie no válida' },
   ),
+  breed: z.string().max(100).optional(),
+  birth_date: str.pipe(z.string().min(1, 'La fecha de nacimiento es obligatoria')),
+  birth_date_exact: z.boolean(),
+  size: z.enum(PET_SIZE_VALUES).optional(),
+})
+
+// Schema para editar mascota — sin species (no se puede cambiar), sin peso ni etapa de vida
+const basePetUpdateSchema = z.object({
+  name: str.pipe(z.string().min(1, 'El nombre es obligatorio').max(100)),
   breed: z.string().max(100).optional(),
   birth_date: str.pipe(z.string().min(1, 'La fecha de nacimiento es obligatoria')),
   birth_date_exact: z.boolean(),
@@ -38,16 +47,8 @@ export const createPetSchema = basePetSchema
     }
   })
 
-// Schema para editar mascota — sin peso ni etapa de vida, con validación condicional de size
-export const updatePetSchema = basePetSchema.superRefine((data, ctx) => {
-  if (data.species === 'dog' && !data.size) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: 'El tamaño es obligatorio para perros',
-      path: ['size'],
-    })
-  }
-})
+// Schema para editar mascota — sin species (no se puede cambiar), sin peso ni etapa de vida
+export const updatePetSchema = basePetUpdateSchema
 
 export type CreatePetFormValues = z.infer<typeof createPetSchema>
 export type UpdatePetFormValues = z.infer<typeof updatePetSchema>
