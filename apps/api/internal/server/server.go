@@ -11,6 +11,7 @@ import (
 	domainAuth "github.com/my-pets/api/internal/domain/auth"
 	"github.com/my-pets/api/internal/domain/health"
 	healthCatalog "github.com/my-pets/api/internal/domain/health_catalog"
+	healthRecord "github.com/my-pets/api/internal/domain/health_record"
 	domainPet "github.com/my-pets/api/internal/domain/pet"
 	domainSetup "github.com/my-pets/api/internal/domain/setup"
 	domainUser "github.com/my-pets/api/internal/domain/user"
@@ -81,6 +82,11 @@ func Run(cfg *config.Config, db *gorm.DB) {
 		healthCatalogRepo := healthCatalog.NewGormRepo(db)
 		healthCatalogHandler := healthCatalog.NewHandler(healthCatalogRepo)
 		healthCatalog.RegisterRoutes(protected, healthCatalogHandler)
+
+		// Health record domain (registros de salud por mascota)
+		healthRecordRepo := healthRecord.NewGormRepo(db)
+		healthRecordHandler := healthRecord.NewHandler(healthRecordRepo, healthCatalogRepo)
+		healthRecord.RegisterRoutes(protected, healthRecordHandler)
 	}
 
 	log.Printf("Server running on :%s", cfg.Port)

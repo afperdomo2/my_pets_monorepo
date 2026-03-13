@@ -34,6 +34,7 @@ func Migrate(db *gorm.DB) error {
 		&models.User{},
 		&models.Pet{},
 		&models.HealthCatalog{},
+		&models.HealthRecord{},
 	); err != nil {
 		return fmt.Errorf("database.Migrate: %w", err)
 	}
