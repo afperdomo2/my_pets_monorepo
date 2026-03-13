@@ -41,6 +41,68 @@ definitions:
     - email
     - name
     type: object
+  health_catalog.CreateHealthCatalogPayload:
+    properties:
+      category:
+        enum:
+        - vaccine
+        - deworming
+        - exam
+        type: string
+      description:
+        maxLength: 1000
+        type: string
+      frequency_months:
+        maximum: 120
+        minimum: 1
+        type: integer
+      is_mandatory:
+        type: boolean
+      name:
+        maxLength: 100
+        minLength: 1
+        type: string
+      species:
+        items:
+          type: string
+        minItems: 1
+        type: array
+    required:
+    - category
+    - name
+    - species
+    type: object
+  health_catalog.UpdateHealthCatalogPayload:
+    properties:
+      category:
+        enum:
+        - vaccine
+        - deworming
+        - exam
+        type: string
+      description:
+        maxLength: 1000
+        type: string
+      frequency_months:
+        maximum: 120
+        minimum: 1
+        type: integer
+      is_mandatory:
+        type: boolean
+      name:
+        maxLength: 100
+        minLength: 1
+        type: string
+      species:
+        items:
+          type: string
+        minItems: 1
+        type: array
+    required:
+    - category
+    - name
+    - species
+    type: object
   pet.CreatePetPayload:
     properties:
       birth_date:
@@ -142,48 +204,6 @@ definitions:
     required:
     - email
     - name
-    type: object
-  vaccines_catalog.CreateVaccineCatalogPayload:
-    properties:
-      frequency_months:
-        maximum: 120
-        minimum: 1
-        type: integer
-      is_mandatory:
-        type: boolean
-      name:
-        maxLength: 100
-        minLength: 1
-        type: string
-      species:
-        items:
-          type: string
-        minItems: 1
-        type: array
-    required:
-    - name
-    - species
-    type: object
-  vaccines_catalog.UpdateVaccineCatalogPayload:
-    properties:
-      frequency_months:
-        maximum: 120
-        minimum: 1
-        type: integer
-      is_mandatory:
-        type: boolean
-      name:
-        maxLength: 100
-        minLength: 1
-        type: string
-      species:
-        items:
-          type: string
-        minItems: 1
-        type: array
-    required:
-    - name
-    - species
     type: object
 host: localhost:8080
 info:
@@ -389,6 +409,287 @@ paths:
       summary: Renovar token de acceso usando la cookie de refresh
       tags:
       - auth
+  /api/v1/health-catalogs:
+    get:
+      parameters:
+      - description: Número de página (por defecto 1)
+        in: query
+        name: page
+        type: integer
+      - description: Elementos por página (por defecto 10)
+        in: query
+        name: per_page
+        type: integer
+      - description: Filtrar por especie (dog, cat, bird, rabbit, fish, other)
+        in: query
+        name: species
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'data: []HealthCatalog, total: int, page: int, per_page: int,
+            total_pages: int'
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: autenticación requerida
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: mensaje de error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - CookieAuth: []
+      summary: Listar registros de la guía de salud (paginado)
+      tags:
+      - health-catalogs
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Datos del registro
+        in: body
+        name: item
+        required: true
+        schema:
+          $ref: '#/definitions/health_catalog.CreateHealthCatalogPayload'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: 'data: HealthCatalog'
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: error de validación
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: autenticación requerida
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: prohibido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: mensaje de error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - CookieAuth: []
+      summary: Crear un nuevo registro en la guía de salud (solo usuario sistema)
+      tags:
+      - health-catalogs
+  /api/v1/health-catalogs/{id}:
+    delete:
+      parameters:
+      - description: ID del registro
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'message: health catalog deleted'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: id inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: autenticación requerida
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: prohibido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: registro no encontrado
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: mensaje de error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - CookieAuth: []
+      summary: Eliminar un registro de la guía de salud (solo usuario sistema)
+      tags:
+      - health-catalogs
+    get:
+      parameters:
+      - description: ID del registro
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'data: HealthCatalog'
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: id inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: autenticación requerida
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: registro no encontrado
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: mensaje de error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - CookieAuth: []
+      summary: Obtener un registro de la guía de salud por ID
+      tags:
+      - health-catalogs
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID del registro
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Datos del registro
+        in: body
+        name: item
+        required: true
+        schema:
+          $ref: '#/definitions/health_catalog.UpdateHealthCatalogPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'data: HealthCatalog'
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: id inválido o error de validación
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: autenticación requerida
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: prohibido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: registro no encontrado
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: mensaje de error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - CookieAuth: []
+      summary: Actualizar un registro de la guía de salud (solo usuario sistema)
+      tags:
+      - health-catalogs
+  /api/v1/health-catalogs/species/{species}:
+    get:
+      parameters:
+      - description: Especie (dog, cat, bird, rabbit, fish, other)
+        in: path
+        name: species
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'data: []HealthCatalog'
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: especie inválida
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: autenticación requerida
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: mensaje de error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - CookieAuth: []
+      summary: Listar registros de la guía de salud por especie
+      tags:
+      - health-catalogs
   /api/v1/pets:
     get:
       parameters:
@@ -932,287 +1233,6 @@ paths:
       summary: Actualizar un usuario existente
       tags:
       - users
-  /api/v1/vaccines-catalog:
-    get:
-      parameters:
-      - description: Número de página (por defecto 1)
-        in: query
-        name: page
-        type: integer
-      - description: Elementos por página (por defecto 10)
-        in: query
-        name: per_page
-        type: integer
-      - description: Filtrar por especie (dog, cat, bird, rabbit, fish, other)
-        in: query
-        name: species
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 'data: []VaccineCatalog, total: int, page: int, per_page: int,
-            total_pages: int'
-          schema:
-            additionalProperties: true
-            type: object
-        "401":
-          description: autenticación requerida
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: mensaje de error
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      security:
-      - CookieAuth: []
-      summary: Listar vacunas del catálogo (paginado)
-      tags:
-      - vaccines-catalog
-    post:
-      consumes:
-      - application/json
-      parameters:
-      - description: Datos de la vaccine
-        in: body
-        name: vaccine
-        required: true
-        schema:
-          $ref: '#/definitions/vaccines_catalog.CreateVaccineCatalogPayload'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: 'data: VaccineCatalog'
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: error de validación
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "401":
-          description: autenticación requerida
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "403":
-          description: prohibido
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: mensaje de error
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      security:
-      - CookieAuth: []
-      summary: Crear una nueva vaccine en el catálogo (solo usuario sistema)
-      tags:
-      - vaccines-catalog
-  /api/v1/vaccines-catalog/{id}:
-    delete:
-      parameters:
-      - description: ID de la vaccine
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 'message: vaccine catalog deleted'
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "400":
-          description: id inválido
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "401":
-          description: autenticación requerida
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "403":
-          description: prohibido
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "404":
-          description: vaccine no encontrada
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: mensaje de error
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      security:
-      - CookieAuth: []
-      summary: Eliminar una vaccine del catálogo (solo usuario sistema)
-      tags:
-      - vaccines-catalog
-    get:
-      parameters:
-      - description: ID de la vaccine
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 'data: VaccineCatalog'
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: id inválido
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "401":
-          description: autenticación requerida
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "404":
-          description: vaccine no encontrada
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: mensaje de error
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      security:
-      - CookieAuth: []
-      summary: Obtener una vaccine del catálogo por ID
-      tags:
-      - vaccines-catalog
-    put:
-      consumes:
-      - application/json
-      parameters:
-      - description: ID de la vaccine
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Datos de la vaccine
-        in: body
-        name: vaccine
-        required: true
-        schema:
-          $ref: '#/definitions/vaccines_catalog.UpdateVaccineCatalogPayload'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 'data: VaccineCatalog'
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: id inválido o error de validación
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "401":
-          description: autenticación requerida
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "403":
-          description: prohibido
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "404":
-          description: vaccine no encontrada
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: mensaje de error
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      security:
-      - CookieAuth: []
-      summary: Actualizar una vaccine del catálogo (solo usuario sistema)
-      tags:
-      - vaccines-catalog
-  /api/v1/vaccines-catalog/species/{species}:
-    get:
-      parameters:
-      - description: Especie (dog, cat, bird, rabbit, fish, other)
-        in: path
-        name: species
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 'data: []VaccineCatalog'
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: especie inválida
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "401":
-          description: autenticación requerida
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: mensaje de error
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      security:
-      - CookieAuth: []
-      summary: Listar vacunas del catálogo por especie
-      tags:
-      - vaccines-catalog
   /health:
     get:
       produces:

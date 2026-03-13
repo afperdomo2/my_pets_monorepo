@@ -1,17 +1,31 @@
 <script setup lang="ts">
-import { IconEdit, IconTrash, IconVaccine } from '@tabler/icons-vue'
+import { IconEdit, IconTrash, IconShieldCheck } from '@tabler/icons-vue'
 import { getSpeciesLabel } from '@/constants/species'
-import type { VaccineCatalog } from '@/types/vaccineCatalog'
+import type { HealthCatalog, HealthCatalogCategory } from '@/types/healthCatalog'
 
 defineProps<{
-  vaccine: VaccineCatalog
+  item: HealthCatalog
   deletingId: string | null
 }>()
 
 const emit = defineEmits<{
-  edit: [vaccine: VaccineCatalog]
-  delete: [vaccine: VaccineCatalog]
+  edit: [item: HealthCatalog]
+  delete: [item: HealthCatalog]
 }>()
+
+// Mapa de categorías a etiquetas en español
+const CATEGORY_LABELS: Record<HealthCatalogCategory, string> = {
+  vaccine: 'Vacuna',
+  deworming: 'Desparasitación',
+  exam: 'Examen',
+}
+
+// Mapa de categorías a clases CSS para el badge
+const CATEGORY_CLASS: Record<HealthCatalogCategory, string> = {
+  vaccine: 'category-badge--vaccine',
+  deworming: 'category-badge--deworming',
+  exam: 'category-badge--exam',
+}
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('es-ES', {
@@ -30,21 +44,28 @@ function frequencyLabel(months: number | null): string {
 </script>
 
 <template>
-  <tr class="vaccine-row">
+  <tr class="catalog-row">
     <!-- Nombre + icono -->
-    <td class="td-vaccine">
-      <div class="vaccine-icon">
-        <IconVaccine :size="18" :stroke-width="1.75" />
+    <td class="td-item">
+      <div class="item-icon">
+        <IconShieldCheck :size="18" :stroke-width="1.75" />
       </div>
-      <div class="vaccine-info">
-        <span class="vaccine-name">{{ vaccine.name }}</span>
+      <div class="item-info">
+        <span class="item-name">{{ item.name }}</span>
       </div>
+    </td>
+
+    <!-- Categoría -->
+    <td class="td-center">
+      <span class="category-badge" :class="CATEGORY_CLASS[item.category]">
+        {{ CATEGORY_LABELS[item.category] }}
+      </span>
     </td>
 
     <!-- Especies -->
     <td class="td-species">
       <div class="species-tags">
-        <span v-for="specie in vaccine.species" :key="specie" class="species-tag">
+        <span v-for="specie in item.species" :key="specie" class="species-tag">
           {{ getSpeciesLabel(specie) }}
         </span>
       </div>
@@ -52,33 +73,33 @@ function frequencyLabel(months: number | null): string {
 
     <!-- Frecuencia -->
     <td class="td-center">
-      <span class="frequency-badge" :class="{ 'frequency-badge--single': vaccine.frequency_months === null }">
-        {{ frequencyLabel(vaccine.frequency_months) }}
+      <span class="frequency-badge" :class="{ 'frequency-badge--single': item.frequency_months === null }">
+        {{ frequencyLabel(item.frequency_months) }}
       </span>
     </td>
 
     <!-- Obligatoria -->
     <td class="td-center">
-      <span class="mandatory-badge" :class="vaccine.is_mandatory ? 'mandatory-badge--yes' : 'mandatory-badge--no'">
-        {{ vaccine.is_mandatory ? 'Sí' : 'No' }}
+      <span class="mandatory-badge" :class="item.is_mandatory ? 'mandatory-badge--yes' : 'mandatory-badge--no'">
+        {{ item.is_mandatory ? 'Sí' : 'No' }}
       </span>
     </td>
 
     <!-- Fecha creación -->
-    <td class="td-center td-date">{{ formatDate(vaccine.created_at) }}</td>
+    <td class="td-center td-date">{{ formatDate(item.created_at) }}</td>
 
     <!-- Acciones -->
     <td class="td-center td-actions">
-      <button class="action-btn action-btn--edit" title="Editar" @click="emit('edit', vaccine)">
+      <button class="action-btn action-btn--edit" title="Editar" @click="emit('edit', item)">
         <IconEdit :size="15" :stroke-width="2" />
       </button>
       <button
         class="action-btn action-btn--delete"
         title="Eliminar"
-        :disabled="deletingId === vaccine.id"
-        @click="emit('delete', vaccine)"
+        :disabled="deletingId === item.id"
+        @click="emit('delete', item)"
       >
-        <IconTrash v-if="deletingId !== vaccine.id" :size="15" :stroke-width="2" />
+        <IconTrash v-if="deletingId !== item.id" :size="15" :stroke-width="2" />
         <div v-else class="spinner spinner--sm" />
       </button>
     </td>
@@ -86,20 +107,20 @@ function frequencyLabel(months: number | null): string {
 </template>
 
 <style scoped>
-.vaccine-row {
+.catalog-row {
   border-bottom: 1px solid var(--color-border-light);
   transition: background var(--transition-fast);
 }
 
-.vaccine-row:last-child {
+.catalog-row:last-child {
   border-bottom: none;
 }
 
-.vaccine-row:hover {
+.catalog-row:hover {
   background: #f9fafb;
 }
 
-.vaccine-row td {
+.catalog-row td {
   padding: var(--space-3) var(--space-4);
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
@@ -110,14 +131,14 @@ function frequencyLabel(months: number | null): string {
   text-align: center;
 }
 
-.td-vaccine {
+.td-item {
   display: flex;
   align-items: center;
   gap: var(--space-3);
   min-width: 200px;
 }
 
-.vaccine-icon {
+.item-icon {
   width: 36px;
   height: 36px;
   border-radius: var(--radius-md);
@@ -129,14 +150,14 @@ function frequencyLabel(months: number | null): string {
   color: var(--color-accent);
 }
 
-.vaccine-info {
+.item-info {
   display: flex;
   flex-direction: column;
   gap: 1px;
   min-width: 0;
 }
 
-.vaccine-name {
+.item-name {
   font-weight: 600;
   color: var(--color-text-primary);
   white-space: nowrap;
@@ -144,14 +165,43 @@ function frequencyLabel(months: number | null): string {
   text-overflow: ellipsis;
 }
 
+/* ── Category badge ─────────────────────────────────────── */
+.category-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.category-badge--vaccine {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.category-badge--deworming {
+  background: #fdf4ff;
+  color: #9333ea;
+}
+
+.category-badge--exam {
+  background: #fff7ed;
+  color: #c2410c;
+}
+
+/* ── Species ────────────────────────────────────────────── */
 .td-species {
   min-width: 180px;
+  text-align: center;
 }
 
 .species-tags {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-1);
+  justify-content: center;
 }
 
 .species-tag {
@@ -165,6 +215,7 @@ function frequencyLabel(months: number | null): string {
   white-space: nowrap;
 }
 
+/* ── Frequency ──────────────────────────────────────────── */
 .frequency-badge {
   display: inline-flex;
   align-items: center;
@@ -181,6 +232,7 @@ function frequencyLabel(months: number | null): string {
   color: #6b7280;
 }
 
+/* ── Mandatory ──────────────────────────────────────────── */
 .mandatory-badge {
   display: inline-flex;
   align-items: center;
@@ -200,12 +252,14 @@ function frequencyLabel(months: number | null): string {
   color: #6b7280;
 }
 
+/* ── Date ───────────────────────────────────────────────── */
 .td-date {
   white-space: nowrap;
   font-size: var(--text-xs) !important;
   color: var(--color-text-tertiary) !important;
 }
 
+/* ── Actions ────────────────────────────────────────────── */
 .td-actions {
   white-space: nowrap;
 }
@@ -249,6 +303,7 @@ function frequencyLabel(months: number | null): string {
   cursor: not-allowed;
 }
 
+/* ── Spinner ────────────────────────────────────────────── */
 .spinner {
   width: 28px;
   height: 28px;

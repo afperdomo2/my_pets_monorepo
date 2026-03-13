@@ -3,14 +3,14 @@ import { ref, computed } from 'vue'
 import { useForm } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'
 import { IconX } from '@tabler/icons-vue'
-import { useCreateVaccineCatalog, useUpdateVaccineCatalog } from '@/composables/useVaccineCatalog'
+import { useCreateHealthCatalog, useUpdateHealthCatalog } from '@/composables/useHealthCatalog'
 import { PET_SPECIES, getSpeciesLabel, getSpeciesValue } from '@/constants/species'
-import type { VaccineCatalog } from '@/types/vaccineCatalog'
-import { createVaccineCatalogSchema, updateVaccineCatalogSchema } from '@/schemas/vaccineCatalog'
+import type { HealthCatalog, HealthCatalogCategory } from '@/types/healthCatalog'
+import { createHealthCatalogSchema, updateHealthCatalogSchema } from '@/schemas/healthCatalog'
 
 const props = defineProps<{
   mode: 'create' | 'edit'
-  vaccine?: VaccineCatalog
+  item?: HealthCatalog
 }>()
 
 const emit = defineEmits<{
@@ -19,15 +19,22 @@ const emit = defineEmits<{
 }>()
 
 const submitError = ref<string | null>(null)
-const createVaccine = useCreateVaccineCatalog()
-const updateVaccine = useUpdateVaccineCatalog()
+const createItem = useCreateHealthCatalog()
+const updateItem = useUpdateHealthCatalog()
+
+// Opciones de categoría con etiquetas en español
+const CATEGORY_OPTIONS: { value: HealthCatalogCategory; label: string }[] = [
+  { value: 'vaccine', label: 'Vacuna' },
+  { value: 'deworming', label: 'Desparasitación' },
+  { value: 'exam', label: 'Examen' },
+]
 
 // Especies disponibles (centralizadas)
 const availableSpecies = PET_SPECIES
 
 // Inicializar con valores en español para edición
 const selectedSpecies = ref<string[]>(
-  props.vaccine?.species.map(getSpeciesLabel) ?? []
+  props.item?.species.map(getSpeciesLabel) ?? []
 )
 
 // ── Create form ─────────────────────────────────────────────
@@ -36,15 +43,19 @@ const {
   handleSubmit: handleCreateSubmit,
   errors: createErrors,
 } = useForm({
-  validationSchema: toTypedSchema(createVaccineCatalogSchema),
+  validationSchema: toTypedSchema(createHealthCatalogSchema),
   initialValues: {
     name: '',
+    category: 'vaccine' as HealthCatalogCategory,
+    description: '',
     frequency_months: null,
     is_mandatory: false,
   },
 })
 
 const [createName, createNameAttrs] = defineCreateField('name')
+const [createCategory, createCategoryAttrs] = defineCreateField('category')
+const [createDescription, createDescriptionAttrs] = defineCreateField('description')
 const [createFrequencyMonths, createFrequencyMonthsAttrs] = defineCreateField('frequency_months')
 const [createIsMandatory, createIsMandatoryAttrs] = defineCreateField('is_mandatory')
 
@@ -57,15 +68,17 @@ const handleCreate = handleCreateSubmit(async (values) => {
   try {
     const speciesInEnglish = selectedSpecies.value.map(s => getSpeciesValue(s))
     const frequencyMonths = values.frequency_months === undefined ? null : values.frequency_months
-    await createVaccine.mutateAsync({
+    await createItem.mutateAsync({
       name: values.name,
+      category: values.category,
+      description: values.description ?? '',
       species: speciesInEnglish,
       frequency_months: frequencyMonths,
       is_mandatory: values.is_mandatory ?? false,
     })
     emit('saved')
   } catch (e) {
-    submitError.value = e instanceof Error ? e.message : 'Error al crear vacuna'
+    submitError.value = e instanceof Error ? e.message : 'Error al crear el registro'
   }
 })
 
@@ -75,20 +88,24 @@ const {
   handleSubmit: handleEditSubmit,
   errors: editErrors,
 } = useForm({
-  validationSchema: toTypedSchema(updateVaccineCatalogSchema),
+  validationSchema: toTypedSchema(updateHealthCatalogSchema),
   initialValues: {
-    name: props.vaccine?.name ?? '',
-    frequency_months: props.vaccine?.frequency_months ?? null,
-    is_mandatory: props.vaccine?.is_mandatory ?? false,
+    name: props.item?.name ?? '',
+    category: (props.item?.category ?? 'vaccine') as HealthCatalogCategory,
+    description: props.item?.description ?? '',
+    frequency_months: props.item?.frequency_months ?? null,
+    is_mandatory: props.item?.is_mandatory ?? false,
   },
 })
 
 const [editName, editNameAttrs] = defineEditField('name')
+const [editCategory, editCategoryAttrs] = defineEditField('category')
+const [editDescription, editDescriptionAttrs] = defineEditField('description')
 const [editFrequencyMonths, editFrequencyMonthsAttrs] = defineEditField('frequency_months')
 const [editIsMandatory, editIsMandatoryAttrs] = defineEditField('is_mandatory')
 
 const handleEdit = handleEditSubmit(async (values) => {
-  if (!props.vaccine) return
+  if (!props.item) return
   submitError.value = null
   if (selectedSpecies.value.length === 0) {
     submitError.value = 'Selecciona al menos una especie'
@@ -97,10 +114,12 @@ const handleEdit = handleEditSubmit(async (values) => {
   try {
     const speciesInEnglish = selectedSpecies.value.map(s => getSpeciesValue(s))
     const frequencyMonths = values.frequency_months === undefined ? null : values.frequency_months
-    await updateVaccine.mutateAsync({
-      id: props.vaccine.id,
+    await updateItem.mutateAsync({
+      id: props.item.id,
       payload: {
         name: values.name,
+        category: values.category,
+        description: values.description ?? '',
         species: speciesInEnglish,
         frequency_months: frequencyMonths,
         is_mandatory: values.is_mandatory ?? false,
@@ -108,7 +127,7 @@ const handleEdit = handleEditSubmit(async (values) => {
     })
     emit('saved')
   } catch (e) {
-    submitError.value = e instanceof Error ? e.message : 'Error al actualizar vacuna'
+    submitError.value = e instanceof Error ? e.message : 'Error al actualizar el registro'
   }
 })
 
@@ -122,7 +141,6 @@ function toggleSpecies(specie: { label: string; value: string }) {
 }
 
 const speciesErrorMessage = computed(() => {
-  // Mostrar error si no hay especies seleccionadas
   if (selectedSpecies.value.length === 0) {
     return 'Selecciona al menos una especie'
   }
@@ -136,7 +154,7 @@ const speciesErrorMessage = computed(() => {
       <div class="modal">
         <div class="modal-header">
           <h2 class="modal-title">
-            {{ mode === 'create' ? 'Nueva vacuna' : 'Editar vacuna' }}
+            {{ mode === 'create' ? 'Nuevo registro' : 'Editar registro' }}
           </h2>
           <button class="modal-close" @click="emit('close')">
             <IconX :size="18" :stroke-width="2.5" />
@@ -146,15 +164,43 @@ const speciesErrorMessage = computed(() => {
         <!-- Create form -->
         <form v-if="mode === 'create'" class="modal-form" @submit.prevent="handleCreate">
           <div class="field">
-            <label class="field-label">Nombre de la vacuna</label>
+            <label class="field-label">Nombre</label>
             <input
               v-model="createName"
               v-bind="createNameAttrs"
               class="field-input"
               :class="{ 'field-input--error': createErrors['name'] }"
-              placeholder="Ej. Vacuna rabia"
+              placeholder="Ej. Rabia, Parvovirus…"
             />
             <p v-if="createErrors['name']" class="field-error">{{ createErrors['name'] }}</p>
+          </div>
+
+          <div class="field">
+            <label class="field-label">Categoría</label>
+            <select
+              v-model="createCategory"
+              v-bind="createCategoryAttrs"
+              class="field-input"
+              :class="{ 'field-input--error': createErrors['category'] }"
+            >
+              <option v-for="opt in CATEGORY_OPTIONS" :key="opt.value" :value="opt.value">
+                {{ opt.label }}
+              </option>
+            </select>
+            <p v-if="createErrors['category']" class="field-error">{{ createErrors['category'] }}</p>
+          </div>
+
+          <div class="field">
+            <label class="field-label">Descripción <span class="field-label--optional">(opcional)</span></label>
+            <textarea
+              v-model="(createDescription as string)"
+              v-bind="createDescriptionAttrs"
+              class="field-input field-textarea"
+              :class="{ 'field-input--error': createErrors['description'] }"
+              placeholder="Descripción del registro, indicaciones, notas…"
+              rows="3"
+            />
+            <p v-if="createErrors['description']" class="field-error">{{ createErrors['description'] }}</p>
           </div>
 
           <div class="field">
@@ -164,8 +210,8 @@ const speciesErrorMessage = computed(() => {
                 <input
                   type="checkbox"
                   :checked="selectedSpecies.includes(specie.label)"
-                  @change="toggleSpecies(specie)"
                   class="checkbox-input"
+                  @change="toggleSpecies(specie)"
                 />
                 <span class="checkbox-text">{{ specie.label }}</span>
               </label>
@@ -198,7 +244,7 @@ const speciesErrorMessage = computed(() => {
                 type="checkbox"
                 class="checkbox-input"
               />
-              <span class="checkbox-text">Vacuna obligatoria</span>
+              <span class="checkbox-text">Obligatorio</span>
             </label>
           </div>
 
@@ -206,9 +252,9 @@ const speciesErrorMessage = computed(() => {
 
           <div class="modal-actions">
             <button type="button" class="btn-secondary" @click="emit('close')">Cancelar</button>
-            <button type="submit" class="btn-primary" :disabled="createVaccine.isPending.value">
-              <div v-if="createVaccine.isPending.value" class="spinner spinner--sm spinner--white" />
-              <span v-else>Crear vacuna</span>
+            <button type="submit" class="btn-primary" :disabled="createItem.isPending.value">
+              <div v-if="createItem.isPending.value" class="spinner spinner--sm spinner--white" />
+              <span v-else>Crear registro</span>
             </button>
           </div>
         </form>
@@ -216,15 +262,43 @@ const speciesErrorMessage = computed(() => {
         <!-- Edit form -->
         <form v-else class="modal-form" @submit.prevent="handleEdit">
           <div class="field">
-            <label class="field-label">Nombre de la vacuna</label>
+            <label class="field-label">Nombre</label>
             <input
               v-model="editName"
               v-bind="editNameAttrs"
               class="field-input"
               :class="{ 'field-input--error': editErrors['name'] }"
-              placeholder="Ej. Vacuna rabia"
+              placeholder="Ej. Rabia, Parvovirus…"
             />
             <p v-if="editErrors['name']" class="field-error">{{ editErrors['name'] }}</p>
+          </div>
+
+          <div class="field">
+            <label class="field-label">Categoría</label>
+            <select
+              v-model="editCategory"
+              v-bind="editCategoryAttrs"
+              class="field-input"
+              :class="{ 'field-input--error': editErrors['category'] }"
+            >
+              <option v-for="opt in CATEGORY_OPTIONS" :key="opt.value" :value="opt.value">
+                {{ opt.label }}
+              </option>
+            </select>
+            <p v-if="editErrors['category']" class="field-error">{{ editErrors['category'] }}</p>
+          </div>
+
+          <div class="field">
+            <label class="field-label">Descripción <span class="field-label--optional">(opcional)</span></label>
+            <textarea
+              v-model="(editDescription as string)"
+              v-bind="editDescriptionAttrs"
+              class="field-input field-textarea"
+              :class="{ 'field-input--error': editErrors['description'] }"
+              placeholder="Descripción del registro, indicaciones, notas…"
+              rows="3"
+            />
+            <p v-if="editErrors['description']" class="field-error">{{ editErrors['description'] }}</p>
           </div>
 
           <div class="field">
@@ -234,8 +308,8 @@ const speciesErrorMessage = computed(() => {
                 <input
                   type="checkbox"
                   :checked="selectedSpecies.includes(specie.label)"
-                  @change="toggleSpecies(specie)"
                   class="checkbox-input"
+                  @change="toggleSpecies(specie)"
                 />
                 <span class="checkbox-text">{{ specie.label }}</span>
               </label>
@@ -268,7 +342,7 @@ const speciesErrorMessage = computed(() => {
                 type="checkbox"
                 class="checkbox-input"
               />
-              <span class="checkbox-text">Vacuna obligatoria</span>
+              <span class="checkbox-text">Obligatorio</span>
             </label>
           </div>
 
@@ -276,8 +350,8 @@ const speciesErrorMessage = computed(() => {
 
           <div class="modal-actions">
             <button type="button" class="btn-secondary" @click="emit('close')">Cancelar</button>
-            <button type="submit" class="btn-primary" :disabled="updateVaccine.isPending.value">
-              <div v-if="updateVaccine.isPending.value" class="spinner spinner--sm spinner--white" />
+            <button type="submit" class="btn-primary" :disabled="updateItem.isPending.value">
+              <div v-if="updateItem.isPending.value" class="spinner spinner--sm spinner--white" />
               <span v-else>Guardar cambios</span>
             </button>
           </div>
@@ -301,12 +375,8 @@ const speciesErrorMessage = computed(() => {
 }
 
 @keyframes fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .modal {
@@ -316,17 +386,13 @@ const speciesErrorMessage = computed(() => {
   width: 100%;
   max-width: 500px;
   animation: slide-up 0.2s ease;
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
 @keyframes slide-up {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @media (max-width: 480px) {
@@ -337,15 +403,12 @@ const speciesErrorMessage = computed(() => {
   .modal {
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
     max-width: 100%;
+    max-height: 95vh;
     animation: slide-up-mobile 0.25s ease;
   }
   @keyframes slide-up-mobile {
-    from {
-      transform: translateY(100%);
-    }
-    to {
-      transform: translateY(0);
-    }
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
   }
 }
 
@@ -428,6 +491,19 @@ const speciesErrorMessage = computed(() => {
 
 .field-input--error:focus {
   box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12);
+}
+
+.field-label--optional {
+  font-weight: 400;
+  color: var(--color-text-tertiary);
+  font-size: var(--text-xs);
+}
+
+.field-textarea {
+  resize: vertical;
+  min-height: 72px;
+  line-height: 1.5;
+  font-family: inherit;
 }
 
 .field-error {
@@ -544,8 +620,6 @@ const speciesErrorMessage = computed(() => {
 }
 
 @keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+  to { transform: rotate(360deg); }
 }
 </style>

@@ -57,7 +57,7 @@ const navItems = [
 
 const adminNavItems = [
   { to: '/users', name: 'users', label: 'Usuarios', icon: IconUsers },
-  { to: '/vaccines-catalog', name: 'vaccines-catalog', label: 'Catálogo de vacunas', icon: IconListCheck },
+  { to: '/health-catalog', name: 'health-catalog', label: 'Guía de salud', icon: IconListCheck },
 ]
 
 const bottomItems = [

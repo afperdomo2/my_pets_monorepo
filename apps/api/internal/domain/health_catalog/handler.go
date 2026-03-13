@@ -1,4 +1,4 @@
-package vaccines_catalog
+package health_catalog
 
 import (
 	"errors"
@@ -10,17 +10,17 @@ import (
 	"github.com/my-pets/api/internal/validation"
 )
 
-// Handler holds the dependencies for vaccine catalog HTTP handlers.
+// Handler agrupa las dependencias para los handlers HTTP de la guía de salud.
 type Handler struct {
 	repo Repository
 }
 
-// NewHandler constructs a Handler with the given Repository.
+// NewHandler construye un Handler con el Repository dado.
 func NewHandler(repo Repository) *Handler {
 	return &Handler{repo: repo}
 }
 
-// parseID extracts and validates the :id path parameter.
+// parseID extrae y valida el parámetro de ruta :id.
 func parseID(c *gin.Context) (string, bool) {
 	id := c.Param("id")
 	if id == "" {
@@ -30,8 +30,8 @@ func parseID(c *gin.Context) (string, bool) {
 	return id, true
 }
 
-// requireSystemUser returns true if the caller is a system user.
-// If not, it responds with 403 Forbidden and returns false.
+// requireSystemUser retorna true si el caller es un usuario sistema.
+// Si no lo es, responde 403 Forbidden y retorna false.
 func requireSystemUser(c *gin.Context) bool {
 	isSystemUser, _ := c.Get("isSystemUser")
 	if isSystemUser != true {
@@ -41,21 +41,21 @@ func requireSystemUser(c *gin.Context) bool {
 	return true
 }
 
-// GetVaccinesCatalog handles GET /api/v1/vaccines-catalog
-// Accessible by any authenticated user.
+// GetHealthCatalogs maneja GET /api/v1/health-catalogs
+// Accesible por cualquier usuario autenticado.
 //
-//	@Summary	Listar vacunas del catálogo (paginado)
-//	@Tags		vaccines-catalog
+//	@Summary	Listar registros de la guía de salud (paginado)
+//	@Tags		health-catalogs
 //	@Produce	json
 //	@Security	CookieAuth
 //	@Param		page		query		int						false	"Número de página (por defecto 1)"
 //	@Param		per_page	query		int						false	"Elementos por página (por defecto 10)"
-//	@Param		species	query		string					false	"Filtrar por especie (dog, cat, bird, rabbit, fish, other)"
-//	@Success	200	{object}	map[string]interface{}	"data: []VaccineCatalog, total: int, page: int, per_page: int, total_pages: int"
+//	@Param		species		query		string					false	"Filtrar por especie (dog, cat, bird, rabbit, fish, other)"
+//	@Success	200	{object}	map[string]interface{}	"data: []HealthCatalog, total: int, page: int, per_page: int, total_pages: int"
 //	@Failure	401	{object}	map[string]string	"autenticación requerida"
 //	@Failure	500	{object}	map[string]string	"mensaje de error"
-//	@Router		/api/v1/vaccines-catalog [get]
-func (h *Handler) GetVaccinesCatalog(c *gin.Context) {
+//	@Router		/api/v1/health-catalogs [get]
+func (h *Handler) GetHealthCatalogs(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	perPage, _ := strconv.Atoi(c.DefaultQuery("per_page", "10"))
 	species := c.Query("species")
@@ -67,7 +67,7 @@ func (h *Handler) GetVaccinesCatalog(c *gin.Context) {
 		perPage = 10
 	}
 
-	// Validar species si se proporciona
+	// Validar especie si se proporciona
 	var speciesFilter *string
 	if species != "" {
 		validSpecies := map[string]bool{
@@ -85,15 +85,15 @@ func (h *Handler) GetVaccinesCatalog(c *gin.Context) {
 		speciesFilter = &species
 	}
 
-	vaccines, total, err := h.repo.GetPaginated(c.Request.Context(), page, perPage, speciesFilter)
+	items, total, err := h.repo.GetPaginated(c.Request.Context(), page, perPage, speciesFilter)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch vaccines catalog"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch health catalog"})
 		return
 	}
 
 	totalPages := int(math.Ceil(float64(total) / float64(perPage)))
 	c.JSON(http.StatusOK, gin.H{
-		"data":        vaccines,
+		"data":        items,
 		"total":       total,
 		"page":        page,
 		"per_page":    perPage,
@@ -101,51 +101,51 @@ func (h *Handler) GetVaccinesCatalog(c *gin.Context) {
 	})
 }
 
-// GetVaccineCatalogByID handles GET /api/v1/vaccines-catalog/:id
-// Accessible by any authenticated user.
+// GetHealthCatalogByID maneja GET /api/v1/health-catalogs/:id
+// Accesible por cualquier usuario autenticado.
 //
-//	@Summary	Obtener una vaccine del catálogo por ID
-//	@Tags		vaccines-catalog
+//	@Summary	Obtener un registro de la guía de salud por ID
+//	@Tags		health-catalogs
 //	@Produce	json
 //	@Security	CookieAuth
-//	@Param		id	path		string					true	"ID de la vaccine"
-//	@Success	200	{object}	map[string]interface{}	"data: VaccineCatalog"
+//	@Param		id	path		string					true	"ID del registro"
+//	@Success	200	{object}	map[string]interface{}	"data: HealthCatalog"
 //	@Failure	400	{object}	map[string]string		"id inválido"
 //	@Failure	401	{object}	map[string]string		"autenticación requerida"
-//	@Failure	404	{object}	map[string]string		"vaccine no encontrada"
+//	@Failure	404	{object}	map[string]string		"registro no encontrado"
 //	@Failure	500	{object}	map[string]string		"mensaje de error"
-//	@Router		/api/v1/vaccines-catalog/{id} [get]
-func (h *Handler) GetVaccineCatalogByID(c *gin.Context) {
+//	@Router		/api/v1/health-catalogs/{id} [get]
+func (h *Handler) GetHealthCatalogByID(c *gin.Context) {
 	id, ok := parseID(c)
 	if !ok {
 		return
 	}
-	v, err := h.repo.GetByID(c.Request.Context(), id)
+	item, err := h.repo.GetByID(c.Request.Context(), id)
 	if errors.Is(err, ErrNotFound) {
-		c.JSON(http.StatusNotFound, gin.H{"error": "vaccine catalog not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "health catalog not found"})
 		return
 	}
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch vaccine catalog"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch health catalog"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"data": v})
+	c.JSON(http.StatusOK, gin.H{"data": item})
 }
 
-// GetVaccinesBySpecies handles GET /api/v1/vaccines-catalog/species/:species
-// Accessible by any authenticated user.
+// GetHealthCatalogBySpecies maneja GET /api/v1/health-catalogs/species/:species
+// Accesible por cualquier usuario autenticado.
 //
-//	@Summary	Listar vacunas del catálogo por especie
-//	@Tags		vaccines-catalog
+//	@Summary	Listar registros de la guía de salud por especie
+//	@Tags		health-catalogs
 //	@Produce	json
 //	@Security	CookieAuth
 //	@Param		species	path		string					true	"Especie (dog, cat, bird, rabbit, fish, other)"
-//	@Success	200	{object}	map[string]interface{}	"data: []VaccineCatalog"
+//	@Success	200	{object}	map[string]interface{}	"data: []HealthCatalog"
 //	@Failure	400	{object}	map[string]string		"especie inválida"
 //	@Failure	401	{object}	map[string]string		"autenticación requerida"
 //	@Failure	500	{object}	map[string]string		"mensaje de error"
-//	@Router		/api/v1/vaccines-catalog/species/{species} [get]
-func (h *Handler) GetVaccinesBySpecies(c *gin.Context) {
+//	@Router		/api/v1/health-catalogs/species/{species} [get]
+func (h *Handler) GetHealthCatalogBySpecies(c *gin.Context) {
 	species := c.Param("species")
 	if species == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid species"})
@@ -165,36 +165,36 @@ func (h *Handler) GetVaccinesBySpecies(c *gin.Context) {
 		return
 	}
 
-	vaccines, err := h.repo.GetBySpecies(c.Request.Context(), species)
+	items, err := h.repo.GetBySpecies(c.Request.Context(), species)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch vaccines by species"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch health catalog by species"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": vaccines})
+	c.JSON(http.StatusOK, gin.H{"data": items})
 }
 
-// CreateVaccineCatalog handles POST /api/v1/vaccines-catalog
-// Only accessible by system users.
+// CreateHealthCatalog maneja POST /api/v1/health-catalogs
+// Solo accesible por usuarios sistema.
 //
-//	@Summary	Crear una nueva vaccine en el catálogo (solo usuario sistema)
-//	@Tags		vaccines-catalog
+//	@Summary	Crear un nuevo registro en la guía de salud (solo usuario sistema)
+//	@Tags		health-catalogs
 //	@Accept		json
 //	@Produce	json
 //	@Security	CookieAuth
-//	@Param		vaccine	body		CreateVaccineCatalogPayload	true	"Datos de la vaccine"
-//	@Success	201	{object}	map[string]interface{}	"data: VaccineCatalog"
+//	@Param		item	body		CreateHealthCatalogPayload	true	"Datos del registro"
+//	@Success	201	{object}	map[string]interface{}	"data: HealthCatalog"
 //	@Failure	400	{object}	map[string]string		"error de validación"
 //	@Failure	401	{object}	map[string]string		"autenticación requerida"
 //	@Failure	403	{object}	map[string]string		"prohibido"
 //	@Failure	500	{object}	map[string]string		"mensaje de error"
-//	@Router		/api/v1/vaccines-catalog [post]
-func (h *Handler) CreateVaccineCatalog(c *gin.Context) {
+//	@Router		/api/v1/health-catalogs [post]
+func (h *Handler) CreateHealthCatalog(c *gin.Context) {
 	if !requireSystemUser(c) {
 		return
 	}
 
-	var payload CreateVaccineCatalogPayload
+	var payload CreateHealthCatalogPayload
 	if err := c.ShouldBindJSON(&payload); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": validation.Translate(err)})
 		return
@@ -202,30 +202,30 @@ func (h *Handler) CreateVaccineCatalog(c *gin.Context) {
 
 	created, err := h.repo.Create(c.Request.Context(), payload)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create vaccine catalog"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create health catalog"})
 		return
 	}
 	c.JSON(http.StatusCreated, gin.H{"data": created})
 }
 
-// UpdateVaccineCatalog handles PUT /api/v1/vaccines-catalog/:id
-// Only accessible by system users.
+// UpdateHealthCatalog maneja PUT /api/v1/health-catalogs/:id
+// Solo accesible por usuarios sistema.
 //
-//	@Summary	Actualizar una vaccine del catálogo (solo usuario sistema)
-//	@Tags		vaccines-catalog
+//	@Summary	Actualizar un registro de la guía de salud (solo usuario sistema)
+//	@Tags		health-catalogs
 //	@Accept		json
 //	@Produce	json
 //	@Security	CookieAuth
-//	@Param		id		path		string						true	"ID de la vaccine"
-//	@Param		vaccine	body		UpdateVaccineCatalogPayload	true	"Datos de la vaccine"
-//	@Success	200	{object}	map[string]interface{}	"data: VaccineCatalog"
+//	@Param		id		path		string						true	"ID del registro"
+//	@Param		item	body		UpdateHealthCatalogPayload	true	"Datos del registro"
+//	@Success	200	{object}	map[string]interface{}	"data: HealthCatalog"
 //	@Failure	400	{object}	map[string]string			"id inválido o error de validación"
 //	@Failure	401	{object}	map[string]string			"autenticación requerida"
 //	@Failure	403	{object}	map[string]string			"prohibido"
-//	@Failure	404	{object}	map[string]string			"vaccine no encontrada"
+//	@Failure	404	{object}	map[string]string			"registro no encontrado"
 //	@Failure	500	{object}	map[string]string			"mensaje de error"
-//	@Router		/api/v1/vaccines-catalog/{id} [put]
-func (h *Handler) UpdateVaccineCatalog(c *gin.Context) {
+//	@Router		/api/v1/health-catalogs/{id} [put]
+func (h *Handler) UpdateHealthCatalog(c *gin.Context) {
 	if !requireSystemUser(c) {
 		return
 	}
@@ -235,7 +235,7 @@ func (h *Handler) UpdateVaccineCatalog(c *gin.Context) {
 		return
 	}
 
-	var payload UpdateVaccineCatalogPayload
+	var payload UpdateHealthCatalogPayload
 	if err := c.ShouldBindJSON(&payload); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": validation.Translate(err)})
 		return
@@ -243,32 +243,32 @@ func (h *Handler) UpdateVaccineCatalog(c *gin.Context) {
 
 	updated, err := h.repo.Update(c.Request.Context(), id, payload)
 	if errors.Is(err, ErrNotFound) {
-		c.JSON(http.StatusNotFound, gin.H{"error": "vaccine catalog not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "health catalog not found"})
 		return
 	}
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update vaccine catalog"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update health catalog"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": updated})
 }
 
-// DeleteVaccineCatalog handles DELETE /api/v1/vaccines-catalog/:id
-// Only accessible by system users.
+// DeleteHealthCatalog maneja DELETE /api/v1/health-catalogs/:id
+// Solo accesible por usuarios sistema.
 //
-//	@Summary	Eliminar una vaccine del catálogo (solo usuario sistema)
-//	@Tags		vaccines-catalog
+//	@Summary	Eliminar un registro de la guía de salud (solo usuario sistema)
+//	@Tags		health-catalogs
 //	@Produce	json
 //	@Security	CookieAuth
-//	@Param		id	path		string				true	"ID de la vaccine"
-//	@Success	200	{object}	map[string]string	"message: vaccine catalog deleted"
+//	@Param		id	path		string				true	"ID del registro"
+//	@Success	200	{object}	map[string]string	"message: health catalog deleted"
 //	@Failure	400	{object}	map[string]string	"id inválido"
 //	@Failure	401	{object}	map[string]string	"autenticación requerida"
 //	@Failure	403	{object}	map[string]string	"prohibido"
-//	@Failure	404	{object}	map[string]string	"vaccine no encontrada"
+//	@Failure	404	{object}	map[string]string	"registro no encontrado"
 //	@Failure	500	{object}	map[string]string	"mensaje de error"
-//	@Router		/api/v1/vaccines-catalog/{id} [delete]
-func (h *Handler) DeleteVaccineCatalog(c *gin.Context) {
+//	@Router		/api/v1/health-catalogs/{id} [delete]
+func (h *Handler) DeleteHealthCatalog(c *gin.Context) {
 	if !requireSystemUser(c) {
 		return
 	}
@@ -280,12 +280,12 @@ func (h *Handler) DeleteVaccineCatalog(c *gin.Context) {
 
 	err := h.repo.Delete(c.Request.Context(), id)
 	if errors.Is(err, ErrNotFound) {
-		c.JSON(http.StatusNotFound, gin.H{"error": "vaccine catalog not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "health catalog not found"})
 		return
 	}
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete vaccine catalog"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete health catalog"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "vaccine catalog deleted"})
+	c.JSON(http.StatusOK, gin.H{"message": "health catalog deleted"})
 }

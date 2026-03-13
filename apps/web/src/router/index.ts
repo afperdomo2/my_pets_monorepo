@@ -83,9 +83,9 @@ const router = createRouter({
           meta: { requiresSystemUser: true },
         },
         {
-          path: 'vaccines-catalog',
-          name: 'vaccines-catalog',
-          component: () => import('../views/VaccineCatalogView.vue'),
+          path: 'health-catalog',
+          name: 'health-catalog',
+          component: () => import('../views/HealthCatalogView.vue'),
           meta: { requiresSystemUser: true },
         },
       ],

@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { IconPlus, IconSearch, IconAlertCircle, IconRefresh } from '@tabler/icons-vue'
-import { useGetVaccinesCatalog, useDeleteVaccineCatalog } from '@/composables/useVaccineCatalog'
+import { useGetHealthCatalogs, useDeleteHealthCatalog } from '@/composables/useHealthCatalog'
 import { useUIStore } from '@/stores/ui'
 import { PET_SPECIES } from '@/constants/species'
-import type { VaccineCatalog } from '@/types/vaccineCatalog'
-import VaccineCatalogFormModal from '@/components/vaccine-catalog/VaccineCatalogFormModal.vue'
-import VaccineCatalogTableRow from '@/components/vaccine-catalog/VaccineCatalogTableRow.vue'
+import type { HealthCatalog } from '@/types/healthCatalog'
+import HealthCatalogFormModal from '@/components/health-catalog/HealthCatalogFormModal.vue'
+import HealthCatalogTableRow from '@/components/health-catalog/HealthCatalogTableRow.vue'
 import AppPagination from '@/components/ui/AppPagination.vue'
 import PerPageSelector from '@/components/ui/PerPageSelector.vue'
 
@@ -30,9 +30,9 @@ watch(perPage, (val) => {
   page.value = 1
 })
 
-const { data, isLoading, isError, error: fetchError, refresh, isFetching } = useGetVaccinesCatalog(page, perPage, speciesFilter)
+const { data, isLoading, isError, error: fetchError, refresh, isFetching } = useGetHealthCatalogs(page, perPage, speciesFilter)
 
-const deleteVaccine = useDeleteVaccineCatalog()
+const deleteItem = useDeleteHealthCatalog()
 
 // ── Search (filtrado local sobre la página actual) ──────────
 const search = ref('')
@@ -41,17 +41,17 @@ const search = ref('')
 type ModalMode = 'create' | 'edit'
 const showModal = ref(false)
 const modalMode = ref<ModalMode>('create')
-const editingVaccine = ref<VaccineCatalog | null>(null)
+const editingItem = ref<HealthCatalog | null>(null)
 
 function openCreate() {
   modalMode.value = 'create'
-  editingVaccine.value = null
+  editingItem.value = null
   showModal.value = true
 }
 
-function openEdit(vaccine: VaccineCatalog) {
+function openEdit(item: HealthCatalog) {
   modalMode.value = 'edit'
-  editingVaccine.value = vaccine
+  editingItem.value = item
   showModal.value = true
 }
 
@@ -62,20 +62,20 @@ function closeModal() {
 // ── Delete ───────────────────────────────────────────────────
 const deletingId = ref<string | null>(null)
 
-async function handleDelete(vaccine: VaccineCatalog) {
-  if (!confirm(`¿Eliminar "${vaccine.name}"? Esta acción no se puede deshacer.`)) return
-  deletingId.value = vaccine.id
+async function handleDelete(item: HealthCatalog) {
+  if (!confirm(`¿Eliminar "${item.name}"? Esta acción no se puede deshacer.`)) return
+  deletingId.value = item.id
   try {
-    await deleteVaccine.mutateAsync(vaccine.id)
+    await deleteItem.mutateAsync(item.id)
   } catch (e) {
-    alert(e instanceof Error ? e.message : 'Error al eliminar vacuna')
+    alert(e instanceof Error ? e.message : 'Error al eliminar registro')
   } finally {
     deletingId.value = null
   }
 }
 
 // ── Derived ──────────────────────────────────────────────────
-const vaccines = ref<VaccineCatalog[]>([])
+const items = ref<HealthCatalog[]>([])
 const total = ref(0)
 const totalPages = ref(1)
 
@@ -84,7 +84,7 @@ watch(
   (res) => {
     if (!res) return
     const q = search.value.toLowerCase()
-    vaccines.value = q
+    items.value = q
       ? res.data.filter((v) => v.name.toLowerCase().includes(q) || v.species.some((s) => s.toLowerCase().includes(q)))
       : res.data
     total.value = res.total
@@ -96,19 +96,19 @@ watch(
 watch(search, () => {
   if (!data.value) return
   const q = search.value.toLowerCase()
-  vaccines.value = q
+  items.value = q
     ? data.value.data.filter((v) => v.name.toLowerCase().includes(q) || v.species.some((s) => s.toLowerCase().includes(q)))
     : data.value.data
 })
 </script>
 
 <template>
-  <div class="vaccines-view">
+  <div class="health-catalog-view">
     <!-- Header -->
     <div class="page-header">
       <div class="page-header__text">
-        <h1 class="page-title">Catálogo de vacunas</h1>
-        <p class="page-subtitle">Administra el catálogo de vacunas disponibles</p>
+        <h1 class="page-title">Guía de salud</h1>
+        <p class="page-subtitle">Administra la guía de salud para tus mascotas</p>
       </div>
       <div class="header-actions">
         <button class="btn-refresh" title="Refrescar" :disabled="isFetching" @click="refresh">
@@ -117,7 +117,7 @@ watch(search, () => {
         </button>
         <button class="btn-create" @click="openCreate">
           <IconPlus :size="16" :stroke-width="2.5" />
-          Nueva vacuna
+          Nuevo registro
         </button>
       </div>
     </div>
@@ -138,14 +138,14 @@ watch(search, () => {
       </div>
       <div class="stats-pill">
         <span class="stats-num">{{ total }}</span>
-        <span class="stats-label">{{ total === 1 ? 'vacuna' : 'vacunas' }}</span>
+        <span class="stats-label">{{ total === 1 ? 'registro' : 'registros' }}</span>
       </div>
     </div>
 
     <!-- Loading -->
     <div v-if="isLoading" class="empty-state">
       <div class="spinner" />
-      <p>Cargando vacunas…</p>
+      <p>Cargando registros…</p>
     </div>
 
     <!-- Error -->
@@ -156,25 +156,26 @@ watch(search, () => {
     </div>
 
     <!-- Empty search -->
-    <div v-else-if="vaccines.length === 0 && search" class="empty-state">
+    <div v-else-if="items.length === 0 && search" class="empty-state">
       <IconSearch :size="40" :stroke-width="1.5" />
       <p>Sin resultados para "<strong>{{ search }}</strong>"</p>
     </div>
 
-    <!-- Empty state (no vaccines) -->
-    <div v-else-if="vaccines.length === 0" class="empty-state">
+    <!-- Empty state (no items) -->
+    <div v-else-if="items.length === 0" class="empty-state">
       <IconSearch :size="40" :stroke-width="1.5" />
-      <p>No hay vacunas registradas</p>
-      <button class="btn-secondary" @click="openCreate">Crear primera vacuna</button>
+      <p>No hay registros en la guía de salud</p>
+      <button class="btn-secondary" @click="openCreate">Crear primer registro</button>
     </div>
 
     <!-- Table -->
     <div v-else class="table-wrapper">
-      <table class="vaccines-table">
+      <table class="health-catalog-table">
         <thead>
           <tr>
             <th>Nombre</th>
-            <th class="th-species">Especies</th>
+            <th class="th-center th-species">Especies</th>
+            <th class="th-center">Categoría</th>
             <th class="th-center">Frecuencia</th>
             <th class="th-center">Obligatoria</th>
             <th class="th-center">Creado</th>
@@ -182,10 +183,10 @@ watch(search, () => {
           </tr>
         </thead>
         <tbody>
-          <VaccineCatalogTableRow
-            v-for="vaccine in vaccines"
-            :key="vaccine.id"
-            :vaccine="vaccine"
+          <HealthCatalogTableRow
+            v-for="item in items"
+            :key="item.id"
+            :item="item"
             :deleting-id="deletingId"
             @edit="openEdit"
             @delete="handleDelete"
@@ -210,10 +211,10 @@ watch(search, () => {
     </div>
 
     <!-- Modal -->
-    <VaccineCatalogFormModal
+    <HealthCatalogFormModal
       v-if="showModal"
       :mode="modalMode"
-      :vaccine="editingVaccine ?? undefined"
+      :item="editingItem ?? undefined"
       @close="closeModal"
       @saved="closeModal"
     />
@@ -222,7 +223,7 @@ watch(search, () => {
 
 <style scoped>
 /* ── Layout ────────────────────────────────────────────── */
-.vaccines-view {
+.health-catalog-view {
   width: 100%;
   max-width: 100%;
   padding: var(--space-8) var(--space-10);
@@ -234,13 +235,13 @@ watch(search, () => {
 }
 
 @media (max-width: 1024px) {
-  .vaccines-view {
+  .health-catalog-view {
     padding: var(--space-6) var(--space-6);
   }
 }
 
 @media (max-width: 768px) {
-  .vaccines-view {
+  .health-catalog-view {
     padding: var(--space-5) var(--space-4);
     gap: var(--space-4);
   }
@@ -472,18 +473,18 @@ watch(search, () => {
   width: 100%;
 }
 
-.vaccines-table {
+.health-catalog-table {
   width: 100%;
-  min-width: 680px;
+  min-width: 760px;
   border-collapse: collapse;
 }
 
-.vaccines-table thead tr {
+.health-catalog-table thead tr {
   background: var(--color-bg);
   border-bottom: 1px solid var(--color-border-light);
 }
 
-.vaccines-table th {
+.health-catalog-table th {
   padding: var(--space-3) var(--space-4);
   text-align: left;
   font-size: var(--text-xs);
@@ -493,11 +494,11 @@ watch(search, () => {
   letter-spacing: 0.06em;
 }
 
-.vaccines-table th.th-center {
+.health-catalog-table th.th-center {
   text-align: center;
 }
 
-.vaccines-table th.th-species {
+.health-catalog-table th.th-species {
   min-width: 180px;
 }
 

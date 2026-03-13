@@ -33,7 +33,7 @@ func Migrate(db *gorm.DB) error {
 	if err := db.AutoMigrate(
 		&models.User{},
 		&models.Pet{},
-		&models.VaccineCatalog{},
+		&models.HealthCatalog{},
 	); err != nil {
 		return fmt.Errorf("database.Migrate: %w", err)
 	}
