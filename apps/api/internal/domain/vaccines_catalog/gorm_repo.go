@@ -18,11 +18,16 @@ func NewGormRepo(db *gorm.DB) Repository {
 	return &gormRepo{db: db}
 }
 
-func (r *gormRepo) GetPaginated(ctx context.Context, page, perPage int) ([]models.VaccineCatalog, int64, error) {
+func (r *gormRepo) GetPaginated(ctx context.Context, page, perPage int, speciesFilter *string) ([]models.VaccineCatalog, int64, error) {
 	var vaccines []models.VaccineCatalog
 	var total int64
 
 	base := r.db.WithContext(ctx).Model(&models.VaccineCatalog{})
+
+	// Aplicar filtro de species si se proporciona
+	if speciesFilter != nil && *speciesFilter != "" {
+		base = base.Where("? = ANY(species)", *speciesFilter)
+	}
 
 	if err := base.Count(&total).Error; err != nil {
 		return nil, 0, fmt.Errorf("vaccines_catalog.GetPaginated count: %w", err)

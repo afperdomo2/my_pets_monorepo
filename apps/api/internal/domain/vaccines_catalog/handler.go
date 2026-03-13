@@ -50,13 +50,16 @@ func requireSystemUser(c *gin.Context) bool {
 //	@Security	CookieAuth
 //	@Param		page		query		int						false	"Número de página (por defecto 1)"
 //	@Param		per_page	query		int						false	"Elementos por página (por defecto 10)"
+//	@Param		species	query		string					false	"Filtrar por especie (dog, cat, bird, rabbit, fish, other)"
 //	@Success	200	{object}	map[string]interface{}	"data: []VaccineCatalog, total: int, page: int, per_page: int, total_pages: int"
-//	@Failure	401	{object}	map[string]string		"autenticación requerida"
-//	@Failure	500	{object}	map[string]string		"mensaje de error"
+//	@Failure	401	{object}	map[string]string	"autenticación requerida"
+//	@Failure	500	{object}	map[string]string	"mensaje de error"
 //	@Router		/api/v1/vaccines-catalog [get]
 func (h *Handler) GetVaccinesCatalog(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	perPage, _ := strconv.Atoi(c.DefaultQuery("per_page", "10"))
+	species := c.Query("species")
+
 	if page < 1 {
 		page = 1
 	}
@@ -64,7 +67,25 @@ func (h *Handler) GetVaccinesCatalog(c *gin.Context) {
 		perPage = 10
 	}
 
-	vaccines, total, err := h.repo.GetPaginated(c.Request.Context(), page, perPage)
+	// Validar species si se proporciona
+	var speciesFilter *string
+	if species != "" {
+		validSpecies := map[string]bool{
+			"dog":    true,
+			"cat":    true,
+			"bird":   true,
+			"rabbit": true,
+			"fish":   true,
+			"other":  true,
+		}
+		if !validSpecies[species] {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid species filter"})
+			return
+		}
+		speciesFilter = &species
+	}
+
+	vaccines, total, err := h.repo.GetPaginated(c.Request.Context(), page, perPage, speciesFilter)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch vaccines catalog"})
 		return

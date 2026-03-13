@@ -9,13 +9,13 @@ import type { CreateVaccineCatalogPayload, UpdateVaccineCatalogPayload } from "@
 const VACCINES_STALE_TIME = 2 * 60_000; // 2 minutos para listado
 const VACCINE_STALE_TIME = 5 * 60_000; // 5 minutos para detalle individual
 
-export function useGetVaccinesCatalog(page: Ref<number>, perPage: Ref<number>) {
+export function useGetVaccinesCatalog(page: Ref<number>, perPage: Ref<number>, species: Ref<string | undefined>) {
   const queryClient = useQueryClient();
-  const queryKey = computed(() => ["vaccines-catalog", { page: page.value, perPage: perPage.value }]);
+  const queryKey = computed(() => ["vaccines-catalog", { page: page.value, perPage: perPage.value, species: species.value }]);
 
   const query = useQuery({
     queryKey,
-    queryFn: () => vaccineCatalogService.getAll(page.value, perPage.value),
+    queryFn: () => vaccineCatalogService.getAll(page.value, perPage.value, species.value),
     staleTime: VACCINES_STALE_TIME,
   });
 

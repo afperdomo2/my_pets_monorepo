@@ -1190,6 +1190,12 @@ const docTemplate = `{
                         "description": "Elementos por página (por defecto 10)",
                         "name": "per_page",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filtrar por especie (dog, cat, bird, rabbit, fish, other)",
+                        "name": "species",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -1818,7 +1824,6 @@ const docTemplate = `{
         "vaccines_catalog.CreateVaccineCatalogPayload": {
             "type": "object",
             "required": [
-                "frequency_months",
                 "name",
                 "species"
             ],
@@ -1848,7 +1853,6 @@ const docTemplate = `{
         "vaccines_catalog.UpdateVaccineCatalogPayload": {
             "type": "object",
             "required": [
-                "frequency_months",
                 "name",
                 "species"
             ],

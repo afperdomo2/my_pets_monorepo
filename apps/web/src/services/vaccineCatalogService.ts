@@ -17,8 +17,12 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
 }
 
 export const vaccineCatalogService = {
-  getAll(page = 1, perPage = 10): Promise<PaginatedResponse<VaccineCatalog>> {
-    return request(`/vaccines-catalog?page=${page}&per_page=${perPage}`)
+  getAll(page = 1, perPage = 10, species?: string): Promise<PaginatedResponse<VaccineCatalog>> {
+    let url = `/vaccines-catalog?page=${page}&per_page=${perPage}`
+    if (species) {
+      url += `&species=${species}`
+    }
+    return request(url)
   },
 
   getById(id: string): Promise<ApiResponse<VaccineCatalog>> {

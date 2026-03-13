@@ -161,7 +161,6 @@ definitions:
         minItems: 1
         type: array
     required:
-    - frequency_months
     - name
     - species
     type: object
@@ -183,7 +182,6 @@ definitions:
         minItems: 1
         type: array
     required:
-    - frequency_months
     - name
     - species
     type: object
@@ -945,6 +943,10 @@ paths:
         in: query
         name: per_page
         type: integer
+      - description: Filtrar por especie (dog, cat, bird, rabbit, fish, other)
+        in: query
+        name: species
+        type: string
       produces:
       - application/json
       responses:

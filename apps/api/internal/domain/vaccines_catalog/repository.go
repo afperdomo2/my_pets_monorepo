@@ -10,7 +10,7 @@ import (
 var ErrNotFound = errors.New("vaccine catalog not found")
 
 type Repository interface {
-	GetPaginated(ctx context.Context, page, perPage int) ([]models.VaccineCatalog, int64, error)
+	GetPaginated(ctx context.Context, page, perPage int, speciesFilter *string) ([]models.VaccineCatalog, int64, error)
 	GetByID(ctx context.Context, id string) (models.VaccineCatalog, error)
 	GetBySpecies(ctx context.Context, species string) ([]models.VaccineCatalog, error)
 	Create(ctx context.Context, payload CreateVaccineCatalogPayload) (models.VaccineCatalog, error)

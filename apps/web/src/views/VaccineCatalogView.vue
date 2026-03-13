@@ -3,6 +3,7 @@ import { ref, watch } from 'vue'
 import { IconPlus, IconSearch, IconAlertCircle, IconRefresh } from '@tabler/icons-vue'
 import { useGetVaccinesCatalog, useDeleteVaccineCatalog } from '@/composables/useVaccineCatalog'
 import { useUIStore } from '@/stores/ui'
+import { PET_SPECIES } from '@/constants/species'
 import type { VaccineCatalog } from '@/types/vaccineCatalog'
 import VaccineCatalogFormModal from '@/components/vaccine-catalog/VaccineCatalogFormModal.vue'
 import VaccineCatalogTableRow from '@/components/vaccine-catalog/VaccineCatalogTableRow.vue'
@@ -11,9 +12,17 @@ import PerPageSelector from '@/components/ui/PerPageSelector.vue'
 
 const uiStore = useUIStore()
 
+// ── Species filter ──────────────────────────────────────────────
+const speciesFilter = ref<string | undefined>(undefined)
+
+// Al cambiar species, resetear a página 1
+watch(speciesFilter, () => {
+  page.value = 1
+})
+
 // ── Pagination state ────────────────────────────────────────
 const page = ref(1)
-const perPage = ref(uiStore.usersPerPage) // Reutilizamos la configuración de usuarios
+const perPage = ref(uiStore.usersPerPage)
 
 // Al cambiar perPage, sincronizar con store y resetear a página 1
 watch(perPage, (val) => {
@@ -21,7 +30,7 @@ watch(perPage, (val) => {
   page.value = 1
 })
 
-const { data, isLoading, isError, error: fetchError, refresh, isFetching } = useGetVaccinesCatalog(page, perPage)
+const { data, isLoading, isError, error: fetchError, refresh, isFetching } = useGetVaccinesCatalog(page, perPage, speciesFilter)
 
 const deleteVaccine = useDeleteVaccineCatalog()
 
@@ -115,9 +124,17 @@ watch(search, () => {
 
     <!-- Toolbar -->
     <div class="toolbar">
-      <div class="search-box">
-        <IconSearch class="search-icon" :size="16" :stroke-width="2" />
-        <input v-model="search" class="search-input" placeholder="Buscar por nombre o especie…" />
+      <div class="toolbar-filters">
+        <div class="search-box">
+          <IconSearch class="search-icon" :size="16" :stroke-width="2" />
+          <input v-model="search" class="search-input" placeholder="Buscar por nombre…" />
+        </div>
+        <select v-model="speciesFilter" class="species-filter">
+          <option :value="undefined">Todas las especies</option>
+          <option v-for="s in PET_SPECIES" :key="s.value" :value="s.value">
+            {{ s.icon }} {{ s.label }}
+          </option>
+        </select>
       </div>
       <div class="stats-pill">
         <span class="stats-num">{{ total }}</span>
@@ -336,14 +353,39 @@ watch(search, () => {
 .toolbar {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: var(--space-3);
+}
+
+.toolbar-filters {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex: 1;
+  max-width: 500px;
 }
 
 .search-box {
   position: relative;
   flex: 1;
-  max-width: 360px;
   min-width: 0;
+}
+
+.species-filter {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  color: var(--color-text-primary);
+  background: #fff;
+  cursor: pointer;
+  min-width: 140px;
+}
+
+.species-filter:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px rgba(66, 184, 131, 0.15);
 }
 
 @media (max-width: 480px) {
@@ -351,9 +393,18 @@ watch(search, () => {
     flex-wrap: wrap;
   }
 
-  .search-box {
+  .toolbar-filters {
     max-width: 100%;
     width: 100%;
+  }
+
+  .search-box {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .species-filter {
+    min-width: 120px;
   }
 
   .stats-pill {
