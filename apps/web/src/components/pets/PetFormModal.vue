@@ -6,6 +6,7 @@ import { IconX } from '@tabler/icons-vue'
 import { useCreatePet, useUpdatePet } from '@/composables/usePets'
 import { createPetSchema, updatePetSchema } from '@/schemas/pet'
 import { estimatedBirthDate, toGrams } from '@/utils/pet'
+import { PET_SPECIES } from '@/constants/species'
 import { PET_SIZE_VALUES, PET_SIZE_LABELS, PET_SIZE_DESCRIPTIONS, PET_SIZE_ICONS } from '@/constants/petSize'
 import type { Pet } from '@/types/pet'
 import type { PetSize } from '@/constants/petSize'
@@ -205,7 +206,7 @@ function close() {
 
               <div class="field">
                 <label class="field-label">Especie <span class="required">*</span></label>
-                <select
+                  <select
                   v-model="species"
                   v-bind="speciesAttrs"
                   class="field-input field-select"
@@ -213,12 +214,9 @@ function close() {
                   :disabled="mode === 'edit'"
                 >
                   <option value="" disabled>Seleccionar…</option>
-                  <option value="dog">🐕 Perro</option>
-                  <option value="cat">🐈 Gato</option>
-                  <option value="bird">🦜 Periquito</option>
-                  <option value="rabbit">🐇 Conejo</option>
-                  <option value="fish">🐠 Pez</option>
-                  <option value="other">🐾 Otro</option>
+                  <option v-for="s in PET_SPECIES" :key="s.value" :value="s.value">
+                    {{ s.icon }} {{ s.label }}
+                  </option>
                 </select>
                 <p v-if="errors.species" class="field-error">{{ errors.species }}</p>
               </div>

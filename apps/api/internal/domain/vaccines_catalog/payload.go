@@ -4,7 +4,7 @@ package vaccines_catalog
 type CreateVaccineCatalogPayload struct {
 	Name            string   `json:"name"             binding:"required,min=1,max=100"`
 	Species         []string `json:"species"          binding:"required,min=1,dive,oneof=dog cat bird rabbit fish other"`
-	FrequencyMonths int      `json:"frequency_months" binding:"required,min=1,max=120"`
+	FrequencyMonths *int     `json:"frequency_months" binding:"omitempty,min=1,max=120"`
 	IsMandatory     bool     `json:"is_mandatory"`
 }
 
@@ -12,6 +12,6 @@ type CreateVaccineCatalogPayload struct {
 type UpdateVaccineCatalogPayload struct {
 	Name            string   `json:"name"             binding:"required,min=1,max=100"`
 	Species         []string `json:"species"          binding:"required,min=1,dive,oneof=dog cat bird rabbit fish other"`
-	FrequencyMonths int      `json:"frequency_months" binding:"required,min=1,max=120"`
+	FrequencyMonths *int     `json:"frequency_months" binding:"omitempty,min=1,max=120"`
 	IsMandatory     bool     `json:"is_mandatory"`
 }

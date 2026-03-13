@@ -4,6 +4,7 @@ import { useForm } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'
 import { IconX } from '@tabler/icons-vue'
 import { useCreateVaccineCatalog, useUpdateVaccineCatalog } from '@/composables/useVaccineCatalog'
+import { PET_SPECIES, getSpeciesLabel, getSpeciesValue } from '@/constants/species'
 import type { VaccineCatalog } from '@/types/vaccineCatalog'
 import { createVaccineCatalogSchema, updateVaccineCatalogSchema } from '@/schemas/vaccineCatalog'
 
@@ -21,9 +22,13 @@ const submitError = ref<string | null>(null)
 const createVaccine = useCreateVaccineCatalog()
 const updateVaccine = useUpdateVaccineCatalog()
 
-// Especies disponibles — podrían venir de constantes o backend en el futuro
-const availableSpecies = ['perro', 'gato', 'conejo', 'roedor', 'ave', 'reptil']
-const selectedSpecies = ref<string[]>(props.vaccine?.species ?? [])
+// Especies disponibles (centralizadas)
+const availableSpecies = PET_SPECIES
+
+// Inicializar con valores en español para edición
+const selectedSpecies = ref<string[]>(
+  props.vaccine?.species.map(getSpeciesLabel) ?? []
+)
 
 // ── Create form ─────────────────────────────────────────────
 const {
@@ -34,8 +39,7 @@ const {
   validationSchema: toTypedSchema(createVaccineCatalogSchema),
   initialValues: {
     name: '',
-    species: [],
-    frequency_months: 12,
+    frequency_months: null,
     is_mandatory: false,
   },
 })
@@ -46,11 +50,17 @@ const [createIsMandatory, createIsMandatoryAttrs] = defineCreateField('is_mandat
 
 const handleCreate = handleCreateSubmit(async (values) => {
   submitError.value = null
+  if (selectedSpecies.value.length === 0) {
+    submitError.value = 'Selecciona al menos una especie'
+    return
+  }
   try {
+    const speciesInEnglish = selectedSpecies.value.map(s => getSpeciesValue(s))
+    const frequencyMonths = values.frequency_months === undefined ? null : values.frequency_months
     await createVaccine.mutateAsync({
       name: values.name,
-      species: selectedSpecies.value,
-      frequency_months: values.frequency_months,
+      species: speciesInEnglish,
+      frequency_months: frequencyMonths,
       is_mandatory: values.is_mandatory ?? false,
     })
     emit('saved')
@@ -68,8 +78,7 @@ const {
   validationSchema: toTypedSchema(updateVaccineCatalogSchema),
   initialValues: {
     name: props.vaccine?.name ?? '',
-    species: props.vaccine?.species ?? [],
-    frequency_months: props.vaccine?.frequency_months ?? 12,
+    frequency_months: props.vaccine?.frequency_months ?? null,
     is_mandatory: props.vaccine?.is_mandatory ?? false,
   },
 })
@@ -81,13 +90,19 @@ const [editIsMandatory, editIsMandatoryAttrs] = defineEditField('is_mandatory')
 const handleEdit = handleEditSubmit(async (values) => {
   if (!props.vaccine) return
   submitError.value = null
+  if (selectedSpecies.value.length === 0) {
+    submitError.value = 'Selecciona al menos una especie'
+    return
+  }
   try {
+    const speciesInEnglish = selectedSpecies.value.map(s => getSpeciesValue(s))
+    const frequencyMonths = values.frequency_months === undefined ? null : values.frequency_months
     await updateVaccine.mutateAsync({
       id: props.vaccine.id,
       payload: {
         name: values.name,
-        species: selectedSpecies.value,
-        frequency_months: values.frequency_months,
+        species: speciesInEnglish,
+        frequency_months: frequencyMonths,
         is_mandatory: values.is_mandatory ?? false,
       },
     })
@@ -97,19 +112,21 @@ const handleEdit = handleEditSubmit(async (values) => {
   }
 })
 
-function toggleSpecies(specie: string) {
-  const idx = selectedSpecies.value.indexOf(specie)
+function toggleSpecies(specie: { label: string; value: string }) {
+  const idx = selectedSpecies.value.indexOf(specie.label)
   if (idx > -1) {
     selectedSpecies.value.splice(idx, 1)
   } else {
-    selectedSpecies.value.push(specie)
+    selectedSpecies.value.push(specie.label)
   }
 }
 
-const hasSpeciesError = computed(() => {
-  const createError = createErrors.value['species']
-  const editError = editErrors.value['species']
-  return props.mode === 'create' ? createError : editError
+const speciesErrorMessage = computed(() => {
+  // Mostrar error si no hay especies seleccionadas
+  if (selectedSpecies.value.length === 0) {
+    return 'Selecciona al menos una especie'
+  }
+  return null
 })
 </script>
 
@@ -143,17 +160,17 @@ const hasSpeciesError = computed(() => {
           <div class="field">
             <label class="field-label">Especies aplicables</label>
             <div class="species-checkboxes">
-              <label v-for="specie in availableSpecies" :key="specie" class="checkbox-label">
+              <label v-for="specie in availableSpecies" :key="specie.value" class="checkbox-label">
                 <input
                   type="checkbox"
-                  :checked="selectedSpecies.includes(specie)"
+                  :checked="selectedSpecies.includes(specie.label)"
                   @change="toggleSpecies(specie)"
                   class="checkbox-input"
                 />
-                <span class="checkbox-text">{{ specie }}</span>
+                <span class="checkbox-text">{{ specie.label }}</span>
               </label>
             </div>
-            <p v-if="hasSpeciesError" class="field-error">{{ hasSpeciesError }}</p>
+            <p v-if="speciesErrorMessage" class="field-error">{{ speciesErrorMessage }}</p>
           </div>
 
           <div class="field">
@@ -166,7 +183,7 @@ const hasSpeciesError = computed(() => {
               type="number"
               min="1"
               max="360"
-              placeholder="12"
+              placeholder="Opcional"
             />
             <p v-if="createErrors['frequency_months']" class="field-error">
               {{ createErrors['frequency_months'] }}
@@ -213,17 +230,17 @@ const hasSpeciesError = computed(() => {
           <div class="field">
             <label class="field-label">Especies aplicables</label>
             <div class="species-checkboxes">
-              <label v-for="specie in availableSpecies" :key="specie" class="checkbox-label">
+              <label v-for="specie in availableSpecies" :key="specie.value" class="checkbox-label">
                 <input
                   type="checkbox"
-                  :checked="selectedSpecies.includes(specie)"
+                  :checked="selectedSpecies.includes(specie.label)"
                   @change="toggleSpecies(specie)"
                   class="checkbox-input"
                 />
-                <span class="checkbox-text">{{ specie }}</span>
+                <span class="checkbox-text">{{ specie.label }}</span>
               </label>
             </div>
-            <p v-if="hasSpeciesError" class="field-error">{{ hasSpeciesError }}</p>
+            <p v-if="speciesErrorMessage" class="field-error">{{ speciesErrorMessage }}</p>
           </div>
 
           <div class="field">
@@ -236,7 +253,7 @@ const hasSpeciesError = computed(() => {
               type="number"
               min="1"
               max="360"
-              placeholder="12"
+              placeholder="Opcional"
             />
             <p v-if="editErrors['frequency_months']" class="field-error">
               {{ editErrors['frequency_months'] }}

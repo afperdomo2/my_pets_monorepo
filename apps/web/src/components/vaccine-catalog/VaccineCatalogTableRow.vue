@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { IconEdit, IconTrash, IconVaccine } from '@tabler/icons-vue'
+import { getSpeciesLabel } from '@/constants/species'
 import type { VaccineCatalog } from '@/types/vaccineCatalog'
 
 defineProps<{
@@ -20,7 +21,8 @@ function formatDate(iso: string): string {
   })
 }
 
-function frequencyLabel(months: number): string {
+function frequencyLabel(months: number | null): string {
+  if (months === null) return 'Dosis única'
   if (months === 1) return 'Mensual'
   if (months === 12) return 'Anual'
   return `${months} meses`
@@ -43,14 +45,16 @@ function frequencyLabel(months: number): string {
     <td class="td-species">
       <div class="species-tags">
         <span v-for="specie in vaccine.species" :key="specie" class="species-tag">
-          {{ specie }}
+          {{ getSpeciesLabel(specie) }}
         </span>
       </div>
     </td>
 
     <!-- Frecuencia -->
     <td class="td-center">
-      <span class="frequency-badge">{{ frequencyLabel(vaccine.frequency_months) }}</span>
+      <span class="frequency-badge" :class="{ 'frequency-badge--single': vaccine.frequency_months === null }">
+        {{ frequencyLabel(vaccine.frequency_months) }}
+      </span>
     </td>
 
     <!-- Obligatoria -->
@@ -170,6 +174,11 @@ function frequencyLabel(months: number): string {
   font-weight: 600;
   background: #eff6ff;
   color: #2563eb;
+}
+
+.frequency-badge--single {
+  background: #f3f4f6;
+  color: #6b7280;
 }
 
 .mandatory-badge {

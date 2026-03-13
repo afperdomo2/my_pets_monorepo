@@ -65,8 +65,7 @@ const bottomItems = [
 ]
 
 function isActive(itemName: string): boolean {
-  if (itemName === 'home') return route.name === 'home'
-  return (route.name as string)?.startsWith(itemName) ?? false
+  return route.name === itemName
 }
 </script>
 
