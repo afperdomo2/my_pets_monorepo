@@ -19,12 +19,12 @@ func NewGormRepo(db *gorm.DB) Repository {
 	return &gormRepo{db: db}
 }
 
-// GetPaginated retorna registros de la guía de salud paginados con filtro opcional de especie.
-func (r *gormRepo) GetPaginated(ctx context.Context, page, perPage int, speciesFilter *string) ([]models.HealthCatalog, int64, error) {
+// GetPaginatedByCategory retorna registros de la guía de salud paginados con filtro opcional de especie, filtrados por categoría.
+func (r *gormRepo) GetPaginatedByCategory(ctx context.Context, category string, page, perPage int, speciesFilter *string) ([]models.HealthCatalog, int64, error) {
 	var items []models.HealthCatalog
 	var total int64
 
-	base := r.db.WithContext(ctx).Model(&models.HealthCatalog{})
+	base := r.db.WithContext(ctx).Model(&models.HealthCatalog{}).Where("category = ?", category)
 
 	// Aplicar filtro de especie si se proporciona
 	if speciesFilter != nil && *speciesFilter != "" {
@@ -32,12 +32,12 @@ func (r *gormRepo) GetPaginated(ctx context.Context, page, perPage int, speciesF
 	}
 
 	if err := base.Count(&total).Error; err != nil {
-		return nil, 0, fmt.Errorf("health_catalog.GetPaginated count: %w", err)
+		return nil, 0, fmt.Errorf("health_catalog.GetPaginatedByCategory count: %w", err)
 	}
 
 	offset := (page - 1) * perPage
 	if err := base.Order("name ASC").Limit(perPage).Offset(offset).Find(&items).Error; err != nil {
-		return nil, 0, fmt.Errorf("health_catalog.GetPaginated: %w", err)
+		return nil, 0, fmt.Errorf("health_catalog.GetPaginatedByCategory: %w", err)
 	}
 
 	return items, total, nil

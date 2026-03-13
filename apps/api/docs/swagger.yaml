@@ -479,46 +479,6 @@ paths:
       tags:
       - auth
   /api/v1/health-catalogs:
-    get:
-      parameters:
-      - description: Número de página (por defecto 1)
-        in: query
-        name: page
-        type: integer
-      - description: Elementos por página (por defecto 10)
-        in: query
-        name: per_page
-        type: integer
-      - description: Filtrar por especie (dog, cat, bird, rabbit, fish, other)
-        in: query
-        name: species
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 'data: []HealthCatalog, total: int, page: int, per_page: int,
-            total_pages: int'
-          schema:
-            additionalProperties: true
-            type: object
-        "401":
-          description: autenticación requerida
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: mensaje de error
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      security:
-      - CookieAuth: []
-      summary: Listar registros de la guía de salud (paginado)
-      tags:
-      - health-catalogs
     post:
       consumes:
       - application/json
@@ -718,6 +678,58 @@ paths:
       security:
       - CookieAuth: []
       summary: Actualizar un registro de la guía de salud (solo usuario sistema)
+      tags:
+      - health-catalogs
+  /api/v1/health-catalogs/category/{category}:
+    get:
+      parameters:
+      - description: Categoría (vaccine, deworming, exam)
+        in: path
+        name: category
+        required: true
+        type: string
+      - description: Número de página (por defecto 1)
+        in: query
+        name: page
+        type: integer
+      - description: Elementos por página (por defecto 10)
+        in: query
+        name: per_page
+        type: integer
+      - description: Filtrar por especie (dog, cat, bird, rabbit, fish, other)
+        in: query
+        name: species
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'data: []HealthCatalog, total: int, page: int, per_page: int,
+            total_pages: int'
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: categoría inválida
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: autenticación requerida
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: mensaje de error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - CookieAuth: []
+      summary: Listar registros de la guía de salud por categoría (paginado)
       tags:
       - health-catalogs
   /api/v1/health-catalogs/species/{species}:

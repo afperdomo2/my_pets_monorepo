@@ -17,8 +17,8 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
 }
 
 export const healthCatalogService = {
-  getAll(page = 1, perPage = 10, species?: string): Promise<PaginatedResponse<HealthCatalog>> {
-    let url = `/health-catalogs?page=${page}&per_page=${perPage}`
+  getAll(category: string, page = 1, perPage = 10, species?: string): Promise<PaginatedResponse<HealthCatalog>> {
+    let url = `/health-catalogs/category/${category}?page=${page}&per_page=${perPage}`
     if (species) {
       url += `&species=${species}`
     }

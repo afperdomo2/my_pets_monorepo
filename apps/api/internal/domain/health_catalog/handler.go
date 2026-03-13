@@ -41,21 +41,35 @@ func requireSystemUser(c *gin.Context) bool {
 	return true
 }
 
-// GetHealthCatalogs maneja GET /api/v1/health-catalogs
+// GetHealthCatalogsByCategory maneja GET /api/v1/health-catalogs/category/:category
 // Accesible por cualquier usuario autenticado.
 //
-//	@Summary	Listar registros de la guía de salud (paginado)
+//	@Summary	Listar registros de la guía de salud por categoría (paginado)
 //	@Tags		health-catalogs
 //	@Produce	json
 //	@Security	CookieAuth
+//	@Param		category	path		string					true	"Categoría (vaccine, deworming, exam)"
 //	@Param		page		query		int						false	"Número de página (por defecto 1)"
 //	@Param		per_page	query		int						false	"Elementos por página (por defecto 10)"
 //	@Param		species		query		string					false	"Filtrar por especie (dog, cat, bird, rabbit, fish, other)"
 //	@Success	200	{object}	map[string]interface{}	"data: []HealthCatalog, total: int, page: int, per_page: int, total_pages: int"
+//	@Failure	400	{object}	map[string]string	"categoría inválida"
 //	@Failure	401	{object}	map[string]string	"autenticación requerida"
 //	@Failure	500	{object}	map[string]string	"mensaje de error"
-//	@Router		/api/v1/health-catalogs [get]
-func (h *Handler) GetHealthCatalogs(c *gin.Context) {
+//	@Router		/api/v1/health-catalogs/category/{category} [get]
+func (h *Handler) GetHealthCatalogsByCategory(c *gin.Context) {
+	category := c.Param("category")
+	
+	validCategories := map[string]bool{
+		"vaccine":   true,
+		"deworming": true,
+		"exam":      true,
+	}
+	if !validCategories[category] {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid category"})
+		return
+	}
+
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	perPage, _ := strconv.Atoi(c.DefaultQuery("per_page", "10"))
 	species := c.Query("species")
@@ -85,7 +99,7 @@ func (h *Handler) GetHealthCatalogs(c *gin.Context) {
 		speciesFilter = &species
 	}
 
-	items, total, err := h.repo.GetPaginated(c.Request.Context(), page, perPage, speciesFilter)
+	items, total, err := h.repo.GetPaginatedByCategory(c.Request.Context(), category, page, perPage, speciesFilter)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch health catalog"})
 		return

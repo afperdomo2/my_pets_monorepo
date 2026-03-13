@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { IconEdit, IconTrash, IconShieldCheck } from '@tabler/icons-vue'
 import { getSpeciesLabel } from '@/constants/species'
-import type { HealthCatalog, HealthCatalogCategory } from '@/types/healthCatalog'
+import type { HealthCatalog } from '@/types/healthCatalog'
 
 defineProps<{
   item: HealthCatalog
@@ -13,19 +13,7 @@ const emit = defineEmits<{
   delete: [item: HealthCatalog]
 }>()
 
-// Mapa de categorías a etiquetas en español
-const CATEGORY_LABELS: Record<HealthCatalogCategory, string> = {
-  vaccine: 'Vacuna',
-  deworming: 'Desparasitación',
-  exam: 'Examen',
-}
-
-// Mapa de categorías a clases CSS para el badge
-const CATEGORY_CLASS: Record<HealthCatalogCategory, string> = {
-  vaccine: 'category-badge--vaccine',
-  deworming: 'category-badge--deworming',
-  exam: 'category-badge--exam',
-}
+// Mapa de categorías removido ya que la columna no se muestra
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('es-ES', {
@@ -52,15 +40,11 @@ function frequencyLabel(months: number | null): string {
       </div>
       <div class="item-info">
         <span class="item-name">{{ item.name }}</span>
+        <span v-if="item.description" class="item-desc">{{ item.description }}</span>
       </div>
     </td>
 
-    <!-- Categoría -->
-    <td class="td-center">
-      <span class="category-badge" :class="CATEGORY_CLASS[item.category]">
-        {{ CATEGORY_LABELS[item.category] }}
-      </span>
-    </td>
+
 
     <!-- Especies -->
     <td class="td-species">
@@ -163,6 +147,16 @@ function frequencyLabel(months: number | null): string {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.item-desc {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.3;
 }
 
 /* ── Category badge ─────────────────────────────────────── */

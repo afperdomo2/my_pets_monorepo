@@ -12,13 +12,13 @@ const HEALTH_CATALOG_LIST_STALE_TIME = 2 * 60_000; // 2 minutos para listado
 /** Stale time para detalles individuales (en ms). Más largo porque cambios son menos frecuentes. */
 const HEALTH_CATALOG_ITEM_STALE_TIME = 5 * 60_000; // 5 minutos para detalle individual
 
-export function useGetHealthCatalogs(page: Ref<number>, perPage: Ref<number>, species: Ref<string | undefined>) {
+export function useGetHealthCatalogs(category: Ref<string>, page: Ref<number>, perPage: Ref<number>, species: Ref<string | undefined>) {
   const queryClient = useQueryClient();
-  const queryKey = computed(() => ["health-catalog", { page: page.value, perPage: perPage.value, species: species.value }]);
+  const queryKey = computed(() => ["health-catalog", { category: category.value, page: page.value, perPage: perPage.value, species: species.value }]);
 
   const query = useQuery({
     queryKey,
-    queryFn: () => healthCatalogService.getAll(page.value, perPage.value, species.value),
+    queryFn: () => healthCatalogService.getAll(category.value, page.value, perPage.value, species.value),
     staleTime: HEALTH_CATALOG_LIST_STALE_TIME,
   });
 

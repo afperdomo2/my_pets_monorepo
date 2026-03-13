@@ -327,67 +327,6 @@ const docTemplate = `{
             }
         },
         "/api/v1/health-catalogs": {
-            "get": {
-                "security": [
-                    {
-                        "CookieAuth": []
-                    }
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "health-catalogs"
-                ],
-                "summary": "Listar registros de la guía de salud (paginado)",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Número de página (por defecto 1)",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Elementos por página (por defecto 10)",
-                        "name": "per_page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Filtrar por especie (dog, cat, bird, rabbit, fish, other)",
-                        "name": "species",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "data: []HealthCatalog, total: int, page: int, per_page: int, total_pages: int",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "401": {
-                        "description": "autenticación requerida",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "mensaje de error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            },
             "post": {
                 "security": [
                     {
@@ -443,6 +382,85 @@ const docTemplate = `{
                     },
                     "403": {
                         "description": "prohibido",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "mensaje de error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/health-catalogs/category/{category}": {
+            "get": {
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "health-catalogs"
+                ],
+                "summary": "Listar registros de la guía de salud por categoría (paginado)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Categoría (vaccine, deworming, exam)",
+                        "name": "category",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Número de página (por defecto 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Elementos por página (por defecto 10)",
+                        "name": "per_page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filtrar por especie (dog, cat, bird, rabbit, fish, other)",
+                        "name": "species",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "data: []HealthCatalog, total: int, page: int, per_page: int, total_pages: int",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "categoría inválida",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "autenticación requerida",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {

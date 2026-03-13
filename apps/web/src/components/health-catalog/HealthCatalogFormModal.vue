@@ -11,6 +11,7 @@ import { createHealthCatalogSchema, updateHealthCatalogSchema } from '@/schemas/
 const props = defineProps<{
   mode: 'create' | 'edit'
   item?: HealthCatalog
+  defaultCategory?: HealthCatalogCategory
 }>()
 
 const emit = defineEmits<{
@@ -46,7 +47,7 @@ const {
   validationSchema: toTypedSchema(createHealthCatalogSchema),
   initialValues: {
     name: '',
-    category: 'vaccine' as HealthCatalogCategory,
+    category: props.defaultCategory ?? 'vaccine',
     description: '',
     frequency_months: null,
     is_mandatory: false,
@@ -154,7 +155,7 @@ const speciesErrorMessage = computed(() => {
       <div class="modal">
         <div class="modal-header">
           <h2 class="modal-title">
-            {{ mode === 'create' ? 'Nuevo registro' : 'Editar registro' }}
+            {{ mode === 'create' ? (props.defaultCategory === 'vaccine' ? 'Nueva vacuna' : props.defaultCategory === 'deworming' ? 'Nueva desparasitación' : 'Nuevo examen') : 'Editar registro' }}
           </h2>
           <button class="modal-close" @click="emit('close')">
             <IconX :size="18" :stroke-width="2.5" />
@@ -182,6 +183,7 @@ const speciesErrorMessage = computed(() => {
               v-bind="createCategoryAttrs"
               class="field-input"
               :class="{ 'field-input--error': createErrors['category'] }"
+              disabled
             >
               <option v-for="opt in CATEGORY_OPTIONS" :key="opt.value" :value="opt.value">
                 {{ opt.label }}
@@ -280,6 +282,7 @@ const speciesErrorMessage = computed(() => {
               v-bind="editCategoryAttrs"
               class="field-input"
               :class="{ 'field-input--error': editErrors['category'] }"
+              disabled
             >
               <option v-for="opt in CATEGORY_OPTIONS" :key="opt.value" :value="opt.value">
                 {{ opt.label }}

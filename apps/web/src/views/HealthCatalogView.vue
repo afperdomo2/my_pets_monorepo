@@ -1,16 +1,27 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
+import { useRoute } from 'vue-router'
 import { IconPlus, IconSearch, IconAlertCircle, IconRefresh } from '@tabler/icons-vue'
 import { useGetHealthCatalogs, useDeleteHealthCatalog } from '@/composables/useHealthCatalog'
 import { useUIStore } from '@/stores/ui'
 import { PET_SPECIES } from '@/constants/species'
-import type { HealthCatalog } from '@/types/healthCatalog'
+import type { HealthCatalog, HealthCatalogCategory } from '@/types/healthCatalog'
 import HealthCatalogFormModal from '@/components/health-catalog/HealthCatalogFormModal.vue'
 import HealthCatalogTableRow from '@/components/health-catalog/HealthCatalogTableRow.vue'
 import AppPagination from '@/components/ui/AppPagination.vue'
 import PerPageSelector from '@/components/ui/PerPageSelector.vue'
 
 const uiStore = useUIStore()
+const route = useRoute()
+
+// El category actual viene de la URL. Si no hay (no debería pasar por el redirect), fallback a vaccine
+const category = computed(() => {
+  const cat = route.params.category as string
+  if (['vaccine', 'deworming', 'exam'].includes(cat)) {
+    return cat as HealthCatalogCategory
+  }
+  return 'vaccine'
+})
 
 // ── Species filter ──────────────────────────────────────────────
 const speciesFilter = ref<string | undefined>(undefined)
@@ -30,7 +41,7 @@ watch(perPage, (val) => {
   page.value = 1
 })
 
-const { data, isLoading, isError, error: fetchError, refresh, isFetching } = useGetHealthCatalogs(page, perPage, speciesFilter)
+const { data, isLoading, isError, error: fetchError, refresh, isFetching } = useGetHealthCatalogs(category, page, perPage, speciesFilter)
 
 const deleteItem = useDeleteHealthCatalog()
 
@@ -104,26 +115,19 @@ watch(search, () => {
 
 <template>
   <div class="health-catalog-view">
-    <!-- Header -->
-    <div class="page-header">
-      <div class="page-header__text">
-        <h1 class="page-title">Guía de salud</h1>
-        <p class="page-subtitle">Administra la guía de salud para tus mascotas</p>
-      </div>
-      <div class="header-actions">
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div class="toolbar-actions">
         <button class="btn-refresh" title="Refrescar" :disabled="isFetching" @click="refresh">
           <IconRefresh :size="16" :stroke-width="2" :class="{ spinning: isFetching }" />
           <span>Refrescar</span>
         </button>
         <button class="btn-create" @click="openCreate">
           <IconPlus :size="16" :stroke-width="2.5" />
-          Nuevo registro
+          {{ category === 'vaccine' ? 'Nueva vacuna' : category === 'deworming' ? 'Nueva desparasitación' : 'Nuevo examen' }}
         </button>
       </div>
-    </div>
 
-    <!-- Toolbar -->
-    <div class="toolbar">
       <div class="toolbar-filters">
         <div class="search-box">
           <IconSearch class="search-icon" :size="16" :stroke-width="2" />
@@ -164,7 +168,7 @@ watch(search, () => {
     <!-- Empty state (no items) -->
     <div v-else-if="items.length === 0" class="empty-state">
       <IconSearch :size="40" :stroke-width="1.5" />
-      <p>No hay registros en la guía de salud</p>
+      <p>No hay registros para esta categoría</p>
       <button class="btn-secondary" @click="openCreate">Crear primer registro</button>
     </div>
 
@@ -175,7 +179,6 @@ watch(search, () => {
           <tr>
             <th>Nombre</th>
             <th class="th-center th-species">Especies</th>
-            <th class="th-center">Categoría</th>
             <th class="th-center">Frecuencia</th>
             <th class="th-center">Obligatoria</th>
             <th class="th-center">Creado</th>
@@ -215,6 +218,7 @@ watch(search, () => {
       v-if="showModal"
       :mode="modalMode"
       :item="editingItem ?? undefined"
+      :default-category="category"
       @close="closeModal"
       @saved="closeModal"
     />
@@ -226,7 +230,7 @@ watch(search, () => {
 .health-catalog-view {
   width: 100%;
   max-width: 100%;
-  padding: var(--space-8) var(--space-10);
+  padding: var(--space-6) 0;
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
@@ -236,65 +240,35 @@ watch(search, () => {
 
 @media (max-width: 1024px) {
   .health-catalog-view {
-    padding: var(--space-6) var(--space-6);
+    padding: var(--space-4) 0;
   }
 }
 
 @media (max-width: 768px) {
   .health-catalog-view {
-    padding: var(--space-5) var(--space-4);
+    padding: var(--space-3) 0;
     gap: var(--space-4);
   }
 }
 
-/* ── Header ────────────────────────────────────────────── */
-.page-header {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: var(--space-4);
-}
-
-@media (max-width: 480px) {
-  .page-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--space-3);
-  }
-
-  .header-actions {
-    width: 100%;
-  }
-
-  .btn-refresh span {
-    display: none;
-  }
-
-  .btn-create {
-    flex: 1;
-    justify-content: center;
-  }
-}
-
-.page-title {
-  font-size: var(--text-2xl);
-  font-weight: 700;
-  color: var(--color-text-primary);
-  margin: 0 0 var(--space-1);
-  line-height: 1.2;
-}
-
-.page-subtitle {
-  font-size: var(--text-sm);
-  color: var(--color-text-tertiary);
-  margin: 0;
-}
-
-.header-actions {
+/* ── Toolbar ───────────────────────────────────────────── */
+.toolbar {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
-  flex-shrink: 0;
+  justify-content: space-between;
+  gap: var(--space-4);
+  background: #fff;
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border-light);
+}
+
+.toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  border-right: 1px solid var(--color-border-light);
+  padding-right: var(--space-4);
 }
 
 .btn-refresh {
@@ -389,29 +363,32 @@ watch(search, () => {
   box-shadow: 0 0 0 3px rgba(66, 184, 131, 0.15);
 }
 
-@media (max-width: 480px) {
+@media (max-width: 768px) {
   .toolbar {
     flex-wrap: wrap;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .toolbar-actions {
+    border-right: none;
+    padding-right: 0;
+    border-bottom: 1px solid var(--color-border-light);
+    padding-bottom: var(--space-3);
+    justify-content: space-between;
   }
 
   .toolbar-filters {
     max-width: 100%;
-    width: 100%;
-  }
-
-  .search-box {
-    flex: 1;
-    min-width: 0;
-  }
-
-  .species-filter {
-    min-width: 120px;
   }
 
   .stats-pill {
     margin-left: 0;
+    align-self: flex-start;
   }
 }
+
+
 
 .search-icon {
   position: absolute;

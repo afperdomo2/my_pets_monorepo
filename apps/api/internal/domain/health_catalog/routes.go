@@ -6,7 +6,7 @@ import "github.com/gin-gonic/gin"
 func RegisterRoutes(rg *gin.RouterGroup, h *Handler) {
 	healthCatalog := rg.Group("/health-catalogs")
 	{
-		healthCatalog.GET("", h.GetHealthCatalogs)
+		healthCatalog.GET("/category/:category", h.GetHealthCatalogsByCategory)
 		healthCatalog.GET("/species/:species", h.GetHealthCatalogBySpecies)
 		healthCatalog.GET("/:id", h.GetHealthCatalogByID)
 		healthCatalog.POST("", h.CreateHealthCatalog)

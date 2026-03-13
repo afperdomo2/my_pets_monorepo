@@ -84,9 +84,19 @@ const router = createRouter({
         },
         {
           path: 'health-catalog',
-          name: 'health-catalog',
-          component: () => import('../views/HealthCatalogView.vue'),
+          component: () => import('../views/HealthCatalogLayout.vue'),
           meta: { requiresSystemUser: true },
+          children: [
+            {
+              path: '',
+              redirect: '/health-catalog/vaccine',
+            },
+            {
+              path: ':category',
+              name: 'health-catalog-category',
+              component: () => import('../views/HealthCatalogView.vue'),
+            },
+          ],
         },
       ],
     },
