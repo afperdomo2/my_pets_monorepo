@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/lib/pq"
 	"gorm.io/gorm"
 
+	"github.com/lib/pq"
 	"github.com/my-pets/api/internal/models"
 )
 

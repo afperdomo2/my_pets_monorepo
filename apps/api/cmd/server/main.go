@@ -22,6 +22,8 @@ import (
 //	@tag.description	Operaciones sobre mascotas
 //	@tag.name			users
 //	@tag.description	Operaciones sobre usuarios
+//	@tag.name			vaccines-catalog
+//	@tag.description	Operaciones sobre el catálogo de vacunas
 
 //	@securityDefinitions.apikey	CookieAuth
 //	@in							cookie

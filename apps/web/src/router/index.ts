@@ -82,6 +82,12 @@ const router = createRouter({
           component: () => import('../views/UsersView.vue'),
           meta: { requiresSystemUser: true },
         },
+        {
+          path: 'vaccines-catalog',
+          name: 'vaccines-catalog',
+          component: () => import('../views/VaccineCatalogView.vue'),
+          meta: { requiresSystemUser: true },
+        },
       ],
     },
 

@@ -13,6 +13,7 @@ import (
 	domainPet "github.com/my-pets/api/internal/domain/pet"
 	domainSetup "github.com/my-pets/api/internal/domain/setup"
 	domainUser "github.com/my-pets/api/internal/domain/user"
+	vaccinesCatalog "github.com/my-pets/api/internal/domain/vaccines_catalog"
 	"github.com/my-pets/api/internal/middleware"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -75,6 +76,11 @@ func Run(cfg *config.Config, db *gorm.DB) {
 		}
 		userHandler := domainUser.NewHandler(userRepo, petCountFn)
 		domainUser.RegisterRoutes(protected, userHandler)
+
+		// Vaccines catalog domain (system user only for mutations)
+		vaccinesCatalogRepo := vaccinesCatalog.NewGormRepo(db)
+		vaccinesCatalogHandler := vaccinesCatalog.NewHandler(vaccinesCatalogRepo)
+		vaccinesCatalog.RegisterRoutes(protected, vaccinesCatalogHandler)
 	}
 
 	log.Printf("Server running on :%s", cfg.Port)

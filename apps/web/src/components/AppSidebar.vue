@@ -10,6 +10,7 @@ import {
   IconUsers,
   IconSettings,
   IconLogout,
+  IconListCheck,
 } from '@tabler/icons-vue'
 import { useAuthStore } from '@/stores/auth'
 
@@ -56,6 +57,7 @@ const navItems = [
 
 const adminNavItems = [
   { to: '/users', name: 'users', label: 'Usuarios', icon: IconUsers },
+  { to: '/vaccines-catalog', name: 'vaccines-catalog', label: 'Catálogo de vacunas', icon: IconListCheck },
 ]
 
 const bottomItems = [
