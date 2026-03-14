@@ -2,75 +2,30 @@
 import { ref } from 'vue'
 import { IconShieldCheck, IconAlertTriangle, IconClockExclamation, IconPlus } from '@tabler/icons-vue'
 import VaccineStatCard from '@/components/vaccines/VaccineStatCard.vue'
-import VaccineTimelineCard from '@/components/vaccines/VaccineTimelineCard.vue'
+import VaccineUpcomingCard from '@/components/vaccines/VaccineUpcomingCard.vue'
 import VaccineHistoryTable from '@/components/vaccines/VaccineHistoryTable.vue'
 import VaccineRecordModal from '@/components/vaccines/VaccineRecordModal.vue'
+import { useGetUpcomingVaccines } from '@/composables/useHealthRecords'
 
 // ── Estado del modal ────────────────────────────
 const showModal = ref(false)
 const preselectedPet = ref<string | undefined>(undefined)
+const preselectedVaccine = ref<string | undefined>(undefined)
 
-function openModal(petId?: string) {
+function openModal(petId?: string, vaccineName?: string) {
   preselectedPet.value = petId
+  preselectedVaccine.value = vaccineName
   showModal.value = true
 }
 
 function closeModal() {
   showModal.value = false
   preselectedPet.value = undefined
+  preselectedVaccine.value = undefined
 }
 
-// ── Datos mock del timeline ─────────────────────
-const timelineItems = [
-  {
-    id: '1',
-    petName: 'Romeo',
-    petInitials: 'RO',
-    petSpecies: 'dog' as const,
-    lifeStage: 'Adulto',
-    vaccineName: 'Antirrábica',
-    dueDate: '20 feb 2026',
-    dueLabel: 'Vencida hace 21 días',
-    urgency: 'urgent' as const,
-    petId: '1',
-  },
-  {
-    id: '2',
-    petName: 'Simba',
-    petInitials: 'SI',
-    petSpecies: 'cat' as const,
-    lifeStage: 'Adulto',
-    vaccineName: 'Triple felina',
-    dueDate: '18 mar 2026',
-    dueLabel: 'En 5 días',
-    urgency: 'soon' as const,
-    petId: '3',
-  },
-  {
-    id: '3',
-    petName: 'Manchas',
-    petInitials: 'MA',
-    petSpecies: 'dog' as const,
-    lifeStage: 'Senior',
-    vaccineName: 'Polivalente canina',
-    dueDate: '10 abr 2026',
-    dueLabel: 'En 28 días',
-    urgency: 'soon' as const,
-    petId: '4',
-  },
-  {
-    id: '4',
-    petName: 'Bolt',
-    petInitials: 'BO',
-    petSpecies: 'dog' as const,
-    lifeStage: 'Cachorro',
-    vaccineName: 'Sextuple',
-    dueDate: '01 ago 2026',
-    dueLabel: 'En 4 meses',
-    urgency: 'future' as const,
-    petId: '5',
-  },
-]
+// ── Próximas vacunas (datos reales) ─────────────────────
+const { records, total, isLoading, isError, refresh } = useGetUpcomingVaccines(10)
 </script>
 
 <template>
@@ -116,21 +71,35 @@ const timelineItems = [
     <section class="timeline-section">
       <div class="section-header">
         <h2 class="section-title">Próximas aplicaciones</h2>
-        <span class="section-count">{{ timelineItems.length }} pendientes</span>
+        <span class="section-count">{{ total }} pendientes</span>
       </div>
-      <div class="timeline-list">
-        <VaccineTimelineCard
-          v-for="item in timelineItems"
-          :key="item.id"
-          :pet-name="item.petName"
-          :pet-initials="item.petInitials"
-          :pet-species="item.petSpecies"
-          :life-stage="item.lifeStage"
-          :vaccine-name="item.vaccineName"
-          :due-date="item.dueDate"
-          :due-label="item.dueLabel"
-          :urgency="item.urgency"
-          @register="openModal(item.petId)"
+
+      <div v-if="isLoading" class="loading-state">
+        <div class="spinner" />
+        <p>Cargando próximas vacunas...</p>
+      </div>
+
+      <div v-else-if="isError" class="error-state">
+        <p>Error al cargar las próximas vacunas</p>
+        <button class="btn-retry" @click="refresh">Reintentar</button>
+      </div>
+
+      <div v-else-if="records.length === 0" class="empty-state">
+        <p>¡No hay vacunas pendientes! 🎉</p>
+        <span>Todas las mascotas están al día con sus vacunas.</span>
+      </div>
+
+      <div v-else class="timeline-list">
+        <VaccineUpcomingCard
+          v-for="record in records"
+          :key="record.id"
+          :record-id="record.id"
+          :pet-id="record.pet_id"
+          :pet-name="record.pet.name"
+          :pet-species="record.pet.species"
+          :vaccine-name="record.name"
+          :due-date="record.due_date"
+          @register="openModal(record.pet_id, record.name)"
         />
       </div>
     </section>
@@ -144,6 +113,7 @@ const timelineItems = [
     <VaccineRecordModal
       v-if="showModal"
       :preselected-pet="preselectedPet"
+      :preselected-vaccine="preselectedVaccine"
       @close="closeModal"
     />
   </div>
@@ -276,5 +246,62 @@ const timelineItems = [
 .history-section {
   display: flex;
   flex-direction: column;
+}
+
+/* ── Loading / Error / Empty states ──────────────── */
+.loading-state,
+.error-state,
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  padding: var(--space-10);
+  text-align: center;
+}
+
+.loading-state p,
+.error-state p,
+.empty-state p {
+  font-size: var(--text-sm);
+  color: var(--color-text-tertiary);
+  margin: 0;
+}
+
+.empty-state span {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--color-border);
+  border-top-color: var(--color-accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.btn-retry {
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.btn-retry:hover {
+  background: var(--color-accent-hover);
 }
 </style>

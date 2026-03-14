@@ -8,6 +8,8 @@ import type { CreateHealthRecordPayload, UpdateHealthRecordPayload, UpdateStatus
 // ═══════════════════════════════════════════════════════════════════════════════════
 /** Stale time para listados paginados (en ms). */
 const HEALTH_RECORD_LIST_STALE_TIME = 2 * 60_000; // 2 minutos
+/** Stale time para próximos registros (en ms). */
+const HEALTH_RECORD_UPCOMING_STALE_TIME = 5 * 60_000; // 5 minutos
 
 export function useGetAllHealthRecords(page: Ref<number>, perPage: Ref<number>) {
   const queryClient = useQueryClient();
@@ -130,4 +132,49 @@ export function useDeleteHealthRecord() {
       queryClient.invalidateQueries({ queryKey: ["health-records", "pet", variables.petId] });
     },
   });
+}
+
+/**
+ * Obtiene los próximos registros pendientes de aplicación.
+ * @param limit - Cantidad de registros a retornar (default: 10, max: 50)
+ * @param category - Filtrar por categoría (opcional): 'vaccine', 'deworming', 'exam'
+ */
+export function useGetUpcomingRecords(limit = 10, category?: string) {
+  const queryClient = useQueryClient();
+  const queryKey = computed(() => ["health-records", "upcoming", { limit, category }]);
+
+  const query = useQuery({
+    queryKey,
+    queryFn: () => healthRecordService.getUpcoming(limit, category),
+    staleTime: HEALTH_RECORD_UPCOMING_STALE_TIME,
+  });
+
+  const records = computed(() => query.data.value?.data ?? []);
+  const total = computed(() => query.data.value?.total ?? 0);
+
+  let refreshing = false;
+  async function refresh() {
+    if (refreshing) return;
+    refreshing = true;
+    try {
+      await queryClient.invalidateQueries({ queryKey: ["health-records", "upcoming"], refetchType: "active" });
+    } finally {
+      refreshing = false;
+    }
+  }
+
+  return {
+    ...query,
+    records,
+    total,
+    refresh,
+  };
+}
+
+/**
+ * Obtiene las próximas vacunas pendientes de aplicación.
+ * @param limit - Cantidad de registros a retornar (default: 10, max: 50)
+ */
+export function useGetUpcomingVaccines(limit = 10) {
+  return useGetUpcomingRecords(limit, 'vaccine');
 }

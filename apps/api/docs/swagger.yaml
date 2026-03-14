@@ -1115,6 +1115,42 @@ paths:
       summary: Listar registros de salud de una mascota por categoría (paginado)
       tags:
       - health-records
+  /api/v1/health-records/upcoming:
+    get:
+      parameters:
+      - description: 'Cantidad de registros a retornar (default: 10, max: 50)'
+        in: query
+        name: limit
+        type: integer
+      - description: Filtrar por categoría (vaccine, deworming, exam)
+        in: query
+        name: category
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'data: []HealthRecord, total: int'
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: autenticación requerida
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: mensaje de error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - CookieAuth: []
+      summary: Listar próximos registros pendientes (sin paginación)
+      tags:
+      - health-records
   /api/v1/pets:
     get:
       parameters:

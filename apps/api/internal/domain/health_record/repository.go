@@ -38,4 +38,10 @@ type Repository interface {
 
 	// Delete elimina un registro de salud validando que pertenezca al usuario.
 	Delete(ctx context.Context, id, ownerID string) error
+
+	// GetUpcomingRecords retorna los próximos registros pendientes de aplicación del usuario.
+	// Si category no está vacío, filtra por esa categoría.
+	// Retorna máximo 'limit' registros, ordenados por due_date ASC.
+	// No tiene paginación.
+	GetUpcomingRecords(ctx context.Context, ownerID, category string, limit int) ([]models.HealthRecord, error)
 }

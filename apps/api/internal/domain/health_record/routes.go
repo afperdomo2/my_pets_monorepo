@@ -10,6 +10,7 @@ import "github.com/gin-gonic/gin"
 //   - PUT    /health-records/:record_id                         → actualizar
 //   - PATCH  /health-records/:record_id/status                  → cambiar status
 //   - DELETE /health-records/:record_id                         → eliminar
+//   - GET    /health-records/upcoming                           → próximos registros pendientes
 //   - GET    /health-records/pets/:pet_id/category/:category    → por mascota y categoría (más específico, primero)
 //   - GET    /health-records/pets/:pet_id                       → por mascota
 func RegisterRoutes(rg *gin.RouterGroup, h *Handler) {
@@ -20,6 +21,9 @@ func RegisterRoutes(rg *gin.RouterGroup, h *Handler) {
 		healthRecords.PUT("/:record_id", h.UpdateHealthRecord)
 		healthRecords.PATCH("/:record_id/status", h.UpdateHealthRecordStatus)
 		healthRecords.DELETE("/:record_id", h.DeleteHealthRecord)
+
+		// Próximos registros pendientes (sin paginación)
+		healthRecords.GET("/upcoming", h.GetUpcomingRecords)
 
 		// Rutas de listado por mascota — la más específica va primero para evitar
 		// que Gin interprete "pets/:pet_id/category/:category" como registro con record_id="pets".

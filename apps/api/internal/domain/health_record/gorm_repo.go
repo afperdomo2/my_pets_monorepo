@@ -234,3 +234,28 @@ func (r *gormRepo) Delete(ctx context.Context, id, ownerID string) error {
 	}
 	return nil
 }
+
+func (r *gormRepo) GetUpcomingRecords(ctx context.Context, ownerID, category string, limit int) ([]models.HealthRecord, error) {
+	var records []models.HealthRecord
+
+	// Construir query base: solo pendientes, sin aplicación, del usuario
+	query := r.db.WithContext(ctx).
+		Model(&models.HealthRecord{}).
+		Where("user_id = ? AND status = 'pending' AND application_date IS NULL", ownerID)
+
+	// Filtrar por categoría si se proporciona
+	if category != "" {
+		query = query.Where("category = ?", category)
+	}
+
+	// Ordenar por due_date ASC y limitar resultados
+	if err := query.
+		Preload("Pet").
+		Order("due_date ASC").
+		Limit(limit).
+		Find(&records).Error; err != nil {
+		return nil, fmt.Errorf("health_record.GetUpcomingRecords: %w", err)
+	}
+
+	return records, nil
+}

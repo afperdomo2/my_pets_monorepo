@@ -27,6 +27,8 @@ onUnmounted(() => {
 const props = defineProps<{
   /** Mascota preseleccionada (si viene desde una tarjeta del timeline) */
   preselectedPet?: string
+  /** Nombre de la vacuna preseleccionada (para buscar y seleccionar automáticamente) */
+  preselectedVaccine?: string
 }>()
 
 const emit = defineEmits<{
@@ -34,7 +36,7 @@ const emit = defineEmits<{
 }>()
 
 // ── Stepper ─────────────────────────────────────
-const currentStep = ref(props.preselectedPet ? 2 : 1)
+const currentStep = ref(props.preselectedPet && props.preselectedVaccine ? 3 : props.preselectedPet ? 2 : 1)
 const totalSteps = 3
 
 const steps = [
@@ -50,6 +52,7 @@ function nextStep() {
 function prevStep() {
   if (currentStep.value > 1) {
     if (props.preselectedPet && currentStep.value === 2) return
+    if (props.preselectedPet && props.preselectedVaccine && currentStep.value === 3) return
     currentStep.value--
   }
 }
@@ -105,6 +108,17 @@ watch(vaccineSearch, () => {
     selectedVaccineId.value = null
   }
 })
+
+// Seleccionar automáticamente la vacuna preseleccionada por nombre
+watch([catalogResponse, () => props.preselectedVaccine], ([catalog, preselectedVaccine]) => {
+  if (!preselectedVaccine || !catalog?.data) return
+  
+  // Buscar la vacuna por nombre
+  const vaccine = catalog.data.find((v) => v.name.toLowerCase() === preselectedVaccine.toLowerCase())
+  if (vaccine) {
+    selectedVaccineId.value = vaccine.id
+  }
+}, { immediate: true })
 
 // ── Paso 3: Fecha y nota ────────────────────────
 const applicationDate = ref('')
@@ -333,6 +347,25 @@ async function save() {
                   a {{ selectedPet.name }}
                 </span>
               </p>
+
+              <!-- Mostrar vacuna seleccionada con opción a cambiar -->
+              <div v-if="selectedVaccine || customVaccineName" class="selected-vaccine-info">
+                <div class="selected-vaccine-info__content">
+                  <IconCheck class="selected-vaccine-info__icon" :size="18" :stroke-width="2.5" />
+                  <div class="selected-vaccine-info__text">
+                    <span class="selected-vaccine-info__label">Vacuna seleccionada:</span>
+                    <span class="selected-vaccine-info__name">{{ selectedVaccine?.name || customVaccineName }}</span>
+                  </div>
+                </div>
+                <button 
+                  v-if="!props.preselectedVaccine"
+                  class="btn-change-vaccine" 
+                  type="button"
+                  @click="currentStep = 2"
+                >
+                  Cambiar
+                </button>
+              </div>
 
               <!-- Calendario para Fecha de Aplicación -->
               <div class="date-field">
@@ -976,5 +1009,64 @@ async function save() {
 
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+/* ── Selected vaccine info (Step 3) ───────────────────────────────────── */
+.selected-vaccine-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background: var(--color-surface-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-4);
+}
+
+.selected-vaccine-info__content {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.selected-vaccine-info__icon {
+  color: var(--color-success);
+  flex-shrink: 0;
+}
+
+.selected-vaccine-info__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.selected-vaccine-info__label {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+}
+
+.selected-vaccine-info__name {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.btn-change-vaccine {
+  padding: var(--space-1) var(--space-3);
+  background: transparent;
+  color: var(--color-accent);
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+  white-space: nowrap;
+}
+
+.btn-change-vaccine:hover {
+  background: var(--color-accent);
+  color: #fff;
 }
 </style>

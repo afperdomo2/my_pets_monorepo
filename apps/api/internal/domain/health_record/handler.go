@@ -380,3 +380,55 @@ func (h *Handler) DeleteHealthRecord(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "registro de salud eliminado"})
 }
+
+// GetUpcomingRecords maneja GET /api/v1/health-records/upcoming
+// Lista los próximos registros pendientes de aplicación (sin paginación).
+// Retorna máximo 50 registros, ordenados por due_date ASC.
+//
+//	@Summary	Listar próximos registros pendientes (sin paginación)
+//	@Tags		health-records
+//	@Produce	json
+//	@Security	CookieAuth
+//	@Param		limit		query		int						false	"Cantidad de registros a retornar (default: 10, max: 50)"
+//	@Param		category	query		string					false	"Filtrar por categoría (vaccine, deworming, exam)"
+//	@Success	200		{object}	map[string]interface{}	"data: []HealthRecord, total: int"
+//	@Failure	401		{object}	map[string]string		"autenticación requerida"
+//	@Failure	500		{object}	map[string]string		"mensaje de error"
+//	@Router		/api/v1/health-records/upcoming [get]
+func (h *Handler) GetUpcomingRecords(c *gin.Context) {
+	// Parsear y validar limit
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+	if limit < 1 {
+		limit = 10
+	}
+	if limit > 50 {
+		limit = 50
+	}
+
+	// Obtener categoría (opcional)
+	category := c.Query("category")
+	if category != "" {
+		validCategories := map[string]bool{"vaccine": true, "deworming": true, "exam": true}
+		if !validCategories[category] {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "categoría inválida: debe ser vaccine, deworming o exam"})
+			return
+		}
+	}
+
+	// Obtener próximos registros pendientes del usuario
+	records, err := h.repo.GetUpcomingRecords(c.Request.Context(), ownerID(c), category, limit)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error al obtener próximos registros"})
+		return
+	}
+
+	// Resolver estado overdue para cada registro
+	for i, rec := range records {
+		records[i] = resolveOverdue(rec)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data":  records,
+		"total": len(records),
+	})
+}
