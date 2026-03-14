@@ -29,10 +29,6 @@ export const healthCatalogService = {
     return request(`/health-catalogs/${id}`)
   },
 
-  getBySpecies(species: string, page = 1, perPage = 10): Promise<PaginatedResponse<HealthCatalog>> {
-    return request(`/health-catalogs/species/${species}?page=${page}&per_page=${perPage}`)
-  },
-
   create(payload: CreateHealthCatalogPayload): Promise<ApiResponse<HealthCatalog>> {
     return request('/health-catalogs', {
       method: 'POST',

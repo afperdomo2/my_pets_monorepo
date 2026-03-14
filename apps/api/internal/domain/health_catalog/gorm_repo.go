@@ -56,19 +56,6 @@ func (r *gormRepo) GetByID(ctx context.Context, id string) (models.HealthCatalog
 	return item, nil
 }
 
-// GetBySpecies retorna todos los registros de la guía de salud aplicables a una especie.
-func (r *gormRepo) GetBySpecies(ctx context.Context, species string) ([]models.HealthCatalog, error) {
-	var items []models.HealthCatalog
-	err := r.db.WithContext(ctx).
-		Where("? = ANY(species)", species).
-		Order("name ASC").
-		Find(&items).Error
-	if err != nil {
-		return nil, fmt.Errorf("health_catalog.GetBySpecies: %w", err)
-	}
-	return items, nil
-}
-
 // Create persiste un nuevo registro en la guía de salud.
 func (r *gormRepo) Create(ctx context.Context, payload CreateHealthCatalogPayload) (models.HealthCatalog, error) {
 	item := models.HealthCatalog{

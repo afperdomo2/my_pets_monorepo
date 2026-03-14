@@ -21,8 +21,13 @@ func NewGormRepo(db *gorm.DB) Repository {
 	return &gormRepo{db: db}
 }
 
+// parseDateString convierte una cadena "YYYY-MM-DD" en time.Time.
+func parseDateString(s string) (time.Time, error) {
+	return time.Parse("2006-01-02", s)
+}
+
 // petBelongsToOwner verifica que la mascota existe y pertenece al usuario autenticado.
-// Retorna error si la mascota no existe o no pertenece al usuario.
+// Retorna el error ErrNotFound si la mascota no existe o no pertenece al usuario.
 func (r *gormRepo) petBelongsToOwner(ctx context.Context, petID, ownerID string) error {
 	var count int64
 	if err := r.db.WithContext(ctx).
@@ -37,43 +42,66 @@ func (r *gormRepo) petBelongsToOwner(ctx context.Context, petID, ownerID string)
 	return nil
 }
 
-// parseDateString convierte una cadena "YYYY-MM-DD" en time.Time.
-func parseDateString(s string) (time.Time, error) {
-	return time.Parse("2006-01-02", s)
-}
-
-func (r *gormRepo) GetPaginated(ctx context.Context, petID, ownerID string, page, perPage int) ([]models.HealthRecord, int64, error) {
-	// Verificar que la mascota pertenece al usuario antes de listar.
-	if err := r.petBelongsToOwner(ctx, petID, ownerID); err != nil {
-		return nil, 0, err
-	}
-
+func (r *gormRepo) GetAllByOwner(ctx context.Context, ownerID string, page, perPage int) ([]models.HealthRecord, int64, error) {
 	var records []models.HealthRecord
 	var total int64
 
-	base := r.db.WithContext(ctx).Model(&models.HealthRecord{}).Where("pet_id = ?", petID)
+	base := r.db.WithContext(ctx).Model(&models.HealthRecord{}).Where("user_id = ?", ownerID)
 
 	if err := base.Count(&total).Error; err != nil {
-		return nil, 0, fmt.Errorf("health_record.GetPaginated count: %w", err)
+		return nil, 0, fmt.Errorf("health_record.GetAllByOwner count: %w", err)
 	}
 
 	offset := (page - 1) * perPage
 	if err := base.Order("due_date ASC").Limit(perPage).Offset(offset).Find(&records).Error; err != nil {
-		return nil, 0, fmt.Errorf("health_record.GetPaginated: %w", err)
+		return nil, 0, fmt.Errorf("health_record.GetAllByOwner: %w", err)
 	}
 
 	return records, total, nil
 }
 
-func (r *gormRepo) GetByID(ctx context.Context, id, petID, ownerID string) (models.HealthRecord, error) {
-	// Verificar que la mascota pertenece al usuario antes de leer el registro.
-	if err := r.petBelongsToOwner(ctx, petID, ownerID); err != nil {
-		return models.HealthRecord{}, err
+func (r *gormRepo) GetByPetID(ctx context.Context, petID, ownerID string, page, perPage int) ([]models.HealthRecord, int64, error) {
+	var records []models.HealthRecord
+	var total int64
+
+	base := r.db.WithContext(ctx).Model(&models.HealthRecord{}).
+		Where("pet_id = ? AND user_id = ?", petID, ownerID)
+
+	if err := base.Count(&total).Error; err != nil {
+		return nil, 0, fmt.Errorf("health_record.GetByPetID count: %w", err)
 	}
 
+	offset := (page - 1) * perPage
+	if err := base.Order("due_date ASC").Limit(perPage).Offset(offset).Find(&records).Error; err != nil {
+		return nil, 0, fmt.Errorf("health_record.GetByPetID: %w", err)
+	}
+
+	return records, total, nil
+}
+
+func (r *gormRepo) GetByPetIDAndCategory(ctx context.Context, petID, category, ownerID string, page, perPage int) ([]models.HealthRecord, int64, error) {
+	var records []models.HealthRecord
+	var total int64
+
+	base := r.db.WithContext(ctx).Model(&models.HealthRecord{}).
+		Where("pet_id = ? AND category = ? AND user_id = ?", petID, category, ownerID)
+
+	if err := base.Count(&total).Error; err != nil {
+		return nil, 0, fmt.Errorf("health_record.GetByPetIDAndCategory count: %w", err)
+	}
+
+	offset := (page - 1) * perPage
+	if err := base.Order("due_date ASC").Limit(perPage).Offset(offset).Find(&records).Error; err != nil {
+		return nil, 0, fmt.Errorf("health_record.GetByPetIDAndCategory: %w", err)
+	}
+
+	return records, total, nil
+}
+
+func (r *gormRepo) GetByID(ctx context.Context, id, ownerID string) (models.HealthRecord, error) {
 	var rec models.HealthRecord
 	result := r.db.WithContext(ctx).
-		Where("id = ? AND pet_id = ?", id, petID).
+		Where("id = ? AND user_id = ?", id, ownerID).
 		First(&rec)
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 		return models.HealthRecord{}, ErrNotFound
@@ -84,9 +112,9 @@ func (r *gormRepo) GetByID(ctx context.Context, id, petID, ownerID string) (mode
 	return rec, nil
 }
 
-func (r *gormRepo) Create(ctx context.Context, petID, ownerID string, payload CreateHealthRecordPayload) (models.HealthRecord, error) {
+func (r *gormRepo) Create(ctx context.Context, ownerID string, payload CreateHealthRecordPayload) (models.HealthRecord, error) {
 	// Verificar que la mascota pertenece al usuario antes de crear.
-	if err := r.petBelongsToOwner(ctx, petID, ownerID); err != nil {
+	if err := r.petBelongsToOwner(ctx, payload.PetID, ownerID); err != nil {
 		return models.HealthRecord{}, err
 	}
 
@@ -110,7 +138,8 @@ func (r *gormRepo) Create(ctx context.Context, petID, ownerID string, payload Cr
 	}
 
 	rec := models.HealthRecord{
-		PetID:           petID,
+		PetID:           payload.PetID,
+		UserID:          ownerID,
 		HealthCatalogID: payload.HealthCatalogID,
 		Category:        payload.Category,
 		Name:            payload.Name,
@@ -126,14 +155,9 @@ func (r *gormRepo) Create(ctx context.Context, petID, ownerID string, payload Cr
 	return rec, nil
 }
 
-func (r *gormRepo) Update(ctx context.Context, id, petID, ownerID string, payload UpdateHealthRecordPayload) (models.HealthRecord, error) {
-	// Verificar que la mascota pertenece al usuario antes de actualizar.
-	if err := r.petBelongsToOwner(ctx, petID, ownerID); err != nil {
-		return models.HealthRecord{}, err
-	}
-
+func (r *gormRepo) Update(ctx context.Context, id, ownerID string, payload UpdateHealthRecordPayload) (models.HealthRecord, error) {
 	var rec models.HealthRecord
-	result := r.db.WithContext(ctx).Where("id = ? AND pet_id = ?", id, petID).First(&rec)
+	result := r.db.WithContext(ctx).Where("id = ? AND user_id = ?", id, ownerID).First(&rec)
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 		return models.HealthRecord{}, ErrNotFound
 	}
@@ -171,14 +195,9 @@ func (r *gormRepo) Update(ctx context.Context, id, petID, ownerID string, payloa
 	return rec, nil
 }
 
-func (r *gormRepo) UpdateStatus(ctx context.Context, id, petID, ownerID string, payload UpdateStatusPayload) (models.HealthRecord, error) {
-	// Verificar que la mascota pertenece al usuario antes de actualizar el status.
-	if err := r.petBelongsToOwner(ctx, petID, ownerID); err != nil {
-		return models.HealthRecord{}, err
-	}
-
+func (r *gormRepo) UpdateStatus(ctx context.Context, id, ownerID string, payload UpdateStatusPayload) (models.HealthRecord, error) {
 	var rec models.HealthRecord
-	result := r.db.WithContext(ctx).Where("id = ? AND pet_id = ?", id, petID).First(&rec)
+	result := r.db.WithContext(ctx).Where("id = ? AND user_id = ?", id, ownerID).First(&rec)
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 		return models.HealthRecord{}, ErrNotFound
 	}
@@ -188,7 +207,7 @@ func (r *gormRepo) UpdateStatus(ctx context.Context, id, petID, ownerID string, 
 
 	rec.Status = payload.Status
 
-	// Si se marca como 'applied' y se provee application_date, actualizarla.
+	// Si se provee application_date, actualizarla.
 	if payload.ApplicationDate != nil {
 		t, err := parseDateString(*payload.ApplicationDate)
 		if err != nil {
@@ -203,14 +222,9 @@ func (r *gormRepo) UpdateStatus(ctx context.Context, id, petID, ownerID string, 
 	return rec, nil
 }
 
-func (r *gormRepo) Delete(ctx context.Context, id, petID, ownerID string) error {
-	// Verificar que la mascota pertenece al usuario antes de eliminar.
-	if err := r.petBelongsToOwner(ctx, petID, ownerID); err != nil {
-		return err
-	}
-
+func (r *gormRepo) Delete(ctx context.Context, id, ownerID string) error {
 	result := r.db.WithContext(ctx).
-		Where("id = ? AND pet_id = ?", id, petID).
+		Where("id = ? AND user_id = ?", id, ownerID).
 		Delete(&models.HealthRecord{})
 	if result.Error != nil {
 		return fmt.Errorf("health_record.Delete: %w", result.Error)

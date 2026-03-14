@@ -59,7 +59,7 @@ func requireSystemUser(c *gin.Context) bool {
 //	@Router		/api/v1/health-catalogs/category/{category} [get]
 func (h *Handler) GetHealthCatalogsByCategory(c *gin.Context) {
 	category := c.Param("category")
-	
+
 	validCategories := map[string]bool{
 		"vaccine":   true,
 		"deworming": true,
@@ -144,48 +144,6 @@ func (h *Handler) GetHealthCatalogByID(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": item})
-}
-
-// GetHealthCatalogBySpecies maneja GET /api/v1/health-catalogs/species/:species
-// Accesible por cualquier usuario autenticado.
-//
-//	@Summary	Listar registros de la guía de salud por especie
-//	@Tags		health-catalogs
-//	@Produce	json
-//	@Security	CookieAuth
-//	@Param		species	path		string					true	"Especie (dog, cat, bird, rabbit, fish, other)"
-//	@Success	200	{object}	map[string]interface{}	"data: []HealthCatalog"
-//	@Failure	400	{object}	map[string]string		"especie inválida"
-//	@Failure	401	{object}	map[string]string		"autenticación requerida"
-//	@Failure	500	{object}	map[string]string		"mensaje de error"
-//	@Router		/api/v1/health-catalogs/species/{species} [get]
-func (h *Handler) GetHealthCatalogBySpecies(c *gin.Context) {
-	species := c.Param("species")
-	if species == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid species"})
-		return
-	}
-
-	validSpecies := map[string]bool{
-		"dog":    true,
-		"cat":    true,
-		"bird":   true,
-		"rabbit": true,
-		"fish":   true,
-		"other":  true,
-	}
-	if !validSpecies[species] {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid species"})
-		return
-	}
-
-	items, err := h.repo.GetBySpecies(c.Request.Context(), species)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch health catalog by species"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"data": items})
 }
 
 // CreateHealthCatalog maneja POST /api/v1/health-catalogs

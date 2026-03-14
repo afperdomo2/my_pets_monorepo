@@ -7,28 +7,35 @@ import (
 	"github.com/my-pets/api/internal/models"
 )
 
-// ErrNotFound se retorna cuando el registro de salud no existe o no pertenece a la mascota del usuario.
+// ErrNotFound se retorna cuando el registro de salud no existe o no pertenece al usuario.
 var ErrNotFound = errors.New("health record not found")
 
 // Repository define el contrato de persistencia para el dominio health_record.
-// Todas las operaciones de escritura y lectura están delimitadas por petID y ownerID
-// para garantizar que los usuarios solo accedan a registros de sus propias mascotas.
+// Todas las operaciones están delimitadas por ownerID (el usuario autenticado),
+// usando el campo user_id de la tabla para filtrado directo sin joins.
 type Repository interface {
-	// GetPaginated retorna una página de registros de salud de una mascota y el total.
-	GetPaginated(ctx context.Context, petID, ownerID string, page, perPage int) ([]models.HealthRecord, int64, error)
+	// GetAllByOwner retorna todos los registros de salud del usuario, de todas sus mascotas.
+	GetAllByOwner(ctx context.Context, ownerID string, page, perPage int) ([]models.HealthRecord, int64, error)
 
-	// GetByID retorna un registro de salud por su ID, validando que pertenezca a la mascota del usuario.
-	GetByID(ctx context.Context, id, petID, ownerID string) (models.HealthRecord, error)
+	// GetByPetID retorna los registros de salud de una mascota específica del usuario.
+	GetByPetID(ctx context.Context, petID, ownerID string, page, perPage int) ([]models.HealthRecord, int64, error)
 
-	// Create crea un nuevo registro de salud para la mascota indicada.
-	Create(ctx context.Context, petID, ownerID string, payload CreateHealthRecordPayload) (models.HealthRecord, error)
+	// GetByPetIDAndCategory retorna los registros de salud de una mascota filtrados por categoría.
+	GetByPetIDAndCategory(ctx context.Context, petID, category, ownerID string, page, perPage int) ([]models.HealthRecord, int64, error)
 
-	// Update actualiza todos los campos editables de un registro de salud existente.
-	Update(ctx context.Context, id, petID, ownerID string, payload UpdateHealthRecordPayload) (models.HealthRecord, error)
+	// GetByID retorna un registro de salud por su ID, validando que pertenezca al usuario.
+	GetByID(ctx context.Context, id, ownerID string) (models.HealthRecord, error)
 
-	// UpdateStatus actualiza únicamente el campo status de un registro de salud.
-	UpdateStatus(ctx context.Context, id, petID, ownerID string, payload UpdateStatusPayload) (models.HealthRecord, error)
+	// Create crea un nuevo registro de salud. El pet_id viene en el payload.
+	// Verifica que la mascota pertenezca al usuario antes de crear.
+	Create(ctx context.Context, ownerID string, payload CreateHealthRecordPayload) (models.HealthRecord, error)
 
-	// Delete elimina un registro de salud de la base de datos.
-	Delete(ctx context.Context, id, petID, ownerID string) error
+	// Update actualiza todos los campos editables de un registro. No permite cambiar pet_id.
+	Update(ctx context.Context, id, ownerID string, payload UpdateHealthRecordPayload) (models.HealthRecord, error)
+
+	// UpdateStatus actualiza únicamente el campo status de un registro.
+	UpdateStatus(ctx context.Context, id, ownerID string, payload UpdateStatusPayload) (models.HealthRecord, error)
+
+	// Delete elimina un registro de salud validando que pertenezca al usuario.
+	Delete(ctx context.Context, id, ownerID string) error
 }

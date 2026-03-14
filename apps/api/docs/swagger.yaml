@@ -123,6 +123,8 @@ definitions:
       notes:
         maxLength: 1000
         type: string
+      pet_id:
+        type: string
       status:
         enum:
         - pending
@@ -130,6 +132,7 @@ definitions:
         type: string
     required:
     - due_date
+    - pet_id
     type: object
   health_record.UpdateHealthRecordPayload:
     properties:
@@ -732,24 +735,268 @@ paths:
       summary: Listar registros de la guía de salud por categoría (paginado)
       tags:
       - health-catalogs
-  /api/v1/health-catalogs/species/{species}:
+  /api/v1/health-records:
     get:
       parameters:
-      - description: Especie (dog, cat, bird, rabbit, fish, other)
+      - description: Número de página (por defecto 1)
+        in: query
+        name: page
+        type: integer
+      - description: Elementos por página (por defecto 10)
+        in: query
+        name: per_page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'data: []HealthRecord, total: int, page: int, per_page: int,
+            total_pages: int'
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: autenticación requerida
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: mensaje de error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - CookieAuth: []
+      summary: Listar todos los registros de salud del usuario (paginado)
+      tags:
+      - health-records
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Datos del registro (incluye pet_id)
+        in: body
+        name: record
+        required: true
+        schema:
+          $ref: '#/definitions/health_record.CreateHealthRecordPayload'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: 'data: HealthRecord'
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: error de validación
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: autenticación requerida
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: mascota o catálogo no encontrado
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: mensaje de error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - CookieAuth: []
+      summary: Crear un registro de salud
+      tags:
+      - health-records
+  /api/v1/health-records/{record_id}:
+    delete:
+      parameters:
+      - description: ID del registro de salud
         in: path
-        name: species
+        name: record_id
         required: true
         type: string
       produces:
       - application/json
       responses:
         "200":
-          description: 'data: []HealthCatalog'
+          description: 'message: registro eliminado'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: id inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: autenticación requerida
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: registro no encontrado
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: mensaje de error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - CookieAuth: []
+      summary: Eliminar un registro de salud
+      tags:
+      - health-records
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID del registro de salud
+        in: path
+        name: record_id
+        required: true
+        type: string
+      - description: Datos del registro
+        in: body
+        name: record
+        required: true
+        schema:
+          $ref: '#/definitions/health_record.UpdateHealthRecordPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'data: HealthRecord'
           schema:
             additionalProperties: true
             type: object
         "400":
-          description: especie inválida
+          description: error de validación
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: autenticación requerida
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: registro no encontrado
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: mensaje de error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - CookieAuth: []
+      summary: Actualizar un registro de salud
+      tags:
+      - health-records
+  /api/v1/health-records/{record_id}/status:
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID del registro de salud
+        in: path
+        name: record_id
+        required: true
+        type: string
+      - description: Nuevo status
+        in: body
+        name: status
+        required: true
+        schema:
+          $ref: '#/definitions/health_record.UpdateStatusPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'data: HealthRecord'
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: error de validación
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: autenticación requerida
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: registro no encontrado
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: mensaje de error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - CookieAuth: []
+      summary: Actualizar el status de un registro de salud
+      tags:
+      - health-records
+  /api/v1/health-records/pets/{pet_id}:
+    get:
+      parameters:
+      - description: ID de la mascota
+        in: path
+        name: pet_id
+        required: true
+        type: string
+      - description: Número de página (por defecto 1)
+        in: query
+        name: page
+        type: integer
+      - description: Elementos por página (por defecto 10)
+        in: query
+        name: per_page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'data: []HealthRecord, total: int, page: int, per_page: int,
+            total_pages: int'
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: pet_id inválido
           schema:
             additionalProperties:
               type: string
@@ -768,9 +1015,62 @@ paths:
             type: object
       security:
       - CookieAuth: []
-      summary: Listar registros de la guía de salud por especie
+      summary: Listar registros de salud de una mascota (paginado)
       tags:
-      - health-catalogs
+      - health-records
+  /api/v1/health-records/pets/{pet_id}/category/{category}:
+    get:
+      parameters:
+      - description: ID de la mascota
+        in: path
+        name: pet_id
+        required: true
+        type: string
+      - description: Categoría (vaccine, deworming, exam)
+        in: path
+        name: category
+        required: true
+        type: string
+      - description: Número de página (por defecto 1)
+        in: query
+        name: page
+        type: integer
+      - description: Elementos por página (por defecto 10)
+        in: query
+        name: per_page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'data: []HealthRecord, total: int, page: int, per_page: int,
+            total_pages: int'
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: pet_id o categoría inválida
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: autenticación requerida
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: mensaje de error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - CookieAuth: []
+      summary: Listar registros de salud de una mascota por categoría (paginado)
+      tags:
+      - health-records
   /api/v1/pets:
     get:
       parameters:
@@ -997,327 +1297,6 @@ paths:
       summary: Actualizar una mascota (debe pertenecer al usuario autenticado)
       tags:
       - pets
-  /api/v1/pets/{pet_id}/health-records:
-    get:
-      parameters:
-      - description: ID de la mascota
-        in: path
-        name: pet_id
-        required: true
-        type: string
-      - description: Número de página (por defecto 1)
-        in: query
-        name: page
-        type: integer
-      - description: Elementos por página (por defecto 10)
-        in: query
-        name: per_page
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 'data: []HealthRecord, total: int, page: int, per_page: int,
-            total_pages: int'
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: pet_id inválido
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "401":
-          description: autenticación requerida
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "404":
-          description: mascota no encontrada
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: mensaje de error
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      security:
-      - CookieAuth: []
-      summary: Listar registros de salud de una mascota (paginado)
-      tags:
-      - health-records
-    post:
-      consumes:
-      - application/json
-      parameters:
-      - description: ID de la mascota
-        in: path
-        name: pet_id
-        required: true
-        type: string
-      - description: Datos del registro
-        in: body
-        name: record
-        required: true
-        schema:
-          $ref: '#/definitions/health_record.CreateHealthRecordPayload'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: 'data: HealthRecord'
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: error de validación
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "401":
-          description: autenticación requerida
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "404":
-          description: mascota o catálogo no encontrado
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: mensaje de error
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      security:
-      - CookieAuth: []
-      summary: Crear un registro de salud para una mascota
-      tags:
-      - health-records
-  /api/v1/pets/{pet_id}/health-records/{id}:
-    delete:
-      parameters:
-      - description: ID de la mascota
-        in: path
-        name: pet_id
-        required: true
-        type: string
-      - description: ID del registro de salud
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 'message: registro eliminado'
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "400":
-          description: id inválido
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "401":
-          description: autenticación requerida
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "404":
-          description: registro no encontrado
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: mensaje de error
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      security:
-      - CookieAuth: []
-      summary: Eliminar un registro de salud
-      tags:
-      - health-records
-    get:
-      parameters:
-      - description: ID de la mascota
-        in: path
-        name: pet_id
-        required: true
-        type: string
-      - description: ID del registro de salud
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 'data: HealthRecord'
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: id inválido
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "401":
-          description: autenticación requerida
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "404":
-          description: registro no encontrado
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: mensaje de error
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      security:
-      - CookieAuth: []
-      summary: Obtener un registro de salud por ID
-      tags:
-      - health-records
-    put:
-      consumes:
-      - application/json
-      parameters:
-      - description: ID de la mascota
-        in: path
-        name: pet_id
-        required: true
-        type: string
-      - description: ID del registro de salud
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Datos del registro
-        in: body
-        name: record
-        required: true
-        schema:
-          $ref: '#/definitions/health_record.UpdateHealthRecordPayload'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 'data: HealthRecord'
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: error de validación
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "401":
-          description: autenticación requerida
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "404":
-          description: registro no encontrado
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: mensaje de error
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      security:
-      - CookieAuth: []
-      summary: Actualizar un registro de salud completo
-      tags:
-      - health-records
-  /api/v1/pets/{pet_id}/health-records/{id}/status:
-    patch:
-      consumes:
-      - application/json
-      parameters:
-      - description: ID de la mascota
-        in: path
-        name: pet_id
-        required: true
-        type: string
-      - description: ID del registro de salud
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Nuevo status
-        in: body
-        name: status
-        required: true
-        schema:
-          $ref: '#/definitions/health_record.UpdateStatusPayload'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 'data: HealthRecord'
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: error de validación
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "401":
-          description: autenticación requerida
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "404":
-          description: registro no encontrado
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: mensaje de error
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      security:
-      - CookieAuth: []
-      summary: Actualizar el status de un registro de salud
-      tags:
-      - health-records
   /api/v1/setup:
     post:
       consumes:

@@ -6,9 +6,11 @@ import "time"
 // Puede estar vinculado al catálogo de salud (health_catalog_id) o ser un ingreso manual.
 // Los campos category y name se copian del catálogo al momento de la inserción
 // para preservar el historial aunque el catálogo cambie (foto histórica).
+// UserID se almacena directamente para permitir filtrado eficiente por usuario sin joins.
 type HealthRecord struct {
 	ID              string     `json:"id"                gorm:"primaryKey;type:uuid;default:gen_random_uuid()"`
 	PetID           string     `json:"pet_id"            gorm:"type:uuid;not null;index"`
+	UserID          string     `json:"user_id"           gorm:"type:uuid;not null;index"`
 	HealthCatalogID *string    `json:"health_catalog_id" gorm:"type:uuid;default:null;constraint:OnDelete:SET NULL"`
 	Category        string     `json:"category"          gorm:"type:varchar(20);not null;index"`
 	Name            string     `json:"name"              gorm:"type:varchar(100);not null"`

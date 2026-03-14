@@ -30,10 +30,9 @@ func ownerID(c *gin.Context) string {
 	return c.GetString("userID")
 }
 
-// petID extrae el parámetro de ruta :id que representa el pet_id.
-// Se usa :id (en lugar de :pet_id) para evitar conflictos con las rutas /pets/:id del dominio pet.
-func parsePetID(c *gin.Context) (string, bool) {
-	id := c.Param("id")
+// parsePetIDParam extrae el parámetro de ruta :pet_id de las rutas /health-records/pets/:pet_id.
+func parsePetIDParam(c *gin.Context) (string, bool) {
+	id := c.Param("pet_id")
 	if id == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "pet_id inválido"})
 		return "", false
@@ -61,27 +60,20 @@ func resolveOverdue(rec models.HealthRecord) models.HealthRecord {
 	return rec
 }
 
-// GetHealthRecords maneja GET /api/v1/pets/:pet_id/health-records
+// GetAllHealthRecords maneja GET /api/v1/health-records
+// Lista todos los registros de salud de todas las mascotas del usuario autenticado.
 //
-//	@Summary	Listar registros de salud de una mascota (paginado)
+//	@Summary	Listar todos los registros de salud del usuario (paginado)
 //	@Tags		health-records
 //	@Produce	json
 //	@Security	CookieAuth
-//	@Param		pet_id		path		string					true	"ID de la mascota"
 //	@Param		page		query		int						false	"Número de página (por defecto 1)"
 //	@Param		per_page	query		int						false	"Elementos por página (por defecto 10)"
 //	@Success	200	{object}	map[string]interface{}	"data: []HealthRecord, total: int, page: int, per_page: int, total_pages: int"
-//	@Failure	400	{object}	map[string]string		"pet_id inválido"
 //	@Failure	401	{object}	map[string]string		"autenticación requerida"
-//	@Failure	404	{object}	map[string]string		"mascota no encontrada"
 //	@Failure	500	{object}	map[string]string		"mensaje de error"
-//	@Router		/api/v1/pets/{pet_id}/health-records [get]
-func (h *Handler) GetHealthRecords(c *gin.Context) {
-	petID, ok := parsePetID(c)
-	if !ok {
-		return
-	}
-
+//	@Router		/api/v1/health-records [get]
+func (h *Handler) GetAllHealthRecords(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	perPage, _ := strconv.Atoi(c.DefaultQuery("per_page", "10"))
 	if page < 1 {
@@ -91,17 +83,12 @@ func (h *Handler) GetHealthRecords(c *gin.Context) {
 		perPage = 10
 	}
 
-	records, total, err := h.repo.GetPaginated(c.Request.Context(), petID, ownerID(c), page, perPage)
-	if errors.Is(err, ErrNotFound) {
-		c.JSON(http.StatusNotFound, gin.H{"error": "mascota no encontrada"})
-		return
-	}
+	records, total, err := h.repo.GetAllByOwner(c.Request.Context(), ownerID(c), page, perPage)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error al obtener registros de salud"})
 		return
 	}
 
-	// Calcular overdue en runtime para cada registro.
 	for i, rec := range records {
 		records[i] = resolveOverdue(rec)
 	}
@@ -116,65 +103,131 @@ func (h *Handler) GetHealthRecords(c *gin.Context) {
 	})
 }
 
-// GetHealthRecord maneja GET /api/v1/pets/:pet_id/health-records/:id
+// GetHealthRecordsByPet maneja GET /api/v1/health-records/pets/:pet_id
+// Lista todos los registros de salud de una mascota específica del usuario autenticado.
 //
-//	@Summary	Obtener un registro de salud por ID
+//	@Summary	Listar registros de salud de una mascota (paginado)
 //	@Tags		health-records
 //	@Produce	json
 //	@Security	CookieAuth
-//	@Param		pet_id	path		string					true	"ID de la mascota"
-//	@Param		id		path		string					true	"ID del registro de salud"
-//	@Success	200	{object}	map[string]interface{}	"data: HealthRecord"
-//	@Failure	400	{object}	map[string]string		"id inválido"
+//	@Param		pet_id		path		string	true	"ID de la mascota"
+//	@Param		page		query		int		false	"Número de página (por defecto 1)"
+//	@Param		per_page	query		int		false	"Elementos por página (por defecto 10)"
+//	@Success	200	{object}	map[string]interface{}	"data: []HealthRecord, total: int, page: int, per_page: int, total_pages: int"
+//	@Failure	400	{object}	map[string]string		"pet_id inválido"
 //	@Failure	401	{object}	map[string]string		"autenticación requerida"
-//	@Failure	404	{object}	map[string]string		"registro no encontrado"
 //	@Failure	500	{object}	map[string]string		"mensaje de error"
-//	@Router		/api/v1/pets/{pet_id}/health-records/{id} [get]
-func (h *Handler) GetHealthRecord(c *gin.Context) {
-	petID, ok := parsePetID(c)
-	if !ok {
-		return
-	}
-	id, ok := parseRecordID(c)
+//	@Router		/api/v1/health-records/pets/{pet_id} [get]
+func (h *Handler) GetHealthRecordsByPet(c *gin.Context) {
+	petID, ok := parsePetIDParam(c)
 	if !ok {
 		return
 	}
 
-	rec, err := h.repo.GetByID(c.Request.Context(), id, petID, ownerID(c))
-	if errors.Is(err, ErrNotFound) {
-		c.JSON(http.StatusNotFound, gin.H{"error": "registro de salud no encontrado"})
-		return
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	perPage, _ := strconv.Atoi(c.DefaultQuery("per_page", "10"))
+	if page < 1 {
+		page = 1
 	}
+	if perPage < 1 {
+		perPage = 10
+	}
+
+	records, total, err := h.repo.GetByPetID(c.Request.Context(), petID, ownerID(c), page, perPage)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "error al obtener registro de salud"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error al obtener registros de salud"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": resolveOverdue(rec)})
+	for i, rec := range records {
+		records[i] = resolveOverdue(rec)
+	}
+
+	totalPages := int(math.Ceil(float64(total) / float64(perPage)))
+	c.JSON(http.StatusOK, gin.H{
+		"data":        records,
+		"total":       total,
+		"page":        page,
+		"per_page":    perPage,
+		"total_pages": totalPages,
+	})
 }
 
-// CreateHealthRecord maneja POST /api/v1/pets/:pet_id/health-records
-// Si se provee health_catalog_id, copia name y category desde el catálogo automáticamente.
+// GetHealthRecordsByPetAndCategory maneja GET /api/v1/health-records/pets/:pet_id/category/:category
+// Lista los registros de salud de una mascota filtrados por categoría (vaccine, deworming, exam).
 //
-//	@Summary	Crear un registro de salud para una mascota
+//	@Summary	Listar registros de salud de una mascota por categoría (paginado)
+//	@Tags		health-records
+//	@Produce	json
+//	@Security	CookieAuth
+//	@Param		pet_id		path		string	true	"ID de la mascota"
+//	@Param		category	path		string	true	"Categoría (vaccine, deworming, exam)"
+//	@Param		page		query		int		false	"Número de página (por defecto 1)"
+//	@Param		per_page	query		int		false	"Elementos por página (por defecto 10)"
+//	@Success	200	{object}	map[string]interface{}	"data: []HealthRecord, total: int, page: int, per_page: int, total_pages: int"
+//	@Failure	400	{object}	map[string]string		"pet_id o categoría inválida"
+//	@Failure	401	{object}	map[string]string		"autenticación requerida"
+//	@Failure	500	{object}	map[string]string		"mensaje de error"
+//	@Router		/api/v1/health-records/pets/{pet_id}/category/{category} [get]
+func (h *Handler) GetHealthRecordsByPetAndCategory(c *gin.Context) {
+	petID, ok := parsePetIDParam(c)
+	if !ok {
+		return
+	}
+
+	category := c.Param("category")
+	validCategories := map[string]bool{"vaccine": true, "deworming": true, "exam": true}
+	if !validCategories[category] {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "categoría inválida: debe ser vaccine, deworming o exam"})
+		return
+	}
+
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	perPage, _ := strconv.Atoi(c.DefaultQuery("per_page", "10"))
+	if page < 1 {
+		page = 1
+	}
+	if perPage < 1 {
+		perPage = 10
+	}
+
+	records, total, err := h.repo.GetByPetIDAndCategory(c.Request.Context(), petID, category, ownerID(c), page, perPage)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error al obtener registros de salud"})
+		return
+	}
+
+	for i, rec := range records {
+		records[i] = resolveOverdue(rec)
+	}
+
+	totalPages := int(math.Ceil(float64(total) / float64(perPage)))
+	c.JSON(http.StatusOK, gin.H{
+		"data":        records,
+		"total":       total,
+		"page":        page,
+		"per_page":    perPage,
+		"total_pages": totalPages,
+	})
+}
+
+// CreateHealthRecord maneja POST /api/v1/health-records
+// El pet_id se recibe en el body. Si se provee health_catalog_id,
+// copia name y category desde el catálogo automáticamente.
+//
+//	@Summary	Crear un registro de salud
 //	@Tags		health-records
 //	@Accept		json
 //	@Produce	json
 //	@Security	CookieAuth
-//	@Param		pet_id	path		string						true	"ID de la mascota"
-//	@Param		record	body		CreateHealthRecordPayload	true	"Datos del registro"
+//	@Param		record	body		CreateHealthRecordPayload	true	"Datos del registro (incluye pet_id)"
 //	@Success	201	{object}	map[string]interface{}	"data: HealthRecord"
 //	@Failure	400	{object}	map[string]string		"error de validación"
 //	@Failure	401	{object}	map[string]string		"autenticación requerida"
 //	@Failure	404	{object}	map[string]string		"mascota o catálogo no encontrado"
 //	@Failure	500	{object}	map[string]string		"mensaje de error"
-//	@Router		/api/v1/pets/{pet_id}/health-records [post]
+//	@Router		/api/v1/health-records [post]
 func (h *Handler) CreateHealthRecord(c *gin.Context) {
-	petID, ok := parsePetID(c)
-	if !ok {
-		return
-	}
-
 	var payload CreateHealthRecordPayload
 	if err := c.ShouldBindJSON(&payload); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": validation.Translate(err)})
@@ -202,9 +255,9 @@ func (h *Handler) CreateHealthRecord(c *gin.Context) {
 		return
 	}
 
-	created, err := h.repo.Create(c.Request.Context(), petID, ownerID(c), payload)
+	created, err := h.repo.Create(c.Request.Context(), ownerID(c), payload)
 	if errors.Is(err, ErrNotFound) {
-		c.JSON(http.StatusNotFound, gin.H{"error": "mascota no encontrada"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "mascota no encontrada o no pertenece al usuario"})
 		return
 	}
 	if err != nil {
@@ -215,27 +268,23 @@ func (h *Handler) CreateHealthRecord(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"data": resolveOverdue(created)})
 }
 
-// UpdateHealthRecord maneja PUT /api/v1/pets/:pet_id/health-records/:id
+// UpdateHealthRecord maneja PUT /api/v1/health-records/:record_id
+// No permite cambiar el pet_id ni el health_catalog_id del registro.
 //
-//	@Summary	Actualizar un registro de salud completo
+//	@Summary	Actualizar un registro de salud
 //	@Tags		health-records
 //	@Accept		json
 //	@Produce	json
 //	@Security	CookieAuth
-//	@Param		pet_id	path		string						true	"ID de la mascota"
-//	@Param		id		path		string						true	"ID del registro de salud"
-//	@Param		record	body		UpdateHealthRecordPayload	true	"Datos del registro"
+//	@Param		record_id	path		string						true	"ID del registro de salud"
+//	@Param		record		body		UpdateHealthRecordPayload	true	"Datos del registro"
 //	@Success	200	{object}	map[string]interface{}	"data: HealthRecord"
 //	@Failure	400	{object}	map[string]string		"error de validación"
 //	@Failure	401	{object}	map[string]string		"autenticación requerida"
 //	@Failure	404	{object}	map[string]string		"registro no encontrado"
 //	@Failure	500	{object}	map[string]string		"mensaje de error"
-//	@Router		/api/v1/pets/{pet_id}/health-records/{id} [put]
+//	@Router		/api/v1/health-records/{record_id} [put]
 func (h *Handler) UpdateHealthRecord(c *gin.Context) {
-	petID, ok := parsePetID(c)
-	if !ok {
-		return
-	}
 	id, ok := parseRecordID(c)
 	if !ok {
 		return
@@ -247,7 +296,7 @@ func (h *Handler) UpdateHealthRecord(c *gin.Context) {
 		return
 	}
 
-	updated, err := h.repo.Update(c.Request.Context(), id, petID, ownerID(c), payload)
+	updated, err := h.repo.Update(c.Request.Context(), id, ownerID(c), payload)
 	if errors.Is(err, ErrNotFound) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "registro de salud no encontrado"})
 		return
@@ -260,27 +309,22 @@ func (h *Handler) UpdateHealthRecord(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": resolveOverdue(updated)})
 }
 
-// UpdateHealthRecordStatus maneja PATCH /api/v1/pets/:pet_id/health-records/:id/status
+// UpdateHealthRecordStatus maneja PATCH /api/v1/health-records/:record_id/status
 //
 //	@Summary	Actualizar el status de un registro de salud
 //	@Tags		health-records
 //	@Accept		json
 //	@Produce	json
 //	@Security	CookieAuth
-//	@Param		pet_id	path		string				true	"ID de la mascota"
-//	@Param		id		path		string				true	"ID del registro de salud"
-//	@Param		status	body		UpdateStatusPayload	true	"Nuevo status"
+//	@Param		record_id	path		string				true	"ID del registro de salud"
+//	@Param		status		body		UpdateStatusPayload	true	"Nuevo status"
 //	@Success	200	{object}	map[string]interface{}	"data: HealthRecord"
 //	@Failure	400	{object}	map[string]string		"error de validación"
 //	@Failure	401	{object}	map[string]string		"autenticación requerida"
 //	@Failure	404	{object}	map[string]string		"registro no encontrado"
 //	@Failure	500	{object}	map[string]string		"mensaje de error"
-//	@Router		/api/v1/pets/{pet_id}/health-records/{id}/status [patch]
+//	@Router		/api/v1/health-records/{record_id}/status [patch]
 func (h *Handler) UpdateHealthRecordStatus(c *gin.Context) {
-	petID, ok := parsePetID(c)
-	if !ok {
-		return
-	}
 	id, ok := parseRecordID(c)
 	if !ok {
 		return
@@ -292,7 +336,7 @@ func (h *Handler) UpdateHealthRecordStatus(c *gin.Context) {
 		return
 	}
 
-	updated, err := h.repo.UpdateStatus(c.Request.Context(), id, petID, ownerID(c), payload)
+	updated, err := h.repo.UpdateStatus(c.Request.Context(), id, ownerID(c), payload)
 	if errors.Is(err, ErrNotFound) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "registro de salud no encontrado"})
 		return
@@ -305,31 +349,26 @@ func (h *Handler) UpdateHealthRecordStatus(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": resolveOverdue(updated)})
 }
 
-// DeleteHealthRecord maneja DELETE /api/v1/pets/:pet_id/health-records/:id
+// DeleteHealthRecord maneja DELETE /api/v1/health-records/:record_id
 //
 //	@Summary	Eliminar un registro de salud
 //	@Tags		health-records
 //	@Produce	json
 //	@Security	CookieAuth
-//	@Param		pet_id	path		string	true	"ID de la mascota"
-//	@Param		id		path		string	true	"ID del registro de salud"
+//	@Param		record_id	path		string	true	"ID del registro de salud"
 //	@Success	200	{object}	map[string]string	"message: registro eliminado"
 //	@Failure	400	{object}	map[string]string	"id inválido"
 //	@Failure	401	{object}	map[string]string	"autenticación requerida"
 //	@Failure	404	{object}	map[string]string	"registro no encontrado"
 //	@Failure	500	{object}	map[string]string	"mensaje de error"
-//	@Router		/api/v1/pets/{pet_id}/health-records/{id} [delete]
+//	@Router		/api/v1/health-records/{record_id} [delete]
 func (h *Handler) DeleteHealthRecord(c *gin.Context) {
-	petID, ok := parsePetID(c)
-	if !ok {
-		return
-	}
 	id, ok := parseRecordID(c)
 	if !ok {
 		return
 	}
 
-	err := h.repo.Delete(c.Request.Context(), id, petID, ownerID(c))
+	err := h.repo.Delete(c.Request.Context(), id, ownerID(c))
 	if errors.Is(err, ErrNotFound) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "registro de salud no encontrado"})
 		return
