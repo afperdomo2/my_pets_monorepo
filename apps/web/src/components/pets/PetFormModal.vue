@@ -3,6 +3,7 @@ import { ref, computed, watch } from 'vue'
 import { useForm } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'
 import { IconX } from '@tabler/icons-vue'
+import DatePicker from '@/components/ui/DatePicker.vue'
 import { useCreatePet, useUpdatePet } from '@/composables/usePets'
 import { createPetSchema, updatePetSchema } from '@/schemas/pet'
 import { estimatedBirthDate, toGrams } from '@/utils/pet'
@@ -65,7 +66,7 @@ const { defineField, handleSubmit, errors, resetForm, setErrors, setFieldValue, 
 const [name, nameAttrs] = defineField('name')
 const [species, speciesAttrs] = defineField('species')
 const [breed, breedAttrs] = defineField('breed')
-const [birthDate, birthDateAttrs] = defineField('birth_date')
+const [birthDate] = defineField('birth_date')
 
 // Clear size when species changes away from 'dog'
 watch(() => values.species, (newSpecies) => {
@@ -286,15 +287,13 @@ function close() {
                 </button>
               </div>
 
-              <!-- Date input: show in edit mode or create with exact date -->
-              <input
+              <!-- Date picker: show in edit mode or create with exact date -->
+              <DatePicker
                 v-if="mode === 'edit' || (mode === 'create' && dateMode === 'exact')"
                 v-model="birthDate"
-                v-bind="birthDateAttrs"
-                class="field-input"
-                :class="{ 'field-input--error': errors.birth_date }"
-                type="date"
-                :max="new Date().toISOString().slice(0, 10)"
+                :max-date="new Date()"
+                placeholder="Seleccionar fecha"
+                :error="!!errors.birth_date"
               />
 
               <!-- Age inputs - only in create mode with age mode -->
