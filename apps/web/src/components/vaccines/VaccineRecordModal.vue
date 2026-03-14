@@ -1,14 +1,41 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import {
   IconX,
   IconArrowLeft,
   IconArrowRight,
   IconCheck,
   IconSearch,
-  IconCalendar,
   IconBell,
+  IconPlus
 } from '@tabler/icons-vue'
+import DatePicker from '@/components/ui/DatePicker.vue'
+import { useGetPets } from '@/composables/usePets'
+import { useGetHealthCatalogs } from '@/composables/useHealthCatalog'
+import { useCreateHealthRecord } from '@/composables/useHealthRecords'
+import { onMounted, onUnmounted } from 'vue'
+
+onMounted(() => {
+  document.body.style.overflow = 'hidden'
+})
+
+onUnmounted(() => {
+  document.body.style.overflow = ''
+})
+
+// Helpers para avatar de mascotas (Misma lógica local a PetCard)
+const SPECIES_EMOJI: Record<string, string> = {
+  dog: '🐕',
+  cat: '🐈',
+  bird: '🦜',
+  rabbit: '🐇',
+  fish: '🐠',
+  other: '🐾',
+}
+
+function speciesEmoji(s: string) {
+  return SPECIES_EMOJI[s] ?? '🐾'
+}
 
 const props = defineProps<{
   /** Mascota preseleccionada (si viene desde una tarjeta del timeline) */
@@ -34,62 +61,154 @@ function nextStep() {
 }
 
 function prevStep() {
-  if (currentStep.value > 1) currentStep.value--
+  if (currentStep.value > 1) {
+    if (props.preselectedPet && currentStep.value === 2) return
+    currentStep.value--
+  }
 }
 
 // ── Paso 1: Seleccionar mascota ─────────────────
-const mockPets = [
-  { id: '1', name: 'Romeo', species: 'dog', initials: 'RO', lifeStage: 'Adulto' },
-  { id: '2', name: 'Luna', species: 'cat', initials: 'LU', lifeStage: 'Joven' },
-  { id: '3', name: 'Simba', species: 'cat', initials: 'SI', lifeStage: 'Adulto' },
-  { id: '4', name: 'Manchas', species: 'dog', initials: 'MA', lifeStage: 'Senior' },
-  { id: '5', name: 'Bolt', species: 'dog', initials: 'BO', lifeStage: 'Cachorro' },
-  { id: '6', name: 'Kira', species: 'cat', initials: 'KI', lifeStage: 'Adulto' },
-]
+const { data: allPets } = useGetPets()
 
 const selectedPetId = ref<string | null>(props.preselectedPet ?? null)
-const selectedPet = computed(() => mockPets.find((p) => p.id === selectedPetId.value))
+const selectedPet = computed(() => allPets.value?.find((p: any) => p.id === selectedPetId.value))
+
+watch(() => allPets.value, (pets) => {
+  if (props.preselectedPet && pets && pets.length > 0) {
+    selectedPetId.value = props.preselectedPet
+  }
+}, { immediate: true })
+
+function petInitials(name: string) {
+  if (!name) return ''
+  return name.slice(0, 2).toUpperCase()
+}
 
 // ── Paso 2: Seleccionar vacuna ──────────────────
+const categoryRef = ref('vaccine')
+const pageRef = ref(1)
+const perPageRef = ref(100)
+const speciesRef = computed(() => selectedPet.value?.species)
+const canFetchVaccines = computed(() => currentStep.value >= 2 && !!speciesRef.value)
+
+const { data: catalogResponse } = useGetHealthCatalogs(categoryRef, pageRef, perPageRef, speciesRef as any, canFetchVaccines)
+
 const vaccineSearch = ref('')
-const mockVaccines = [
-  { id: '1', name: 'Antirrábica', frequency: 'Anual', species: ['dog', 'cat'] },
-  { id: '2', name: 'Polivalente canina', frequency: 'Anual', species: ['dog'] },
-  { id: '3', name: 'Triple felina', frequency: 'Anual', species: ['cat'] },
-  { id: '4', name: 'Sextuple', frequency: 'Anual', species: ['dog'] },
-  { id: '5', name: 'Leucemia felina', frequency: 'Anual', species: ['cat'] },
-  { id: '6', name: 'Bordetelosis', frequency: 'Cada 6 meses', species: ['dog'] },
-]
+const selectedVaccineId = ref<string | null>(null)
+const customVaccineName = ref('')
 
 const filteredVaccines = computed(() => {
-  let list = mockVaccines
-  // Filtrar por especie de la mascota seleccionada
-  if (selectedPet.value) {
-    list = list.filter((v) => v.species.includes(selectedPet.value!.species))
-  }
-  // Filtrar por texto de búsqueda
+  const list = catalogResponse.value?.data || []
   const q = vaccineSearch.value.toLowerCase().trim()
   if (q) {
-    list = list.filter((v) => v.name.toLowerCase().includes(q))
+    return list.filter((v: any) => v.name.toLowerCase().includes(q))
   }
   return list
 })
 
-const selectedVaccineId = ref<string | null>(null)
-const selectedVaccine = computed(() => mockVaccines.find((v) => v.id === selectedVaccineId.value))
+function selectCustomVaccine() {
+  selectedVaccineId.value = 'custom'
+  if (vaccineSearch.value.trim() && !customVaccineName.value) {
+    customVaccineName.value = vaccineSearch.value.trim()
+  }
+}
+
+const selectedVaccine = computed(() => {
+  if (selectedVaccineId.value === 'custom') return null
+  return catalogResponse.value?.data?.find((v: any) => v.id === selectedVaccineId.value)
+})
+
+watch(vaccineSearch, () => {
+  if (selectedVaccineId.value === 'custom' && vaccineSearch.value.trim() !== customVaccineName.value) {
+    selectedVaccineId.value = null
+  }
+})
 
 // ── Paso 3: Fecha y nota ────────────────────────
 const applicationDate = ref('')
+const boosterDate = ref('')
 const note = ref('')
-const wantsReminder = ref(true)
+const wantsReminder = ref(false)
+
+watch(applicationDate, (newDate) => {
+  if (newDate) {
+     const d = new Date(newDate + 'T12:00:00')
+     d.setFullYear(d.getFullYear() + 1) // Default to 1 year for manual entries or existing records without catalog details
+     boosterDate.value = d.toISOString().split('T')[0] || ''
+  }
+})
+
+watch(selectedVaccine, (val) => {
+   if (!val) {
+     wantsReminder.value = false
+     boosterDate.value = ''
+     return
+   }
+   // Defaults it to false but calculate the future date anyway
+   wantsReminder.value = false
+   if (applicationDate.value && val.frequency_months) {
+     const d = new Date(applicationDate.value + 'T12:00:00')
+     d.setMonth(d.getMonth() + val.frequency_months)
+     boosterDate.value = d.toISOString().split('T')[0] || ''
+   }
+})
 
 // ── Validación por paso ─────────────────────────
 const canAdvance = computed(() => {
   if (currentStep.value === 1) return !!selectedPetId.value
-  if (currentStep.value === 2) return !!selectedVaccineId.value
-  if (currentStep.value === 3) return !!applicationDate.value
+  if (currentStep.value === 2) {
+    if (selectedVaccineId.value === 'custom') return customVaccineName.value.trim().length > 0
+    return !!selectedVaccineId.value
+  }
+  if (currentStep.value === 3) {
+    if (!applicationDate.value) return false
+    if (wantsReminder.value && !boosterDate.value) return false
+    return true
+  }
   return false
 })
+
+// ── Solicitud ───────────────────────────────────
+const createHealthRecord = useCreateHealthRecord()
+
+async function save() {
+  if (!canAdvance.value || createHealthRecord.isPending.value) return
+  
+  try {
+     const name = selectedVaccineId.value === 'custom' ? customVaccineName.value : (selectedVaccine.value?.name || '')
+     const catalogId = selectedVaccineId.value === 'custom' ? undefined : (selectedVaccineId.value ?? undefined)
+
+     const basePayload = {
+       pet_id: selectedPetId.value!,
+       category: 'vaccine',
+       name,
+       health_catalog_id: catalogId,
+       notes: note.value || undefined,
+     }
+
+     // 1. Aplicada
+     await createHealthRecord.mutateAsync({
+       ...basePayload,
+       status: 'applied',
+       application_date: applicationDate.value,
+       due_date: applicationDate.value,
+     })
+
+     // 2. Refuerzo
+     if (wantsReminder.value && boosterDate.value) {
+       await createHealthRecord.mutateAsync({
+         ...basePayload,
+         status: 'pending',
+         due_date: boosterDate.value,
+         application_date: undefined
+       })
+     }
+
+     emit('close')
+  } catch(e) {
+     console.error(e)
+  }
+}
 </script>
 
 <template>
@@ -100,7 +219,7 @@ const canAdvance = computed(() => {
           <div class="modal-header">
             <h2>Registrar vacuna</h2>
             <button class="btn-close" @click="emit('close')">
-              <IconX :size="18" :stroke-width="2" />
+               <IconX :size="18" :stroke-width="2" />
             </button>
           </div>
 
@@ -133,7 +252,7 @@ const canAdvance = computed(() => {
               <p class="step-instruction">Seleccioná la mascota que recibió la vacuna</p>
               <div class="pets-grid">
                 <button
-                  v-for="pet in mockPets"
+                  v-for="pet in allPets"
                   :key="pet.id"
                   class="pet-option"
                   :class="{
@@ -142,9 +261,10 @@ const canAdvance = computed(() => {
                   }"
                   @click="selectedPetId = pet.id"
                 >
-                  <div class="pet-option__avatar">{{ pet.initials }}</div>
+                  <div class="pet-option__avatar">
+                    <span style="font-size: 1.5rem; line-height: 1;">{{ speciesEmoji(pet.species) }}</span>
+                  </div>
                   <span class="pet-option__name">{{ pet.name }}</span>
-                  <span class="pet-option__stage">{{ pet.lifeStage }}</span>
                 </button>
               </div>
             </div>
@@ -155,6 +275,26 @@ const canAdvance = computed(() => {
                 Seleccioná la vacuna aplicada
                 <span v-if="selectedPet" class="step-instruction__pet">a {{ selectedPet.name }}</span>
               </p>
+
+              <!-- Option for Manual Vaccine -->
+              <button
+                class="vaccine-option custom-vaccine"
+                :class="{ 'vaccine-option--selected': selectedVaccineId === 'custom' }"
+                @click="selectCustomVaccine"
+                style="margin-bottom: var(--space-2);"
+              >
+                <div class="vaccine-option__info">
+                  <span class="vaccine-option__name">Añadir otra vacuna manualmente</span>
+                  <span class="vaccine-option__freq">Si no encuentras la vacuna en la lista</span>
+                </div>
+                <div v-if="selectedVaccineId === 'custom'" class="vaccine-option__check">
+                    <IconCheck :size="16" :stroke-width="2.5" />
+                </div>
+                <div v-else class="vaccine-option__check" style="color: var(--color-text-tertiary)">
+                    <IconPlus :size="16" :stroke-width="2" />
+                </div>
+              </button>
+
               <div class="vaccine-search-box">
                 <IconSearch class="vaccine-search-icon" :size="16" :stroke-width="2" />
                 <input
@@ -172,8 +312,14 @@ const canAdvance = computed(() => {
                   @click="selectedVaccineId = vaccine.id"
                 >
                   <div class="vaccine-option__info">
-                    <span class="vaccine-option__name">{{ vaccine.name }}</span>
-                    <span class="vaccine-option__freq">{{ vaccine.frequency }}</span>
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                      <span class="vaccine-option__name">{{ vaccine.name }}</span>
+                      <span v-if="vaccine.is_mandatory" class="badge-mandatory">Obligatoria</span>
+                    </div>
+                    <span v-if="vaccine.description" class="vaccine-option__desc">{{ vaccine.description }}</span>
+                    <span class="vaccine-option__freq">
+                      {{ vaccine.frequency_months ? `Se recomienda cada ${vaccine.frequency_months} meses` : 'Sin frecuencia' }}
+                    </span>
                   </div>
                   <div v-if="selectedVaccineId === vaccine.id" class="vaccine-option__check">
                     <IconCheck :size="16" :stroke-width="2.5" />
@@ -181,63 +327,96 @@ const canAdvance = computed(() => {
                 </button>
               </div>
               <p v-if="filteredVaccines.length === 0" class="no-results">
-                No se encontraron vacunas
+                 No se encontraron vacunas en el catálogo. Seleccioná añadir manualmente.
               </p>
+
+              <!-- Input para nombre de vacuna manual -->
+              <div v-if="selectedVaccineId === 'custom'" style="margin-top: 16px;">
+                <label class="field-label">Nombre de la vacuna <span style="color:red; margin-left: 4px;">*</span></label>
+                <input
+                  v-model="customVaccineName"
+                  class="vaccine-search-input"
+                  style="padding-left: 12px; border-color: var(--color-accent);"
+                  placeholder="Ej: Antirrábica..."
+                />
+              </div>
             </div>
 
             <!-- Paso 3: ¿Cuándo? -->
             <div v-if="currentStep === 3" class="step-content">
               <p class="step-instruction">
                 Indicá la fecha de aplicación
-                <span v-if="selectedVaccine" class="step-instruction__pet">
-                  de {{ selectedVaccine.name }}
+                <span v-if="selectedVaccine || customVaccineName" class="step-instruction__pet">
+                  de {{ selectedVaccine?.name || customVaccineName }}
+                </span>
+                <span v-if="selectedPet" class="step-instruction__pet">
+                  a {{ selectedPet.name }}
                 </span>
               </p>
 
+              <!-- Calendario para Fecha de Aplicación -->
               <div class="date-field">
-                <label class="field-label">
-                  <IconCalendar :size="14" :stroke-width="2" />
-                  Fecha de aplicación
-                </label>
-                <input v-model="applicationDate" type="date" class="date-input" />
+                <label class="field-label">Fecha de aplicación <span style="color:red; margin-left: 4px;">*</span></label>
+                <DatePicker
+                  v-model="applicationDate"
+                  :max-date="new Date()"
+                  placeholder="Seleccionar fecha"
+                  unique-id="application-date"
+                />
               </div>
 
-              <div class="note-field">
+              <!-- Calendario para Refuerzo, condicionado al toggle -->
+              <div class="date-field" style="margin-top: var(--space-2)">
+                  <div class="suggestion-card">
+                    <div class="suggestion-icon">
+                      <IconBell :size="18" :stroke-width="1.75" />
+                    </div>
+                    <div class="suggestion-body">
+                      <div class="suggestion-header">
+                        <p class="suggestion-text">
+                          <strong>¿Programar refuerzo?</strong>
+                          <template v-if="selectedVaccine && selectedVaccine.frequency_months">
+                            <br>Esta vacuna tiene un intervalo de <strong>{{ selectedVaccine.frequency_months }} meses</strong>.
+                          </template>
+                        </p>
+                        <label class="suggestion-toggle">
+                          <input v-model="wantsReminder" type="checkbox" class="toggle-checkbox" />
+                          <span class="toggle-track">
+                            <span class="toggle-thumb" />
+                          </span>
+                          <span class="toggle-label">{{ wantsReminder ? 'Sí' : 'No' }}</span>
+                        </label>
+                      </div>
+
+                      <template v-if="wantsReminder">
+                         <div style="margin-top: 8px">
+                           <DatePicker
+                             v-model="boosterDate"
+                             placeholder="Fecha del refuerzo"
+                             unique-id="booster-date"
+                           />
+                         </div>
+                      </template>
+                    </div>
+                  </div>
+              </div>
+
+              <div class="note-field" style="margin-top: var(--space-1)">
                 <label class="field-label">Nota (opcional)</label>
                 <textarea
                   v-model="note"
                   class="note-input"
-                  rows="3"
-                  placeholder="Ej: Aplicada por Dr. Pérez en clínica veterinaria…"
+                  rows="2"
+                  placeholder="Ej: Lote #12345, veterinaria central..."
                 />
               </div>
 
-              <!-- Sugerencia inteligente -->
-              <div v-if="selectedVaccine" class="suggestion-card">
-                <div class="suggestion-icon">
-                  <IconBell :size="18" :stroke-width="1.75" />
-                </div>
-                <div class="suggestion-body">
-                  <p class="suggestion-text">
-                    <strong>{{ selectedVaccine.name }}</strong> suele aplicarse
-                    <strong>{{ selectedVaccine.frequency?.toLowerCase() }}</strong>.
-                    ¿Querés que te avise cuando corresponda la próxima dosis?
-                  </p>
-                  <label class="suggestion-toggle">
-                    <input v-model="wantsReminder" type="checkbox" class="toggle-checkbox" />
-                    <span class="toggle-track">
-                      <span class="toggle-thumb" />
-                    </span>
-                    <span class="toggle-label">{{ wantsReminder ? 'Sí, avisame' : 'No, gracias' }}</span>
-                  </label>
-                </div>
-              </div>
             </div>
           </div>
 
           <!-- Footer -->
           <div class="modal-footer">
-            <button v-if="currentStep > 1" class="btn-prev" @click="prevStep">
+            <button v-if="currentStep > 1 && !(props.preselectedPet && currentStep === 2)" class="btn-prev" @click="prevStep">
               <IconArrowLeft :size="16" :stroke-width="2" />
               Anterior
             </button>
@@ -254,11 +433,14 @@ const canAdvance = computed(() => {
             <button
               v-else
               class="btn-save"
-              :disabled="!canAdvance"
-              @click="emit('close')"
+              :disabled="!canAdvance || createHealthRecord.isPending.value"
+              @click="save"
             >
-              <IconCheck :size="16" :stroke-width="2.5" />
-              Guardar
+              <span v-if="createHealthRecord.isPending.value" class="btn-spinner" />
+              <template v-else>
+                 <IconCheck :size="16" :stroke-width="2.5" />
+                 Guardar
+              </template>
             </button>
         </div>
       </div>
@@ -286,7 +468,7 @@ const canAdvance = computed(() => {
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-xl);
   width: 100%;
-  max-width: 520px;
+  max-width: 600px;
   max-height: 90vh;
   display: flex;
   flex-direction: column;
@@ -307,6 +489,7 @@ const canAdvance = computed(() => {
   font-size: var(--text-lg);
   font-weight: 600;
   color: var(--color-text-primary);
+  margin: 0;
 }
 
 .btn-close {
@@ -419,6 +602,7 @@ const canAdvance = computed(() => {
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
   line-height: 1.5;
+  margin: 0;
 }
 
 .step-instruction__pet {
@@ -479,25 +663,15 @@ const canAdvance = computed(() => {
   transition: background var(--transition-fast);
 }
 
-.pet-option--dog .pet-option__avatar    { background: #fef3c7; color: #92400e; }
-.pet-option--cat .pet-option__avatar    { background: #ede9fe; color: #5b21b6; }
-.pet-option--bird .pet-option__avatar   { background: #cffafe; color: #0e7490; }
-.pet-option--rabbit .pet-option__avatar { background: #fce7f3; color: #9d174d; }
+.pet-option--dog .pet-option__avatar    { background: #fef3c7; }
+.pet-option--cat .pet-option__avatar    { background: #ede9fe; }
+.pet-option--bird .pet-option__avatar   { background: #cffafe; }
+.pet-option--rabbit .pet-option__avatar { background: #fce7f3; }
 
 .pet-option__name {
   font-size: var(--text-sm);
   font-weight: 600;
   color: var(--color-text-primary);
-}
-
-.pet-option__stage {
-  font-size: 0.65rem;
-  font-weight: 500;
-  padding: 1px var(--space-2);
-  border-radius: var(--radius-full);
-  background: var(--color-bg-alt);
-  color: var(--color-text-tertiary);
-  border: 1px solid var(--color-border-light);
 }
 
 /* ── Paso 2: Búsqueda vacunas ───────── */
@@ -529,13 +703,14 @@ const canAdvance = computed(() => {
 .vaccine-search-input:focus {
   border-color: var(--color-accent);
   box-shadow: 0 0 0 3px rgba(61, 122, 95, 0.12);
+  outline: none;
 }
 
 .vaccine-list {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  max-height: 240px;
+  gap: 4px;
+  max-height: 280px;
   overflow-y: auto;
 }
 
@@ -549,6 +724,7 @@ const canAdvance = computed(() => {
   border-radius: var(--radius-md);
   cursor: pointer;
   transition: background var(--transition-fast), border-color var(--transition-fast);
+  text-align: left;
 }
 
 .vaccine-option:hover {
@@ -582,6 +758,33 @@ const canAdvance = computed(() => {
   color: var(--color-accent);
 }
 
+.custom-vaccine {
+  background: #f8fafc;
+  border: 1.5px dashed var(--color-border);
+}
+
+.custom-vaccine:hover {
+  border-color: var(--color-accent);
+}
+
+.badge-mandatory {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  background: #FEF2F2;
+  color: #DC2626;
+  border: 1px solid #FECACA;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+}
+
+.vaccine-option__desc {
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  margin-top: 2px;
+  line-height: 1.3;
+}
+
 .no-results {
   font-size: var(--text-sm);
   color: var(--color-text-tertiary);
@@ -606,21 +809,6 @@ const canAdvance = computed(() => {
   flex-direction: column;
 }
 
-.date-input {
-  padding: var(--space-2) var(--space-3);
-  border: 1.5px solid var(--color-border-light);
-  border-radius: var(--radius-md);
-  font-size: var(--text-sm);
-  color: var(--color-text-primary);
-  background: var(--color-bg);
-  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
-}
-
-.date-input:focus {
-  border-color: var(--color-accent);
-  box-shadow: 0 0 0 3px rgba(61, 122, 95, 0.12);
-}
-
 .note-input {
   padding: var(--space-3);
   border: 1.5px solid var(--color-border-light);
@@ -637,6 +825,7 @@ const canAdvance = computed(() => {
 .note-input:focus {
   border-color: var(--color-accent);
   box-shadow: 0 0 0 3px rgba(61, 122, 95, 0.12);
+  outline: none;
 }
 
 /* ── Sugerencia ─────────────────────── */
@@ -664,13 +853,21 @@ const canAdvance = computed(() => {
 .suggestion-body {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  flex-grow: 1;
+}
+
+.suggestion-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-2);
 }
 
 .suggestion-text {
   font-size: var(--text-sm);
   color: #1E40AF;
   line-height: 1.5;
+  margin: 0;
 }
 
 /* ── Toggle switch ──────────────────── */
@@ -679,6 +876,7 @@ const canAdvance = computed(() => {
   align-items: center;
   gap: var(--space-2);
   cursor: pointer;
+  flex-shrink: 0;
 }
 
 .toggle-checkbox {
@@ -799,45 +997,23 @@ const canAdvance = computed(() => {
   background: #256644;
   transform: translateY(-1px);
 }
-
 .btn-save:disabled {
   background: var(--color-border);
   color: var(--color-text-tertiary);
   cursor: not-allowed;
 }
 
-/* ── Modal transitions ──────────────── */
-.modal-enter-active {
-  transition: opacity 200ms ease;
+.btn-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255,255,255,0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
 }
 
-.modal-enter-active .modal-container {
-  transition: opacity 200ms ease, transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.modal-leave-active {
-  transition: opacity 150ms ease;
-}
-
-.modal-leave-active .modal-container {
-  transition: opacity 150ms ease, transform 150ms ease;
-}
-
-.modal-enter-from {
-  opacity: 0;
-}
-
-.modal-enter-from .modal-container {
-  opacity: 0;
-  transform: scale(0.95) translateY(10px);
-}
-
-.modal-leave-to {
-  opacity: 0;
-}
-
-.modal-leave-to .modal-container {
-  opacity: 0;
-  transform: scale(0.97) translateY(5px);
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 </style>

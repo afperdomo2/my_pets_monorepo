@@ -7,6 +7,7 @@ func RegisterRoutes(rg *gin.RouterGroup, h *Handler) {
 	healthCatalog := rg.Group("/health-catalogs")
 	{
 		healthCatalog.GET("/category/:category", h.GetHealthCatalogsByCategory)
+		healthCatalog.GET("/species/:species/category/:category", h.GetHealthCatalogsBySpeciesAndCategory)
 		healthCatalog.GET("/:id", h.GetHealthCatalogByID)
 		healthCatalog.POST("", h.CreateHealthCatalog)
 		healthCatalog.PUT("/:id", h.UpdateHealthCatalog)

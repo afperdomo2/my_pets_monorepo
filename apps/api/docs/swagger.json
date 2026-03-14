@@ -474,6 +474,74 @@
                 }
             }
         },
+        "/api/v1/health-catalogs/species/{species}/category/{category}": {
+            "get": {
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "health-catalogs"
+                ],
+                "summary": "Listar registros de la guía de salud por especie y categoría",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Especie (dog, cat, bird, rabbit, fish, other)",
+                        "name": "species",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Categoría (vaccine, deworming, exam)",
+                        "name": "category",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "data: []HealthCatalog",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "especie o categoría inválida",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "autenticación requerida",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "mensaje de error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/health-catalogs/{id}": {
             "get": {
                 "security": [

@@ -7,11 +7,13 @@ interface Props {
   maxDate?: Date
   placeholder?: string
   error?: boolean
+  uniqueId?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  maxDate: () => new Date(),
+  maxDate: undefined,
   placeholder: 'Seleccionar fecha',
+  uniqueId: () => `dp-${Math.random().toString(36).substr(2, 9)}`
 })
 
 const emit = defineEmits<{
@@ -146,6 +148,7 @@ function isSelected(dateObj: Date | null): boolean {
 
 function isDisabled(dateObj: Date | null): boolean {
   if (!dateObj) return true
+  if (!props.maxDate) return false
   const max = new Date(props.maxDate)
   max.setHours(23, 59, 59, 999)
   return dateObj > max
@@ -191,15 +194,31 @@ function close() {
 
 watch(isOpen, async (open) => {
   if (open) {
+    if ((window as any).__activeDatePicker && (window as any).__activeDatePicker !== props.uniqueId) {
+       document.dispatchEvent(new CustomEvent('close-date-picker'))
+    }
+    (window as any).__activeDatePicker = props.uniqueId
+    
     await nextTick()
     calculatePosition()
     document.addEventListener('click', handleDocumentClick)
     document.addEventListener('scroll', calculatePosition, true)
+    document.addEventListener('close-date-picker', handleCloseEvent)
   } else {
+    if ((window as any).__activeDatePicker === props.uniqueId) {
+       (window as any).__activeDatePicker = null
+    }
     document.removeEventListener('click', handleDocumentClick)
     document.removeEventListener('scroll', calculatePosition, true)
+    document.removeEventListener('close-date-picker', handleCloseEvent)
   }
 })
+
+function handleCloseEvent() {
+  if (isOpen.value && (window as any).__activeDatePicker !== props.uniqueId) {
+    isOpen.value = false
+  }
+}
 
 function handleDocumentClick(event: MouseEvent) {
   const target = event.target as HTMLElement

@@ -43,6 +43,21 @@ func (r *gormRepo) GetPaginatedByCategory(ctx context.Context, category string, 
 	return items, total, nil
 }
 
+// GetBySpeciesAndCategory retorna registros de la guía de salud filtrados por especie y categoría.
+func (r *gormRepo) GetBySpeciesAndCategory(ctx context.Context, species, category string) ([]models.HealthCatalog, error) {
+	var items []models.HealthCatalog
+	err := r.db.WithContext(ctx).
+		Where("category = ?", category).
+		Where("? = ANY(species)", species).
+		Order("is_mandatory DESC, name ASC").
+		Find(&items).Error
+	if err != nil {
+		return nil, fmt.Errorf("health_catalog.GetBySpeciesAndCategory: %w", err)
+	}
+
+	return items, nil
+}
+
 // GetByID retorna un registro de la guía de salud por su ID.
 func (r *gormRepo) GetByID(ctx context.Context, id string) (models.HealthCatalog, error) {
 	var item models.HealthCatalog

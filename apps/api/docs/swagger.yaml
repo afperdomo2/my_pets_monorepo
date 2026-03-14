@@ -735,6 +735,50 @@ paths:
       summary: Listar registros de la guía de salud por categoría (paginado)
       tags:
       - health-catalogs
+  /api/v1/health-catalogs/species/{species}/category/{category}:
+    get:
+      parameters:
+      - description: Especie (dog, cat, bird, rabbit, fish, other)
+        in: path
+        name: species
+        required: true
+        type: string
+      - description: Categoría (vaccine, deworming, exam)
+        in: path
+        name: category
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'data: []HealthCatalog'
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: especie o categoría inválida
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: autenticación requerida
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: mensaje de error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - CookieAuth: []
+      summary: Listar registros de la guía de salud por especie y categoría
+      tags:
+      - health-catalogs
   /api/v1/health-records:
     get:
       parameters:

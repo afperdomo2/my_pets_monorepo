@@ -115,6 +115,57 @@ func (h *Handler) GetHealthCatalogsByCategory(c *gin.Context) {
 	})
 }
 
+// GetHealthCatalogsBySpeciesAndCategory maneja GET /api/v1/health-catalogs/species/:species/category/:category
+// Accesible por cualquier usuario autenticado.
+// Retorna el catálogo de salud filtrado por especie y categoría.
+//
+//	@Summary	Listar registros de la guía de salud por especie y categoría
+//	@Tags		health-catalogs
+//	@Produce	json
+//	@Security	CookieAuth
+//	@Param		species	path		string					true	"Especie (dog, cat, bird, rabbit, fish, other)"
+//	@Param		category	path		string					true	"Categoría (vaccine, deworming, exam)"
+//	@Success	200	{object}	map[string]interface{}	"data: []HealthCatalog"
+//	@Failure	400	{object}	map[string]string	"especie o categoría inválida"
+//	@Failure	401	{object}	map[string]string	"autenticación requerida"
+//	@Failure	500	{object}	map[string]string	"mensaje de error"
+//	@Router		/api/v1/health-catalogs/species/{species}/category/{category} [get]
+func (h *Handler) GetHealthCatalogsBySpeciesAndCategory(c *gin.Context) {
+	species := c.Param("species")
+	category := c.Param("category")
+
+	validSpecies := map[string]bool{
+		"dog":    true,
+		"cat":    true,
+		"bird":   true,
+		"rabbit": true,
+		"fish":   true,
+		"other":  true,
+	}
+	if !validSpecies[species] {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid species"})
+		return
+	}
+
+	validCategories := map[string]bool{
+		"vaccine":   true,
+		"deworming": true,
+		"exam":      true,
+	}
+	if !validCategories[category] {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid category"})
+		return
+	}
+
+	items, err := h.repo.GetBySpeciesAndCategory(c.Request.Context(), species, category)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch health catalog"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": items})
+}
+
 // GetHealthCatalogByID maneja GET /api/v1/health-catalogs/:id
 // Accesible por cualquier usuario autenticado.
 //

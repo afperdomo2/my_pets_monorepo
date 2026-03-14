@@ -13,6 +13,7 @@ var ErrNotFound = errors.New("health catalog not found")
 // Repository define las operaciones de persistencia para la guía de salud.
 type Repository interface {
 	GetPaginatedByCategory(ctx context.Context, category string, page, perPage int, speciesFilter *string) ([]models.HealthCatalog, int64, error)
+	GetBySpeciesAndCategory(ctx context.Context, species, category string) ([]models.HealthCatalog, error)
 	GetByID(ctx context.Context, id string) (models.HealthCatalog, error)
 	Create(ctx context.Context, payload CreateHealthCatalogPayload) (models.HealthCatalog, error)
 	Update(ctx context.Context, id string, payload UpdateHealthCatalogPayload) (models.HealthCatalog, error)
