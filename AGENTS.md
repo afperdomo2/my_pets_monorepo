@@ -136,14 +136,67 @@ type Pet struct {
 - Alias `@/` para imports internos
 - `import type { ... }` para tipos
 
-### Tipos
+### Tipos y Contratos
+
+**Estructura de tipos:**
+```
+src/types/
+├── shared.ts          # ApiResponse<T>, PaginatedResponse<T> (reutilizables)
+├── pet.ts             # Pet, CreatePetPayload, UpdatePetPayload
+├── user.ts            # User, UserWithPetCount, payloads
+├── healthRecord.ts    # HealthRecord, payloads
+├── healthCatalog.ts   # HealthCatalog, payloads
+├── auth.ts            # LoginCredentials, LoginResponse, MeResponse
+└── index.ts           # Índice de exportación
+```
+
+**Interfaces estándar:**
 ```ts
 export interface Pet { }              // Entidad completa
-export interface PetPayload { }        // Body create/update
+export interface PetPayload { }       // Body create/update
 export interface ApiResponse<T> { data: T; total?: number }
 export interface PaginatedResponse<T> {
   data: T[]; total: number; page: number; per_page: number; total_pages: number;
 }
+```
+
+**Enums (patrón objeto const):**
+- Usar `const` objects en lugar de `enum` de TypeScript para mejor type safety y strings puros en runtime
+- Los enums deben reflejar exactamente los valores del backend Go
+
+```ts
+// ✅ Patrón recomendado (Opción B)
+export const HealthRecordStatus = {
+  Pending: 'pending',
+  Applied: 'applied',
+  Overdue: 'overdue',
+} as const
+
+export type HealthRecordStatusType = (typeof HealthRecordStatus)[keyof typeof HealthRecordStatus]
+
+// Uso: HealthRecordStatus.Pending → 'pending'
+```
+
+**Constantes centralizadas:**
+```
+src/constants/
+├── pagination.ts      # PER_PAGE_DEFAULT = 10, PER_PAGE_OPTIONS, helpers
+├── petSize.ts         # PET_SIZE_VALUES, labels, icons
+├── species.ts         # PET_SPECIES, helpers
+├── lifeStage.ts       # LifeStageForDog, LifeStageForCat, etc. + labels
+├── healthRecord.ts    # HealthRecordStatus, HealthCatalogCategory + labels
+├── auth.ts            # AuthProvider, token expiry, rutas
+└── index.ts           # Índice de exportación
+```
+
+**Utilidades y helpers:**
+```
+src/utils/
+├── date.ts            # formatDate, isBirthday, calculateAge, estimateBirthDate
+├── formatters.ts      # formatWeight, formatAge, capitalize, truncate
+├── healthRecord.ts    # getHealthRecordStatusLabel, isOverdue, daysUntilDue
+├── pet.ts             # Funciones específicas de pets (compatibilidad)
+└── index.ts           # Índice de exportación
 ```
 
 ### Pinia stores
@@ -158,8 +211,33 @@ export const usePetStore = defineStore('pets', () => {
 - Exponer siempre `loading` y `error`
 
 ### Servicios
-- `fetch` nativo, `credentials: 'include'`
-- `BASE_URL = '/api/v1'`
+
+**Cliente HTTP compartido (`src/services/http.ts`):**
+```ts
+import { get, post, put, patch, del } from '@/services/http'
+
+export const petService = {
+  getAll(page = 1, perPage = PER_PAGE_DEFAULT) {
+    return get(`/pets?page=${page}&per_page=${perPage}`)
+  },
+  // ...
+}
+```
+
+- `BASE_URL = '/api/v1'` (centralizada en http.ts)
+- `credentials: 'include'` para cookies JWT
+- `ApiError` class para manejo uniforme de errores
+
+**Estructura de servicios:**
+```
+src/services/
+├── http.ts              # Cliente HTTP compartido (get, post, put, patch, del)
+├── authService.ts       # login, logout, refresh, me, updateProfile
+├── petService.ts        # getAll, getById, create, update, remove
+├── userService.ts       # getAll, getById, create, update, remove
+├── healthRecordService.ts
+└── healthCatalogService.ts
+```
 
 ---
 
@@ -246,3 +324,7 @@ async function refresh() {
 4. **Type-check**: Obligatorio tras cambios TS (`pnpm type-check`)
 5. **Lint**: `oxlint` antes de `eslint`
 6. **NO commits automáticos**: Solo cuando el usuario lo pida explícitamente
+7. **Contratos frontend-backend**: Los tipos TypeScript deben reflejar exactamente las structs Go del backend
+8. **Enums**: Usar patrón `const` object (Opción B) en lugar de `enum` TS — ver sección "Convenciones — TypeScript / Vue"
+9. **Paginación**: Usar `PER_PAGE_DEFAULT = 10` desde `@/constants/pagination` en todos los composables
+10. **HTTP client**: Usar `get/post/put/patch/del` desde `@/services/http` en lugar de `fetch` directo
