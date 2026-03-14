@@ -2534,10 +2534,6 @@ const docTemplate = `{
         {
             "description": "Operaciones sobre usuarios",
             "name": "users"
-        },
-        {
-            "description": "Operaciones sobre el catálogo de vacunas",
-            "name": "vaccines-catalog"
         }
     ]
 }`

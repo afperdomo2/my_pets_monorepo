@@ -387,56 +387,6 @@ let refreshing = false   // JS puro, NO ref — síncrono, no necesita reactivid
 
 ---
 
-## Cache Time Constants — convención de composables
-
-Todos los composables de TanStack Query **DEBEN** exponer **constantes globales de cache al top del archivo** para permitir ajustes rápidos sin bucear en la lógica. Esto facilita control fino del comportamiento de caché entre módulos.
-
-### Patrón de cache constants en composables
-
-```ts
-// apps/web/src/composables/useVaccineCatalog.ts
-
-// ═══════════════════════════════════════════════════════════════════════════════════
-// Cache time constants — ajusta estos valores según los SLAs de cada módulo
-// ═══════════════════════════════════════════════════════════════════════════════════
-/** Stale time para listados paginados (en ms). Reduce para refrescar más a menudo. */
-const VACCINES_STALE_TIME = 2 * 60_000 // 2 minutos
-
-/** Stale time para detalles individuales (en ms). Más largo porque cambios son menos frecuentes. */
-const VACCINE_STALE_TIME = 5 * 60_000 // 5 minutos
-
-export const useVaccineCatalog = () => {
-  const queryClient = useQueryClient()
-  
-  // useQuery usa VACCINES_STALE_TIME → comportamiento de caché automático
-  // useQuery con :id usa VACCINE_STALE_TIME → caché más largo
-}
-```
-
-### Documentación de constantes
-
-- **VACCINES_STALE_TIME** = `2 * 60_000` = 2 minutos
-  - Aplicado a listados paginados (`/api/v1/vaccines-catalog`)
-  - Mantiene datos frescos sin abrumar el servidor con requests
-  
-- **VACCINE_STALE_TIME** = `5 * 60_000` = 5 minutos
-  - Aplicado a detalles individuales (`/api/v1/vaccines-catalog/:id`)
-  - Cambios son menos frecuentes en detalles
-
-### Cómo ajustar cache times en producción
-
-Si la data del módulo cambia frecuentemente y necesitas refrescar más a menudo:
-
-1. Reduce las constantes (ej: 30_000 = 30 segundos)
-2. Los refrescos manuales (`refetch()`, `invalidateQueries()`) siempre respetan el stale time
-
-Si la data es muy estable y quieres reducir requests:
-
-1. Aumenta las constantes (ej: 10 * 60_000 = 10 minutos)
-2. Los users todavía pueden hacer refresh manual explícito
-
----
-
 ## Paginación — convenciones
 
 ### Respuesta paginada del backend
