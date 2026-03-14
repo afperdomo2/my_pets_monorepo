@@ -25,6 +25,11 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
 }
 
 export const healthRecordService = {
+  // Obtener todos los registros del usuario
+  getAll(page = 1, perPage = 10): Promise<PaginatedResponse<HealthRecord>> {
+    return request(`/health-records?page=${page}&per_page=${perPage}`)
+  },
+
   // Obtener registros de una mascota
   getByPetId(petId: string, page = 1, perPage = 10): Promise<PaginatedResponse<HealthRecord>> {
     return request(`/health-records/pets/${petId}?page=${page}&per_page=${perPage}`)

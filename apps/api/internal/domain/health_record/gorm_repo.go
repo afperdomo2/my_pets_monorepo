@@ -53,7 +53,7 @@ func (r *gormRepo) GetAllByOwner(ctx context.Context, ownerID string, page, perP
 	}
 
 	offset := (page - 1) * perPage
-	if err := base.Order("due_date ASC").Limit(perPage).Offset(offset).Find(&records).Error; err != nil {
+	if err := base.Preload("Pet").Order("due_date ASC").Limit(perPage).Offset(offset).Find(&records).Error; err != nil {
 		return nil, 0, fmt.Errorf("health_record.GetAllByOwner: %w", err)
 	}
 
@@ -72,7 +72,7 @@ func (r *gormRepo) GetByPetID(ctx context.Context, petID, ownerID string, page, 
 	}
 
 	offset := (page - 1) * perPage
-	if err := base.Order("due_date ASC").Limit(perPage).Offset(offset).Find(&records).Error; err != nil {
+	if err := base.Preload("Pet").Order("due_date ASC").Limit(perPage).Offset(offset).Find(&records).Error; err != nil {
 		return nil, 0, fmt.Errorf("health_record.GetByPetID: %w", err)
 	}
 
@@ -91,7 +91,7 @@ func (r *gormRepo) GetByPetIDAndCategory(ctx context.Context, petID, category, o
 	}
 
 	offset := (page - 1) * perPage
-	if err := base.Order("due_date ASC").Limit(perPage).Offset(offset).Find(&records).Error; err != nil {
+	if err := base.Preload("Pet").Order("due_date ASC").Limit(perPage).Offset(offset).Find(&records).Error; err != nil {
 		return nil, 0, fmt.Errorf("health_record.GetByPetIDAndCategory: %w", err)
 	}
 

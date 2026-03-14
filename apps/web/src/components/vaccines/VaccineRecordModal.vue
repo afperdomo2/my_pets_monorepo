@@ -13,6 +13,7 @@ import DatePicker from '@/components/ui/DatePicker.vue'
 import { useGetPets } from '@/composables/usePets'
 import { useGetHealthCatalogs } from '@/composables/useHealthCatalog'
 import { useCreateHealthRecord } from '@/composables/useHealthRecords'
+import PetAvatar from '@/components/pets/PetAvatar.vue'
 import { onMounted, onUnmounted } from 'vue'
 
 onMounted(() => {
@@ -22,20 +23,6 @@ onMounted(() => {
 onUnmounted(() => {
   document.body.style.overflow = ''
 })
-
-// Helpers para avatar de mascotas (Misma lógica local a PetCard)
-const SPECIES_EMOJI: Record<string, string> = {
-  dog: '🐕',
-  cat: '🐈',
-  bird: '🦜',
-  rabbit: '🐇',
-  fish: '🐠',
-  other: '🐾',
-}
-
-function speciesEmoji(s: string) {
-  return SPECIES_EMOJI[s] ?? '🐾'
-}
 
 const props = defineProps<{
   /** Mascota preseleccionada (si viene desde una tarjeta del timeline) */
@@ -261,9 +248,7 @@ async function save() {
                   }"
                   @click="selectedPetId = pet.id"
                 >
-                  <div class="pet-option__avatar">
-                    <span style="font-size: 1.5rem; line-height: 1;">{{ speciesEmoji(pet.species) }}</span>
-                  </div>
+                  <PetAvatar :species="pet.species" :name="pet.name" size="lg" />
                   <span class="pet-option__name">{{ pet.name }}</span>
                 </button>
               </div>
@@ -648,25 +633,6 @@ async function save() {
   box-shadow: 0 0 0 3px rgba(61, 122, 95, 0.15);
   background: var(--color-accent-light);
 }
-
-.pet-option__avatar {
-  width: 48px;
-  height: 48px;
-  border-radius: var(--radius-full);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: var(--text-sm);
-  font-weight: 700;
-  background: var(--color-bg-alt);
-  color: var(--color-text-secondary);
-  transition: background var(--transition-fast);
-}
-
-.pet-option--dog .pet-option__avatar    { background: #fef3c7; }
-.pet-option--cat .pet-option__avatar    { background: #ede9fe; }
-.pet-option--bird .pet-option__avatar   { background: #cffafe; }
-.pet-option--rabbit .pet-option__avatar { background: #fce7f3; }
 
 .pet-option__name {
   font-size: var(--text-sm);

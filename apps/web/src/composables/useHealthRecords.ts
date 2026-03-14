@@ -9,6 +9,32 @@ import type { CreateHealthRecordPayload, UpdateHealthRecordPayload, UpdateStatus
 /** Stale time para listados paginados (en ms). */
 const HEALTH_RECORD_LIST_STALE_TIME = 2 * 60_000; // 2 minutos
 
+export function useGetAllHealthRecords(page: Ref<number>, perPage: Ref<number>) {
+  const queryClient = useQueryClient();
+  const queryKey = computed(() => ["health-records", "all", { page: page.value, perPage: perPage.value }]);
+
+  const query = useQuery({
+    queryKey,
+    queryFn: () => healthRecordService.getAll(page.value, perPage.value),
+    staleTime: HEALTH_RECORD_LIST_STALE_TIME,
+  });
+
+  let refreshing = false;
+  async function refresh() {
+    if (refreshing) return;
+    refreshing = true;
+    try {
+      page.value = 1;
+      await nextTick();
+      await queryClient.invalidateQueries({ queryKey: ["health-records", "all"], refetchType: "active" });
+    } finally {
+      refreshing = false;
+    }
+  }
+
+  return { ...query, refresh };
+}
+
 export function useGetHealthRecordsByPet(petId: Ref<string>, page: Ref<number>, perPage: Ref<number>) {
   const queryClient = useQueryClient();
   const queryKey = computed(() => ["health-records", "pet", petId.value, { page: page.value, perPage: perPage.value }]);

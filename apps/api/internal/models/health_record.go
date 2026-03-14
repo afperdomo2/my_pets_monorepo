@@ -22,5 +22,5 @@ type HealthRecord struct {
 	UpdatedAt       time.Time  `json:"updated_at"        gorm:"type:timestamptz;not null;default:now()"`
 
 	// Relación con Pet — CASCADE: si se elimina la mascota, se eliminan sus registros.
-	Pet Pet `json:"-" gorm:"foreignKey:PetID;constraint:OnDelete:CASCADE"`
+	Pet Pet `json:"pet" gorm:"foreignKey:PetID;constraint:OnDelete:CASCADE"`
 }

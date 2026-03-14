@@ -1,72 +1,34 @@
 <script setup lang="ts">
-// Datos mock del historial de vacunas
-const history = [
-  {
-    id: '1',
-    petName: 'Romeo',
-    petInitials: 'RO',
-    petSpecies: 'dog',
-    vaccine: 'Antirrábica',
-    appliedDate: '15 ene 2026',
-    nextDose: '15 ene 2027',
-    status: 'uptodate' as const,
-  },
-  {
-    id: '2',
-    petName: 'Luna',
-    petInitials: 'LU',
-    petSpecies: 'cat',
-    vaccine: 'Triple felina',
-    appliedDate: '03 dic 2025',
-    nextDose: '03 dic 2026',
-    status: 'uptodate' as const,
-  },
-  {
-    id: '3',
-    petName: 'Simba',
-    petInitials: 'SI',
-    petSpecies: 'cat',
-    vaccine: 'Antirrábica',
-    appliedDate: '20 feb 2025',
-    nextDose: '20 feb 2026',
-    status: 'overdue' as const,
-  },
-  {
-    id: '4',
-    petName: 'Manchas',
-    petInitials: 'MA',
-    petSpecies: 'dog',
-    vaccine: 'Polivalente canina',
-    appliedDate: '10 sep 2025',
-    nextDose: '10 mar 2026',
-    status: 'upcoming' as const,
-  },
-  {
-    id: '5',
-    petName: 'Bolt',
-    petInitials: 'BO',
-    petSpecies: 'dog',
-    vaccine: 'Sextuple',
-    appliedDate: '01 ago 2025',
-    nextDose: '01 ago 2026',
-    status: 'uptodate' as const,
-  },
-  {
-    id: '6',
-    petName: 'Kira',
-    petInitials: 'KI',
-    petSpecies: 'cat',
-    vaccine: 'Leucemia felina',
-    appliedDate: '28 nov 2025',
-    nextDose: '28 nov 2026',
-    status: 'uptodate' as const,
-  },
-]
+import { ref, computed } from 'vue'
+import { useGetAllHealthRecords } from '@/composables/useHealthRecords'
+import type { HealthRecordStatus } from '@/types/healthRecord'
+import PetAvatar from '@/components/pets/PetAvatar.vue'
+import AppPagination from '@/components/ui/AppPagination.vue'
+import PerPageSelector from '@/components/ui/PerPageSelector.vue'
 
-const STATUS_CONFIG = {
-  uptodate: { label: 'Al día', className: 'status--uptodate' },
-  upcoming: { label: 'Próxima', className: 'status--upcoming' },
-  overdue:  { label: 'Vencida', className: 'status--overdue' },
+const page = ref(1)
+const perPage = ref(10)
+
+const { data, isLoading, isError, refresh } = useGetAllHealthRecords(page, perPage)
+
+const records = computed(() => data.value?.data ?? [])
+const total = computed(() => data.value?.total ?? 0)
+const totalPages = computed(() => data.value?.total_pages ?? 0)
+
+const STATUS_CONFIG: Record<HealthRecordStatus, { label: string; className: string }> = {
+  applied: { label: 'Aplicada', className: 'status--uptodate' },
+  pending: { label: 'Pendiente', className: 'status--upcoming' },
+  overdue: { label: 'Vencida', className: 'status--overdue' },
+}
+
+function formatDate(dateStr: string | null): string {
+  if (!dateStr) return '—'
+  const date = new Date(dateStr)
+  return date.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })
+}
+
+function goToPage(newPage: number) {
+  page.value = newPage
 }
 </script>
 
@@ -74,11 +36,11 @@ const STATUS_CONFIG = {
   <div class="history-panel">
     <div class="panel-header">
       <h2>Historial de vacunación</h2>
-      <span class="panel-count">{{ history.length }} registros</span>
+      <span class="panel-count">{{ total }} registros</span>
     </div>
 
     <div class="table-wrapper">
-      <table class="history-table">
+      <table v-if="!isLoading && !isError" class="history-table">
         <thead>
           <tr>
             <th>Mascota</th>
@@ -89,32 +51,51 @@ const STATUS_CONFIG = {
           </tr>
         </thead>
         <tbody>
-          <tr v-for="row in history" :key="row.id" class="history-row">
+          <tr v-for="record in records" :key="record.id" class="history-row">
             <td>
               <div class="pet-cell">
-                <div class="pet-mini-avatar" :class="`pet-mini-avatar--${row.petSpecies}`">
-                  {{ row.petInitials }}
-                </div>
-                <span class="pet-cell-name">{{ row.petName }}</span>
+                <PetAvatar :species="record.pet.species" :name="record.pet.name" size="sm" />
+                <span class="pet-cell-name">{{ record.pet.name }}</span>
               </div>
             </td>
             <td>
-              <span class="vaccine-cell">{{ row.vaccine }}</span>
+              <span class="vaccine-cell">{{ record.name }}</span>
             </td>
             <td class="td-center">
-              <span class="date-cell">{{ row.appliedDate }}</span>
+              <span class="date-cell">{{ formatDate(record.application_date) }}</span>
             </td>
             <td class="td-center">
-              <span class="date-cell">{{ row.nextDose }}</span>
+              <span class="date-cell">{{ formatDate(record.due_date) }}</span>
             </td>
             <td class="td-center">
-              <span class="status-badge" :class="STATUS_CONFIG[row.status].className">
-                {{ STATUS_CONFIG[row.status].label }}
+              <span class="status-badge" :class="STATUS_CONFIG[record.status].className">
+                {{ STATUS_CONFIG[record.status].label }}
               </span>
             </td>
           </tr>
         </tbody>
       </table>
+
+      <div v-else-if="isLoading" class="loading-state">
+        <div class="spinner" />
+        <p>Cargando registros...</p>
+      </div>
+
+      <div v-else-if="isError" class="error-state">
+        <p>Error al cargar los registros</p>
+        <button class="btn-retry" @click="refresh">Reintentar</button>
+      </div>
+    </div>
+
+    <!-- Paginación -->
+    <div class="table-footer">
+      <PerPageSelector v-model="perPage" :options="[10, 25, 50]" />
+      <AppPagination
+        v-model:current-page="page"
+        :total-pages="totalPages"
+        :total-items="total"
+        :per-page="perPage"
+      />
     </div>
   </div>
 </template>
@@ -208,24 +189,6 @@ const STATUS_CONFIG = {
   gap: var(--space-2);
 }
 
-.pet-mini-avatar {
-  width: 30px;
-  height: 30px;
-  border-radius: var(--radius-full);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.65rem;
-  font-weight: 700;
-  flex-shrink: 0;
-}
-
-.pet-mini-avatar--dog    { background: #fef3c7; color: #92400e; }
-.pet-mini-avatar--cat    { background: #ede9fe; color: #5b21b6; }
-.pet-mini-avatar--bird   { background: #cffafe; color: #0e7490; }
-.pet-mini-avatar--rabbit { background: #fce7f3; color: #9d174d; }
-.pet-mini-avatar--fish   { background: #dbeafe; color: #1e40af; }
-
 .pet-cell-name {
   font-size: var(--text-sm);
   font-weight: 600;
@@ -254,17 +217,85 @@ const STATUS_CONFIG = {
 }
 
 .status--uptodate {
-  background: #E8F5EE;
-  color: #2E7D52;
+  background: #e8f5ee;
+  color: #2e7d52;
 }
 
 .status--upcoming {
-  background: #FEF3E2;
-  color: #C4714A;
+  background: #fef3e2;
+  color: #c4714a;
 }
 
 .status--overdue {
-  background: #FEF2F2;
-  color: #DC2626;
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+/* ── Estados de carga/error ──────── */
+.loading-state,
+.error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-10) var(--space-4);
+  gap: var(--space-3);
+}
+
+.loading-state p,
+.error-state p {
+  font-size: var(--text-sm);
+  color: var(--color-text-tertiary);
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--color-border);
+  border-top-color: var(--color-accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.btn-retry {
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.btn-retry:hover {
+  background: var(--color-accent-hover);
+}
+
+/* ── Footer con paginación ───────── */
+.table-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  padding: var(--space-4) var(--space-6);
+  border-top: 1px solid var(--color-border-light);
+  background: var(--color-bg);
+}
+
+@media (max-width: 600px) {
+  .table-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-3);
+  }
 }
 </style>

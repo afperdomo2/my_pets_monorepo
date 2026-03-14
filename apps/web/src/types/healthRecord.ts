@@ -1,3 +1,5 @@
+export type HealthRecordStatus = 'applied' | 'pending' | 'overdue'
+
 export interface HealthRecord {
   id: string
   pet_id: string
@@ -5,12 +7,18 @@ export interface HealthRecord {
   health_catalog_id: string | null
   category: string
   name: string
-  status: string
+  status: HealthRecordStatus
   application_date: string | null
   due_date: string
   notes: string | null
   created_at: string
   updated_at: string
+  pet: {
+    id: string
+    name: string
+    species: string
+    breed: string
+  }
 }
 
 export interface CreateHealthRecordPayload {
