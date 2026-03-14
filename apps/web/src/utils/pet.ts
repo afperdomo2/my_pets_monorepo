@@ -1,7 +1,15 @@
 /**
  * Pet utility helpers — pure functions, no Vue dependencies.
  * Imported by components, composables and views that display pet data.
+ *
+ * Nota: Las funciones de uso general (formatWeight, toGrams, formatAge, etc.)
+ * están centralizadas en @/utils/formatters. Este archivo mantiene compatibilidad
+ * y agrega funciones específicas de pets.
  */
+
+import { calculateAge, isBirthday, estimateBirthDate, formatDate } from '@/utils/date'
+import { formatWeight, toGrams, formatAge as formatAgeString } from '@/utils/formatters'
+import { getLifeStageLabel } from '@/constants/lifeStage'
 
 export interface AgeResult {
   years: number
@@ -11,92 +19,52 @@ export interface AgeResult {
 /**
  * Calculates years and months elapsed from a birth date ISO string to today.
  * Uses UTC dates to avoid timezone edge cases.
+ * @deprecated Usar calculateAge desde @/utils/date
  */
 export function calcAge(birthDateIso: string): AgeResult {
-  const birth = new Date(birthDateIso)
-  const now = new Date()
-
-  let years = now.getUTCFullYear() - birth.getUTCFullYear()
-  let months = now.getUTCMonth() - birth.getUTCMonth()
-
-  if (months < 0) {
-    years--
-    months += 12
-  }
-
-  // If the day of the month hasn't been reached yet this month, subtract one month
-  if (now.getUTCDate() < birth.getUTCDate()) {
-    months--
-    if (months < 0) {
-      years--
-      months += 12
-    }
-  }
-
-  return { years: Math.max(0, years), months: Math.max(0, months) }
+  return calculateAge(birthDateIso)
 }
 
 /**
  * Returns a human-readable age string.
  * Examples: "3 años, 2 meses" | "5 meses" | "1 año" | "Recién nacido"
+ * @deprecated Usar formatAge desde @/utils/formatters
  */
 export function formatAge(age: AgeResult): string {
-  const { years, months } = age
-
-  if (years === 0 && months === 0) return 'Recién nacido'
-  if (years === 0) return `${months} ${months === 1 ? 'mes' : 'meses'}`
-  if (months === 0) return `${years} ${years === 1 ? 'año' : 'años'}`
-  return `${years} ${years === 1 ? 'año' : 'años'}, ${months} ${months === 1 ? 'mes' : 'meses'}`
+  return formatAgeString(age.years, age.months)
 }
 
 /**
  * Checks whether today is the pet's birthday (same day and month).
  * Should ONLY be called when birth_date_exact === true.
+ * @deprecated Usar isBirthday desde @/utils/date
  */
 export function isBirthdayToday(birthDateIso: string): boolean {
-  const birth = new Date(birthDateIso)
-  const now = new Date()
-  return birth.getUTCDate() === now.getUTCDate() && birth.getUTCMonth() === now.getUTCMonth()
+  return isBirthday(birthDateIso)
 }
 
 /**
  * Formats a weight in grams to a human-readable string.
- * - < 1000 g → "Xg"   (e.g. "850 g")
- * - >= 1000 g → "X kg" with up to 2 decimal places (e.g. "3.5 kg")
+ * @deprecated Usar formatWeight desde @/utils/formatters
  */
-export function formatWeight(grams: number): string {
-  if (grams < 1000) return `${grams} g`
-  const kg = grams / 1000
-  // Remove trailing zeros: 3.50 → "3.5", 4.00 → "4"
-  return `${parseFloat(kg.toFixed(2))} kg`
+export function formatWeightLegacy(grams: number): string {
+  return formatWeight(grams)
 }
 
 /**
  * Converts a user input weight to grams based on the selected unit.
+ * @deprecated Usar toGrams desde @/utils/formatters
  */
-export function toGrams(value: number, unit: 'kg' | 'g'): number {
-  return unit === 'kg' ? Math.round(value * 1000) : Math.round(value)
+export function toGramsLegacy(value: number, unit: 'kg' | 'g'): number {
+  return toGrams(value, unit)
 }
 
 /**
  * Calculates an estimated birth date string ("YYYY-MM-DD") from years and months.
- * Subtracts the given period from today's date.
+ * @deprecated Usar estimateBirthDate desde @/utils/date
  */
 export function estimatedBirthDate(years: number, months: number): string {
-  const now = new Date()
-  let y = now.getUTCFullYear() - years
-  let m = now.getUTCMonth() - months
-
-  if (m < 0) {
-    y--
-    m += 12
-  }
-
-  // Use the same day-of-month as today, clamped to valid range for the target month
-  const maxDay = new Date(Date.UTC(y, m + 1, 0)).getUTCDate()
-  const d = Math.min(now.getUTCDate(), maxDay)
-
-  return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+  return estimateBirthDate(years, months)
 }
 
 /**
@@ -104,7 +72,7 @@ export function estimatedBirthDate(years: number, months: number): string {
  * Example: "12 de enero de 2022"
  */
 export function formatBirthDate(birthDateIso: string): string {
-  return new Date(birthDateIso).toLocaleDateString('es-ES', {
+  return formatDate(birthDateIso, 'es-ES', {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
@@ -112,24 +80,19 @@ export function formatBirthDate(birthDateIso: string): string {
   })
 }
 
-const LIFE_STAGE_LABEL: Record<string, string> = {
-  // Perro
-  puppy: 'Cachorro',
-  junior: 'Joven',
-  adult: 'Adulto',
-  senior: 'Senior',
-  geriatric: 'Geriátrico',
-  // Gato
-  kitten: 'Gatito',
-  young_adult: 'Joven Adulto',
-  mature_adult: 'Adulto Maduro',
-  end_of_life: 'Fin de Vida',
-  // Conejo
-  infant: 'Infancia',
-  juvenile: 'Juvenil',
-  teenager: 'Adolescente',
+/**
+ * Obtiene el label en español para una etapa de vida.
+ * Centralizado en @/constants/lifeStage.
+ */
+export function lifeStageLabel(stage: string): string {
+  return getLifeStageLabel(stage)
 }
 
-export function lifeStageLabel(stage: string): string {
-  return LIFE_STAGE_LABEL[stage] ?? stage
+// Re-exportar funciones centralizadas para compatibilidad
+export {
+  calculateAge as calcAgeNew,
+  formatWeight,
+  toGrams,
+  formatAge as formatAgeNew,
+  getLifeStageLabel,
 }

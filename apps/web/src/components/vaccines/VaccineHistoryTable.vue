@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useGetAllHealthRecords } from '@/composables/useHealthRecords'
-import type { HealthRecordStatus } from '@/types/healthRecord'
+import type { HealthRecordStatusType } from '@/constants/healthRecord'
+import { HealthRecordStatus } from '@/constants/healthRecord'
 import PetAvatar from '@/components/pets/PetAvatar.vue'
 import AppPagination from '@/components/ui/AppPagination.vue'
 import PerPageSelector from '@/components/ui/PerPageSelector.vue'
@@ -15,20 +16,16 @@ const records = computed(() => data.value?.data ?? [])
 const total = computed(() => data.value?.total ?? 0)
 const totalPages = computed(() => data.value?.total_pages ?? 0)
 
-const STATUS_CONFIG: Record<HealthRecordStatus, { label: string; className: string }> = {
-  applied: { label: 'Aplicada', className: 'status--uptodate' },
-  pending: { label: 'Pendiente', className: 'status--upcoming' },
-  overdue: { label: 'Vencida', className: 'status--overdue' },
+const STATUS_CONFIG: Record<HealthRecordStatusType, { label: string; className: string }> = {
+  [HealthRecordStatus.Applied]: { label: 'Aplicada', className: 'status--uptodate' },
+  [HealthRecordStatus.Pending]: { label: 'Pendiente', className: 'status--upcoming' },
+  [HealthRecordStatus.Overdue]: { label: 'Vencida', className: 'status--overdue' },
 }
 
 function formatDate(dateStr: string | null): string {
   if (!dateStr) return '—'
   const date = new Date(dateStr)
   return date.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })
-}
-
-function goToPage(newPage: number) {
-  page.value = newPage
 }
 </script>
 
@@ -68,8 +65,8 @@ function goToPage(newPage: number) {
               <span class="date-cell">{{ formatDate(record.due_date) }}</span>
             </td>
             <td class="td-center">
-              <span class="status-badge" :class="STATUS_CONFIG[record.status].className">
-                {{ STATUS_CONFIG[record.status].label }}
+              <span class="status-badge" :class="STATUS_CONFIG[record.status as HealthRecordStatusType]?.className">
+                {{ STATUS_CONFIG[record.status as HealthRecordStatusType]?.label }}
               </span>
             </td>
           </tr>

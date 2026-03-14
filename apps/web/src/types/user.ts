@@ -26,22 +26,34 @@ export interface UpdateUserPayload {
   pet_limit?: number
 }
 
+/**
+ * @deprecated Usar desde @/types/auth
+ */
 export interface UpdateProfilePayload {
   name: string
   email: string
 }
 
+/**
+ * @deprecated Usar desde @/types/auth
+ */
 export interface ChangePasswordPayload {
   current_password: string
   new_password: string
   confirm_password: string
 }
 
+/**
+ * @deprecated Usar LoginCredentials desde @/types/auth
+ */
 export interface LoginPayload {
   email: string
   password: string
 }
 
+/**
+ * @deprecated Usar LoginResponse desde @/types/auth
+ */
 export interface AuthResponse {
   data: User
   expires_in: number

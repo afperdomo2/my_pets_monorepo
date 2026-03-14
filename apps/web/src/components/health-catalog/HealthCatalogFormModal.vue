@@ -5,13 +5,15 @@ import { toTypedSchema } from '@vee-validate/zod'
 import { IconX } from '@tabler/icons-vue'
 import { useCreateHealthCatalog, useUpdateHealthCatalog } from '@/composables/useHealthCatalog'
 import { PET_SPECIES, getSpeciesLabel, getSpeciesValue } from '@/constants/species'
-import type { HealthCatalog, HealthCatalogCategory } from '@/types/healthCatalog'
+import type { HealthCatalog } from '@/types/healthCatalog'
+import type { HealthCatalogCategoryType } from '@/constants/healthRecord'
+import { HealthCatalogCategory } from '@/constants/healthRecord'
 import { createHealthCatalogSchema, updateHealthCatalogSchema } from '@/schemas/healthCatalog'
 
 const props = defineProps<{
   mode: 'create' | 'edit'
   item?: HealthCatalog
-  defaultCategory?: HealthCatalogCategory
+  defaultCategory?: HealthCatalogCategoryType
 }>()
 
 const emit = defineEmits<{
@@ -24,10 +26,10 @@ const createItem = useCreateHealthCatalog()
 const updateItem = useUpdateHealthCatalog()
 
 // Opciones de categoría con etiquetas en español
-const CATEGORY_OPTIONS: { value: HealthCatalogCategory; label: string }[] = [
-  { value: 'vaccine', label: 'Vacuna' },
-  { value: 'deworming', label: 'Desparasitación' },
-  { value: 'exam', label: 'Examen' },
+const CATEGORY_OPTIONS: { value: HealthCatalogCategoryType; label: string }[] = [
+  { value: HealthCatalogCategory.Vaccine, label: 'Vacuna' },
+  { value: HealthCatalogCategory.Deworming, label: 'Desparasitación' },
+  { value: HealthCatalogCategory.Exam, label: 'Examen' },
 ]
 
 // Especies disponibles (centralizadas)
@@ -92,7 +94,7 @@ const {
   validationSchema: toTypedSchema(updateHealthCatalogSchema),
   initialValues: {
     name: props.item?.name ?? '',
-    category: (props.item?.category ?? 'vaccine') as HealthCatalogCategory,
+    category: (props.item?.category ?? 'vaccine') as HealthCatalogCategoryType,
     description: props.item?.description ?? '',
     frequency_months: props.item?.frequency_months ?? null,
     is_mandatory: props.item?.is_mandatory ?? false,

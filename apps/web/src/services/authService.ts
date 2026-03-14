@@ -1,38 +1,22 @@
-import type { User, LoginPayload, AuthResponse, UpdateProfilePayload, ChangePasswordPayload } from '@/types/user'
-
-const BASE_URL = '/api/v1'
-
-async function request<T>(url: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${BASE_URL}${url}`, {
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    ...options,
-  })
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: 'Unknown error' }))
-    throw new Error(err.error ?? `HTTP ${res.status}`)
-  }
-  return res.json()
-}
+import type { User, UpdateProfilePayload, ChangePasswordPayload } from '@/types/user'
+import type { LoginCredentials, LoginResponse, MeResponse } from '@/types/auth'
+import { get, post, put, del } from '@/services/http'
 
 export const authService = {
-  login(payload: LoginPayload): Promise<AuthResponse> {
-    return request('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    })
+  login(payload: LoginCredentials): Promise<LoginResponse> {
+    return post('/auth/login', payload)
   },
 
   logout(): Promise<{ message: string }> {
-    return request('/auth/logout', { method: 'POST' })
+    return post('/auth/logout')
   },
 
-  refresh(): Promise<AuthResponse> {
-    return request('/auth/refresh', { method: 'POST' })
+  refresh(): Promise<{ access_token: string; expires_in: number }> {
+    return post('/auth/refresh')
   },
 
-  me(): Promise<{ data: User }> {
-    return request('/auth/me')
+  me(): Promise<MeResponse> {
+    return get('/auth/me')
   },
 
   /** Redirects the browser to the Google OAuth initiation endpoint on the API. */
@@ -43,16 +27,14 @@ export const authService = {
   },
 
   updateProfile(payload: UpdateProfilePayload): Promise<{ data: User }> {
-    return request('/auth/profile', {
-      method: 'PUT',
-      body: JSON.stringify(payload),
-    })
+    return put('/auth/profile', payload)
   },
 
   changePassword(payload: ChangePasswordPayload): Promise<{ message: string }> {
-    return request('/auth/password', {
-      method: 'PUT',
-      body: JSON.stringify(payload),
-    })
+    return put('/auth/password', payload)
+  },
+
+  googleLogout(): Promise<{ message: string }> {
+    return del('/auth/google/logout')
   },
 }

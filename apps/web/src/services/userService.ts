@@ -1,45 +1,27 @@
 import type { User, UserWithPetCount, CreateUserPayload, UpdateUserPayload } from '@/types/user'
-import type { ApiResponse, PaginatedResponse } from '@/types/pet'
+import type { ApiResponse, PaginatedResponse } from '@/types/shared'
+import { get, post, put, del } from '@/services/http'
 
-const BASE_URL = '/api/v1'
-
-async function request<T>(url: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${BASE_URL}${url}`, {
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    ...options,
-  })
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: 'Unknown error' }))
-    throw new Error(err.error ?? `HTTP ${res.status}`)
-  }
-  return res.json()
-}
+const PER_PAGE_DEFAULT = 10
 
 export const userService = {
-  getAll(page = 1, perPage = 10): Promise<PaginatedResponse<UserWithPetCount>> {
-    return request(`/users?page=${page}&per_page=${perPage}`)
+  getAll(page = 1, perPage = PER_PAGE_DEFAULT): Promise<PaginatedResponse<UserWithPetCount>> {
+    return get(`/users?page=${page}&per_page=${perPage}`)
   },
 
   getById(id: string): Promise<ApiResponse<UserWithPetCount>> {
-    return request(`/users/${id}`)
+    return get(`/users/${id}`)
   },
 
   create(payload: CreateUserPayload): Promise<ApiResponse<User>> {
-    return request('/users', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    })
+    return post('/users', payload)
   },
 
   update(id: string, payload: UpdateUserPayload): Promise<ApiResponse<User>> {
-    return request(`/users/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(payload),
-    })
+    return put(`/users/${id}`, payload)
   },
 
   remove(id: string): Promise<{ message: string }> {
-    return request(`/users/${id}`, { method: 'DELETE' })
+    return del(`/users/${id}`)
   },
 }

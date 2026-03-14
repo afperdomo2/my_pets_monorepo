@@ -5,7 +5,8 @@ import { IconPlus, IconSearch, IconAlertCircle, IconRefresh } from '@tabler/icon
 import { useGetHealthCatalogs, useDeleteHealthCatalog } from '@/composables/useHealthCatalog'
 import { useUIStore } from '@/stores/ui'
 import { PET_SPECIES } from '@/constants/species'
-import type { HealthCatalog, HealthCatalogCategory } from '@/types/healthCatalog'
+import type { HealthCatalog } from '@/types/healthCatalog'
+import type { HealthCatalogCategoryType } from '@/constants/healthRecord'
 import HealthCatalogFormModal from '@/components/health-catalog/HealthCatalogFormModal.vue'
 import HealthCatalogTableRow from '@/components/health-catalog/HealthCatalogTableRow.vue'
 import AppPagination from '@/components/ui/AppPagination.vue'
@@ -18,7 +19,7 @@ const route = useRoute()
 const category = computed(() => {
   const cat = route.params.category as string
   if (['vaccine', 'deworming', 'exam'].includes(cat)) {
-    return cat as HealthCatalogCategory
+    return cat as HealthCatalogCategoryType
   }
   return 'vaccine'
 })

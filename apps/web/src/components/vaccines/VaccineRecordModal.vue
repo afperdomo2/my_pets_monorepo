@@ -58,18 +58,13 @@ function prevStep() {
 const { data: allPets } = useGetPets()
 
 const selectedPetId = ref<string | null>(props.preselectedPet ?? null)
-const selectedPet = computed(() => allPets.value?.find((p: any) => p.id === selectedPetId.value))
+const selectedPet = computed(() => allPets.value?.find((p) => p.id === selectedPetId.value))
 
 watch(() => allPets.value, (pets) => {
   if (props.preselectedPet && pets && pets.length > 0) {
     selectedPetId.value = props.preselectedPet
   }
 }, { immediate: true })
-
-function petInitials(name: string) {
-  if (!name) return ''
-  return name.slice(0, 2).toUpperCase()
-}
 
 // ── Paso 2: Seleccionar vacuna ──────────────────
 const categoryRef = ref('vaccine')
@@ -78,7 +73,7 @@ const perPageRef = ref(100)
 const speciesRef = computed(() => selectedPet.value?.species)
 const canFetchVaccines = computed(() => currentStep.value >= 2 && !!speciesRef.value)
 
-const { data: catalogResponse } = useGetHealthCatalogs(categoryRef, pageRef, perPageRef, speciesRef as any, canFetchVaccines)
+const { data: catalogResponse } = useGetHealthCatalogs(categoryRef, pageRef, perPageRef, speciesRef, canFetchVaccines)
 
 const vaccineSearch = ref('')
 const selectedVaccineId = ref<string | null>(null)
@@ -88,7 +83,7 @@ const filteredVaccines = computed(() => {
   const list = catalogResponse.value?.data || []
   const q = vaccineSearch.value.toLowerCase().trim()
   if (q) {
-    return list.filter((v: any) => v.name.toLowerCase().includes(q))
+    return list.filter((v) => v.name.toLowerCase().includes(q))
   }
   return list
 })
@@ -102,7 +97,7 @@ function selectCustomVaccine() {
 
 const selectedVaccine = computed(() => {
   if (selectedVaccineId.value === 'custom') return null
-  return catalogResponse.value?.data?.find((v: any) => v.id === selectedVaccineId.value)
+  return catalogResponse.value?.data?.find((v) => v.id === selectedVaccineId.value)
 })
 
 watch(vaccineSearch, () => {

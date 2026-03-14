@@ -194,18 +194,22 @@ function close() {
 
 watch(isOpen, async (open) => {
   if (open) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if ((window as any).__activeDatePicker && (window as any).__activeDatePicker !== props.uniqueId) {
        document.dispatchEvent(new CustomEvent('close-date-picker'))
     }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (window as any).__activeDatePicker = props.uniqueId
-    
+
     await nextTick()
     calculatePosition()
     document.addEventListener('click', handleDocumentClick)
     document.addEventListener('scroll', calculatePosition, true)
     document.addEventListener('close-date-picker', handleCloseEvent)
   } else {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if ((window as any).__activeDatePicker === props.uniqueId) {
+       // eslint-disable-next-line @typescript-eslint/no-explicit-any
        (window as any).__activeDatePicker = null
     }
     document.removeEventListener('click', handleDocumentClick)
@@ -215,6 +219,7 @@ watch(isOpen, async (open) => {
 })
 
 function handleCloseEvent() {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   if (isOpen.value && (window as any).__activeDatePicker !== props.uniqueId) {
     isOpen.value = false
   }

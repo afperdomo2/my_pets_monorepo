@@ -2,11 +2,10 @@ import { petService } from '@/services/petService'
 import type { Pet, CreatePetPayload, UpdatePetPayload } from '@/types/pet'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
+import { PER_PAGE_DEFAULT } from '@/constants/pagination'
 
 const PETS_STALE_TIME = 30 * 60_000
 const PET_STALE_TIME = 30 * 60_000
-
-const PER_PAGE = 10
 
 export function useGetPets() {
   const page = ref(1)
@@ -16,8 +15,8 @@ export function useGetPets() {
   const total = ref(0)
 
   const query = useQuery({
-    queryKey: computed(() => ['pets', { page: page.value, perPage: PER_PAGE }]),
-    queryFn: () => petService.getAll(page.value, PER_PAGE),
+    queryKey: computed(() => ['pets', { page: page.value, perPage: PER_PAGE_DEFAULT }]),
+    queryFn: () => petService.getAll(page.value, PER_PAGE_DEFAULT),
     staleTime: PETS_STALE_TIME,
   })
 

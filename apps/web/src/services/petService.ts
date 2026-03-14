@@ -1,44 +1,27 @@
-import type { Pet, CreatePetPayload, UpdatePetPayload, ApiResponse, PaginatedResponse } from '@/types/pet'
+import type { Pet, CreatePetPayload, UpdatePetPayload } from '@/types/pet'
+import type { ApiResponse, PaginatedResponse } from '@/types/shared'
+import { get, post, put, del } from '@/services/http'
 
-const BASE_URL = '/api/v1'
-
-async function request<T>(url: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${BASE_URL}${url}`, {
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    ...options,
-  })
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: 'Unknown error' }))
-    throw new Error(err.error ?? `HTTP ${res.status}`)
-  }
-  return res.json()
-}
+const PER_PAGE_DEFAULT = 10
 
 export const petService = {
-  getAll(page = 1, perPage = 10): Promise<PaginatedResponse<Pet>> {
-    return request(`/pets?page=${page}&per_page=${perPage}`)
+  getAll(page = 1, perPage = PER_PAGE_DEFAULT): Promise<PaginatedResponse<Pet>> {
+    return get(`/pets?page=${page}&per_page=${perPage}`)
   },
 
   getById(id: string): Promise<ApiResponse<Pet>> {
-    return request(`/pets/${id}`)
+    return get(`/pets/${id}`)
   },
 
   create(payload: CreatePetPayload): Promise<ApiResponse<Pet>> {
-    return request('/pets', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    })
+    return post('/pets', payload)
   },
 
   update(id: string, payload: UpdatePetPayload): Promise<ApiResponse<Pet>> {
-    return request(`/pets/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(payload),
-    })
+    return put(`/pets/${id}`, payload)
   },
 
   remove(id: string): Promise<{ message: string }> {
-    return request(`/pets/${id}`, { method: 'DELETE' })
+    return del(`/pets/${id}`)
   },
 }

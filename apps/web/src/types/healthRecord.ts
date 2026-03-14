@@ -1,5 +1,9 @@
-export type HealthRecordStatus = 'applied' | 'pending' | 'overdue'
+import type { HealthRecordStatusType } from '@/constants/healthRecord'
+import type { ApiResponse, PaginatedResponse } from '@/types/shared'
 
+/**
+ * Registro de salud completo devuelto por la API.
+ */
 export interface HealthRecord {
   id: string
   pet_id: string
@@ -7,7 +11,7 @@ export interface HealthRecord {
   health_catalog_id: string | null
   category: string
   name: string
-  status: HealthRecordStatus
+  status: HealthRecordStatusType
   application_date: string | null
   due_date: string
   notes: string | null
@@ -21,6 +25,9 @@ export interface HealthRecord {
   }
 }
 
+/**
+ * Payload para crear un registro de salud.
+ */
 export interface CreateHealthRecordPayload {
   pet_id: string
   health_catalog_id?: string
@@ -32,6 +39,10 @@ export interface CreateHealthRecordPayload {
   notes?: string
 }
 
+/**
+ * Payload para actualizar un registro de salud completo.
+ * Pet_id y health_catalog_id no son actualizables.
+ */
 export interface UpdateHealthRecordPayload {
   category: string
   name: string
@@ -41,20 +52,13 @@ export interface UpdateHealthRecordPayload {
   notes?: string
 }
 
+/**
+ * Payload para actualizar solo el status de un registro.
+ */
 export interface UpdateStatusPayload {
   status: string
   application_date?: string
 }
 
-export interface ApiResponse<T> {
-  data: T
-  total?: number
-}
-
-export interface PaginatedResponse<T> {
-  data: T[]
-  total: number
-  page: number
-  per_page: number
-  total_pages: number
-}
+// Re-exportar tipos compartidos para compatibilidad
+export type { ApiResponse, PaginatedResponse }

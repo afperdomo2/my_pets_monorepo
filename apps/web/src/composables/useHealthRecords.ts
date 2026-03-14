@@ -125,8 +125,8 @@ export function useUpdateHealthRecordStatus() {
 export function useDeleteHealthRecord() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, petId }: { id: string; petId: string }) => healthRecordService.remove(id),
-    onSuccess: (_, variables) => {
+    mutationFn: (variables: { id: string; petId: string }) => healthRecordService.remove(variables.id),
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["health-records", "pet", variables.petId] });
     },
   });

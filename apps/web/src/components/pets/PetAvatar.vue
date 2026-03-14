@@ -24,7 +24,7 @@ interface Props {
   name?: string
 }
 
-const props = withDefaults(defineProps<Props>(), {
+withDefaults(defineProps<Props>(), {
   size: 'md',
   showInitials: false,
   name: '',
