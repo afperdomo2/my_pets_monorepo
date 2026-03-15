@@ -96,8 +96,12 @@ export function useCreateHealthRecord() {
   return useMutation({
     mutationFn: (payload: CreateHealthRecordPayload) => healthRecordService.create(payload).then((r) => r.data),
     onSuccess: (newItem) => {
-      // Invalidar registros de la mascota para que las tablas se refresquen
+      // Invalidar registros de la mascota afectada
       queryClient.invalidateQueries({ queryKey: ["health-records", "pet", newItem.pet_id] });
+      // Invalidar el listado global (VaccineHistoryTable)
+      queryClient.invalidateQueries({ queryKey: ["health-records", "all"] });
+      // Invalidar próximas vacunas/registros (VaccinesView upcoming)
+      queryClient.invalidateQueries({ queryKey: ["health-records", "upcoming"] });
     },
   });
 }
