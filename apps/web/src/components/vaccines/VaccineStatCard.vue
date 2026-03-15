@@ -26,7 +26,11 @@ defineProps<{
 </template>
 
 <style scoped>
+/* container query: el componente responde a su propio tamaño, no al viewport */
 .stat-card {
+  container-type: inline-size;
+  container-name: stat-card;
+
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
@@ -53,6 +57,7 @@ defineProps<{
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .stat-card--green .stat-card__icon {
@@ -109,5 +114,25 @@ defineProps<{
 .stat-card__badge--red {
   background: #FEF2F2;
   color: #DC2626;
+}
+
+/* ── Container query: layout horizontal cuando la card es ancha ── */
+/* Ej: cuando el grid pone 1 columna y la card ocupa todo el ancho */
+@container stat-card (min-width: 320px) {
+  .stat-card {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-4) var(--space-5);
+  }
+
+  .stat-card__body {
+    flex: 1;
+  }
+
+  .stat-card__badge {
+    align-self: center;
+    white-space: nowrap;
+  }
 }
 </style>

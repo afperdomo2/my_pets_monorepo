@@ -381,7 +381,7 @@ async function save() {
                     type="button"
                     class="btn-today"
                     title="Establecer fecha de hoy"
-                    @click="applicationDate = new Date().toISOString().split('T')[0]"
+                    @click="applicationDate = new Date().toISOString().split('T')[0] ?? ''"
                   >
                     Hoy
                   </button>
@@ -483,19 +483,38 @@ async function save() {
   justify-content: center;
   z-index: 1000;
   padding: var(--space-4);
+  /* En móvil muy pequeño, pegado abajo */
+  align-items: flex-end;
+}
+
+@media (min-width: 37.5em) {
+  .modal-backdrop {
+    align-items: center;
+  }
 }
 
 /* ── Container ──────────────────────── */
 .modal-container {
+  container-type: inline-size;
+  container-name: modal;
+
   background: var(--color-surface);
-  border-radius: var(--radius-xl);
+  /* min() garantiza que nunca sea mayor que el viewport */
+  width: min(600px, 100%);
+  /* En móvil ocupa casi todo el alto, en desktop está acotado */
+  max-height: min(90vh, 800px);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
   box-shadow: var(--shadow-xl);
-  width: 100%;
-  max-width: 600px;
-  max-height: 90vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+@media (min-width: 37.5em) {
+  .modal-container {
+    border-radius: var(--radius-xl);
+    max-height: 90vh;
+  }
 }
 
 /* ── Header ─────────────────────────── */
@@ -503,21 +522,35 @@ async function save() {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--space-5) var(--space-6);
+  padding: var(--space-4) var(--space-5);
   border-bottom: 1px solid var(--color-border-light);
+  flex-shrink: 0;
+}
+
+@container modal (min-width: 420px) {
+  .modal-header {
+    padding: var(--space-5) var(--space-6);
+  }
 }
 
 .modal-header h2 {
   font-family: var(--font-display);
-  font-size: var(--text-lg);
+  font-size: var(--text-base);
   font-weight: 600;
   color: var(--color-text-primary);
   margin: 0;
 }
 
+@container modal (min-width: 420px) {
+  .modal-header h2 {
+    font-size: var(--text-lg);
+  }
+}
+
 .btn-close {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
+  min-height: 44px; /* área táctil */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -539,19 +572,33 @@ async function save() {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--space-4) var(--space-6);
+  padding: var(--space-3) var(--space-5);
   position: relative;
+  flex-shrink: 0;
+}
+
+@container modal (min-width: 420px) {
+  .stepper-bar {
+    padding: var(--space-4) var(--space-6);
+  }
 }
 
 .step-connector {
   position: absolute;
   top: 50%;
-  left: calc(var(--space-6) + 14px);
-  right: calc(var(--space-6) + 14px);
+  left: calc(var(--space-5) + 14px);
+  right: calc(var(--space-5) + 14px);
   height: 2px;
   background: var(--color-border-light);
   transform: translateY(-4px);
   z-index: 0;
+}
+
+@container modal (min-width: 420px) {
+  .step-connector {
+    left: calc(var(--space-6) + 14px);
+    right: calc(var(--space-6) + 14px);
+  }
 }
 
 .step-connector__fill {
@@ -601,6 +648,13 @@ async function save() {
   color: var(--color-text-tertiary);
   font-weight: 500;
   transition: color var(--transition-fast);
+  /* En muy pequeño, ocultar labels para que no se pisen */
+}
+
+@container modal (max-width: 319px) {
+  .step-label {
+    display: none;
+  }
 }
 
 .step-item--active .step-label {
@@ -612,7 +666,14 @@ async function save() {
 .modal-body {
   flex: 1;
   overflow-y: auto;
-  padding: var(--space-5) var(--space-6);
+  padding: var(--space-4) var(--space-5);
+  overscroll-behavior: contain;
+}
+
+@container modal (min-width: 420px) {
+  .modal-body {
+    padding: var(--space-5) var(--space-6);
+  }
 }
 
 .step-content {
@@ -636,14 +697,9 @@ async function save() {
 /* ── Paso 1: Grid mascotas ──────────── */
 .pets-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  /* auto-fill: mínimo 130px por card, fluido */
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
   gap: var(--space-3);
-}
-
-@media (max-width: 480px) {
-  .pets-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
 }
 
 .pet-option {
@@ -656,6 +712,7 @@ async function save() {
   border: 2px solid var(--color-border-light);
   border-radius: var(--radius-lg);
   cursor: pointer;
+  min-height: 44px; /* área táctil */
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast),
     transform var(--transition-fast);
 }
@@ -695,6 +752,7 @@ async function save() {
 .vaccine-search-input {
   width: 100%;
   padding: var(--space-2) var(--space-3) var(--space-2) 2.25rem;
+  min-height: 44px; /* área táctil */
   border: 1.5px solid var(--color-border-light);
   border-radius: var(--radius-md);
   font-size: var(--text-sm);
@@ -714,15 +772,18 @@ async function save() {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  max-height: 280px;
+  max-height: 240px;
   overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .vaccine-option {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: var(--space-2);
   padding: var(--space-3) var(--space-4);
+  min-height: 44px; /* área táctil */
   background: var(--color-surface);
   border: 1.5px solid var(--color-border-light);
   border-radius: var(--radius-md);
@@ -745,6 +806,7 @@ async function save() {
   display: flex;
   flex-direction: column;
   gap: 1px;
+  min-width: 0;
 }
 
 .vaccine-option__name {
@@ -760,6 +822,7 @@ async function save() {
 
 .vaccine-option__check {
   color: var(--color-accent);
+  flex-shrink: 0;
 }
 
 .custom-vaccine {
@@ -780,6 +843,7 @@ async function save() {
   border: 1px solid #FECACA;
   padding: 2px 6px;
   border-radius: var(--radius-sm);
+  flex-shrink: 0;
 }
 
 .vaccine-option__desc {
@@ -817,14 +881,17 @@ async function save() {
   display: flex;
   gap: var(--space-2);
   align-items: flex-start;
+  flex-wrap: wrap;
 }
 
 .date-picker-with-action :deep(.date-picker) {
   flex: 1;
+  min-width: 160px;
 }
 
 .btn-today {
   padding: var(--space-2) var(--space-3);
+  min-height: 44px; /* área táctil */
   background: var(--color-accent-light);
   color: var(--color-accent-dark);
   border: 1.5px solid var(--color-accent);
@@ -855,6 +922,8 @@ async function save() {
   min-height: 60px;
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
   font-family: var(--font-body);
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .note-input:focus {
@@ -889,6 +958,7 @@ async function save() {
   display: flex;
   flex-direction: column;
   flex-grow: 1;
+  min-width: 0;
 }
 
 .suggestion-header {
@@ -896,6 +966,7 @@ async function save() {
   justify-content: space-between;
   align-items: flex-start;
   gap: var(--space-2);
+  flex-wrap: wrap;
 }
 
 .suggestion-text {
@@ -912,6 +983,7 @@ async function save() {
   gap: var(--space-2);
   cursor: pointer;
   flex-shrink: 0;
+  min-height: 44px; /* área táctil */
 }
 
 .toggle-checkbox {
@@ -958,9 +1030,16 @@ async function save() {
 .modal-footer {
   display: flex;
   align-items: center;
-  padding: var(--space-4) var(--space-6);
+  padding: var(--space-3) var(--space-5);
   border-top: 1px solid var(--color-border-light);
   gap: var(--space-3);
+  flex-shrink: 0;
+}
+
+@container modal (min-width: 420px) {
+  .modal-footer {
+    padding: var(--space-4) var(--space-6);
+  }
 }
 
 .footer-spacer {
@@ -972,6 +1051,7 @@ async function save() {
   align-items: center;
   gap: var(--space-2);
   padding: var(--space-2) var(--space-3);
+  min-height: 44px; /* área táctil */
   background: var(--color-surface);
   border: 1.5px solid var(--color-border-light);
   border-radius: var(--radius-md);
@@ -980,6 +1060,7 @@ async function save() {
   font-weight: 500;
   cursor: pointer;
   transition: background var(--transition-fast), border-color var(--transition-fast);
+  white-space: nowrap;
 }
 
 .btn-prev:hover {
@@ -992,6 +1073,7 @@ async function save() {
   align-items: center;
   gap: var(--space-2);
   padding: var(--space-2) var(--space-5);
+  min-height: 44px; /* área táctil */
   background: var(--color-accent);
   color: #fff;
   border: none;
@@ -1000,6 +1082,7 @@ async function save() {
   font-weight: 600;
   cursor: pointer;
   transition: background var(--transition-fast), transform var(--transition-fast);
+  white-space: nowrap;
 }
 
 .btn-next:hover:not(:disabled) {
@@ -1018,6 +1101,7 @@ async function save() {
   align-items: center;
   gap: var(--space-2);
   padding: var(--space-2) var(--space-5);
+  min-height: 44px; /* área táctil */
   background: #2E7D52;
   color: #fff;
   border: none;
@@ -1026,6 +1110,7 @@ async function save() {
   font-weight: 600;
   cursor: pointer;
   transition: background var(--transition-fast), transform var(--transition-fast);
+  white-space: nowrap;
 }
 
 .btn-save:hover:not(:disabled) {
@@ -1063,16 +1148,19 @@ async function save() {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   margin-bottom: var(--space-4);
+  flex-wrap: wrap;
 }
 
 .selected-vaccine-info__content {
   display: flex;
   align-items: center;
   gap: var(--space-2);
+  min-width: 0;
+  flex: 1;
 }
 
 .selected-vaccine-info__icon {
-  color: var(--color-success);
+  color: var(--color-success, #10b981);
   flex-shrink: 0;
 }
 
@@ -1080,6 +1168,7 @@ async function save() {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  min-width: 0;
 }
 
 .selected-vaccine-info__label {
@@ -1091,10 +1180,14 @@ async function save() {
   font-size: var(--text-sm);
   font-weight: 600;
   color: var(--color-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .btn-change-vaccine {
   padding: var(--space-1) var(--space-3);
+  min-height: 36px;
   background: transparent;
   color: var(--color-accent);
   border: 1px solid var(--color-accent);
@@ -1104,6 +1197,7 @@ async function save() {
   cursor: pointer;
   transition: background var(--transition-fast), color var(--transition-fast);
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .btn-change-vaccine:hover {

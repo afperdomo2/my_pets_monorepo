@@ -91,6 +91,16 @@
   --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-slow: 400ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Breakpoints (em = accesible, respeta zoom del navegador)
+     Uso: @media (max-width: 30em)  → equivale a 480px
+          @media (max-width: 37.5em) → equivale a 600px
+          @media (max-width: 48em)  → equivale a 768px
+          @media (max-width: 64em)  → equivale a 1024px */
+  --bp-sm:  30em;    /* 480px  – móvil */
+  --bp-md:  37.5em;  /* 600px  – tablet pequeña */
+  --bp-lg:  48em;    /* 768px  – tablet */
+  --bp-xl:  64em;    /* 1024px – escritorio pequeño */
 }
 
 /* ── Reset ────────────────────────────────────────────────── */

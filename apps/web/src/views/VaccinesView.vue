@@ -123,17 +123,11 @@ const { records, total, isLoading, isError, refresh } = useGetUpcomingVaccines(1
 /* ── Layout principal ─────────────── */
 .vaccines-dashboard {
   width: 100%;
-  padding: var(--space-8) var(--space-10);
+  /* clamp(): mínimo 1rem, ideal 5vw, máximo 2.5rem — se adapta sin media queries */
+  padding: var(--space-8) clamp(var(--space-4), 5vw, var(--space-10));
   display: flex;
   flex-direction: column;
-  gap: var(--space-8);
-}
-
-@media (max-width: 768px) {
-  .vaccines-dashboard {
-    padding: var(--space-5) var(--space-4);
-    gap: var(--space-5);
-  }
+  gap: clamp(var(--space-5), 4vw, var(--space-8));
 }
 
 /* ── Header ───────────────────────── */
@@ -142,23 +136,11 @@ const { records, total, isLoading, isError, refresh } = useGetUpcomingVaccines(1
   align-items: flex-end;
   justify-content: space-between;
   gap: var(--space-4);
-}
-
-@media (max-width: 480px) {
-  .page-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--space-3);
-  }
-
-  .btn-register-vaccine {
-    width: 100%;
-    justify-content: center;
-  }
+  flex-wrap: wrap; /* se rompe solo cuando no cabe */
 }
 
 .page-title {
-  font-size: var(--text-2xl);
+  font-size: clamp(var(--text-xl), 4vw, var(--text-2xl));
   font-weight: 700;
   color: var(--color-text-primary);
   margin: 0 0 var(--space-1);
@@ -176,6 +158,7 @@ const { records, total, isLoading, isError, refresh } = useGetUpcomingVaccines(1
   align-items: center;
   gap: var(--space-2);
   padding: var(--space-2) var(--space-5);
+  min-height: 44px; /* área táctil mínima */
   background: var(--color-accent);
   color: #fff;
   border: none;
@@ -195,18 +178,25 @@ const { records, total, isLoading, isError, refresh } = useGetUpcomingVaccines(1
   box-shadow: var(--shadow-md);
 }
 
+/* En móvil el botón ocupa todo el ancho */
+@media (max-width: 30em) {
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .btn-register-vaccine {
+    justify-content: center;
+    width: 100%;
+  }
+}
+
 /* ── Stats section ────────────────── */
 .stats-section {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  /* auto-fit + minmax: 3 cols en desktop, 2 en tablet, 1 en móvil — sin media queries */
+  grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
   gap: var(--space-4);
-}
-
-@media (max-width: 768px) {
-  .stats-section {
-    grid-template-columns: 1fr;
-    gap: var(--space-3);
-  }
 }
 
 /* ── Section headers ──────────────── */
@@ -214,7 +204,9 @@ const { records, total, isLoading, isError, refresh } = useGetUpcomingVaccines(1
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: var(--space-2);
   margin-bottom: var(--space-4);
+  flex-wrap: wrap;
 }
 
 .section-title {
@@ -257,7 +249,7 @@ const { records, total, isLoading, isError, refresh } = useGetUpcomingVaccines(1
   align-items: center;
   justify-content: center;
   gap: var(--space-3);
-  padding: var(--space-10);
+  padding: var(--space-10) var(--space-4);
   text-align: center;
 }
 
@@ -291,6 +283,7 @@ const { records, total, isLoading, isError, refresh } = useGetUpcomingVaccines(1
 
 .btn-retry {
   padding: var(--space-2) var(--space-4);
+  min-height: 44px;
   background: var(--color-accent);
   color: #fff;
   border: none;

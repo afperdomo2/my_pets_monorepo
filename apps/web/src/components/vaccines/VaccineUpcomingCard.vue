@@ -64,6 +64,7 @@ function handleRegister() {
 </script>
 
 <template>
+  <div class="upcoming-card-wrapper">
   <div class="upcoming-card" :class="urgencyClass">
     <div class="upcoming-card__content">
       <!-- Mascota -->
@@ -99,15 +100,21 @@ function handleRegister() {
       </button>
     </div>
   </div>
+  </div>
 </template>
 
 <style scoped>
+/* ── Wrapper: el container real ─────────────────────────── */
+.upcoming-card-wrapper {
+  container-type: inline-size;
+  container-name: upcoming-card;
+}
+
 /* ── Card container ─────────────────────────────────────── */
 .upcoming-card {
-  display: grid;
-  grid-template-columns: 140px 1fr 220px auto;
-  align-items: center;
-  gap: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
   padding: var(--space-4);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
@@ -115,13 +122,6 @@ function handleRegister() {
   transition:
     box-shadow var(--transition-fast),
     transform var(--transition-fast);
-}
-
-@media (max-width: 768px) {
-  .upcoming-card {
-    grid-template-columns: 1fr;
-    gap: var(--space-3);
-  }
 }
 
 .upcoming-card:hover {
@@ -135,27 +135,53 @@ function handleRegister() {
 }
 
 .upcoming-card--urgent {
-  border-left: 4px solid var(--color-warning);
+  border-left: 4px solid var(--color-warning, #f59e0b);
 }
 
 .upcoming-card--soon {
-  border-left: 4px solid var(--color-info);
+  border-left: 4px solid var(--color-info, #3b82f6);
 }
 
 .upcoming-card--future {
-  border-left: 4px solid var(--color-success);
+  border-left: 4px solid var(--color-success, #10b981);
 }
 
-/* ── Content layout ─────────────────────────────────────── */
+/* ── Content: columna por defecto (móvil) ─────────────── */
 .upcoming-card__content {
-  display: contents;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
 }
 
-@media (max-width: 768px) {
+/* ── En containers anchos (≥520px): layout en fila ──────── */
+@container upcoming-card (min-width: 520px) {
+  .upcoming-card {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-4);
+  }
+
   .upcoming-card__content {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-3);
+    flex-direction: row;
+    align-items: center;
+    flex: 1;
+    gap: var(--space-4);
+    min-width: 0;
+  }
+
+  .pet-info {
+    min-width: 140px;
+    flex-shrink: 0;
+  }
+
+  .vaccine-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .due-info {
+    min-width: 180px;
+    flex-shrink: 0;
   }
 }
 
@@ -171,12 +197,16 @@ function handleRegister() {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  min-width: 0;
 }
 
 .pet-info__name {
   font-size: var(--text-sm);
   font-weight: 600;
   color: var(--color-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .pet-info__species {
@@ -247,7 +277,10 @@ function handleRegister() {
 .btn-register {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: var(--space-2);
+  width: 100%;
+  min-height: 44px;
   padding: var(--space-2) var(--space-4);
   background: var(--color-accent);
   color: #fff;
@@ -262,6 +295,17 @@ function handleRegister() {
   white-space: nowrap;
 }
 
+/* En desktop: el botón se ajusta a su contenido */
+@container upcoming-card (min-width: 520px) {
+  .upcoming-card__action {
+    width: auto;
+  }
+
+  .btn-register {
+    width: fit-content;
+  }
+}
+
 .btn-register:hover {
   background: var(--color-accent-hover);
   transform: translateY(-1px);
@@ -269,21 +313,5 @@ function handleRegister() {
 
 .btn-register:active {
   transform: translateY(0);
-}
-
-@media (max-width: 768px) {
-  .upcoming-card {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .upcoming-card__action {
-    width: 100%;
-  }
-
-  .btn-register {
-    width: 100%;
-    justify-content: center;
-  }
 }
 </style>

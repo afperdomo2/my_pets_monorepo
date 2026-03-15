@@ -88,6 +88,31 @@ function formatDate(dateStr: string | null): string {
       </div>
     </div>
 
+    <!-- Vista card para móvil (container < 560px) -->
+    <div v-if="!isLoading && !isError" class="record-cards">
+      <div v-for="record in records" :key="`card-${record.id}`" class="record-card">
+        <div class="record-card__top">
+          <PetAvatar :species="record.pet.species" :name="record.pet.name" size="sm" />
+          <span class="record-card__vaccine">{{ record.pet.name }} — {{ record.name }}</span>
+        </div>
+        <div class="record-card__dates">
+          <div class="record-card__date-item">
+            <span class="record-card__date-label">Aplicada</span>
+            <span class="record-card__date-value">{{ formatDate(record.application_date) }}</span>
+          </div>
+          <div class="record-card__date-item">
+            <span class="record-card__date-label">Próxima</span>
+            <span class="record-card__date-value">{{ formatDate(record.due_date) }}</span>
+          </div>
+        </div>
+        <div class="record-card__status">
+          <span class="status-badge" :class="STATUS_CONFIG[record.status as HealthRecordStatusType]?.className">
+            {{ STATUS_CONFIG[record.status as HealthRecordStatusType]?.label }}
+          </span>
+        </div>
+      </div>
+    </div>
+
     <!-- Paginación -->
     <div class="table-footer">
       <PerPageSelector v-model="perPage" :options="[10, 25, 50]" />
@@ -105,6 +130,9 @@ function formatDate(dateStr: string | null): string {
 <style scoped>
 /* ── Panel ────────────────────────── */
 .history-panel {
+  container-type: inline-size;
+  container-name: history-panel;
+
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
@@ -115,6 +143,8 @@ function formatDate(dateStr: string | null): string {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: var(--space-2);
+  flex-wrap: wrap;
   padding: var(--space-5) var(--space-6);
   border-bottom: 1px solid var(--color-border-light);
 }
@@ -132,7 +162,7 @@ function formatDate(dateStr: string | null): string {
   font-weight: 500;
 }
 
-/* ── Tabla ────────────────────────── */
+/* ── Tabla (desktop: ≥ 560px del contenedor) ────────── */
 .table-wrapper {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
@@ -140,7 +170,7 @@ function formatDate(dateStr: string | null): string {
 
 .history-table {
   width: 100%;
-  min-width: 620px;
+  min-width: 560px;
   border-collapse: collapse;
 }
 
@@ -195,6 +225,7 @@ function formatDate(dateStr: string | null): string {
   display: flex;
   flex-direction: column;
   gap: 1px;
+  min-width: 0;
 }
 
 .pet-cell-name {
@@ -216,6 +247,7 @@ function formatDate(dateStr: string | null): string {
 .date-cell {
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
+  white-space: nowrap;
 }
 
 /* ── Badges de estado ────────────── */
@@ -242,6 +274,87 @@ function formatDate(dateStr: string | null): string {
 .status--overdue {
   background: #fef2f2;
   color: #dc2626;
+}
+
+/* ── Vista card para contenedores pequeños (< 560px) ─── */
+/* Ocultar tabla, mostrar cards */
+.record-cards {
+  display: none;
+}
+
+@container history-panel (max-width: 559px) {
+  .table-wrapper {
+    display: none;
+  }
+
+  .record-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .record-card {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: var(--space-2) var(--space-3);
+    padding: var(--space-4);
+    border-bottom: 1px solid var(--color-border-light);
+  }
+
+  .record-card:last-child {
+    border-bottom: none;
+  }
+
+  .record-card__top {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    grid-column: 1 / -1;
+  }
+
+  .record-card__vaccine {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--color-text-primary);
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .record-card__dates {
+    display: flex;
+    gap: var(--space-4);
+    grid-column: 1;
+  }
+
+  .record-card__date-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .record-card__date-label {
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-tertiary);
+  }
+
+  .record-card__date-value {
+    font-size: var(--text-xs);
+    color: var(--color-text-secondary);
+  }
+
+  .record-card__status {
+    grid-column: 2;
+    grid-row: 2;
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-end;
+  }
 }
 
 /* ── Estados de carga/error ──────── */
@@ -278,6 +391,7 @@ function formatDate(dateStr: string | null): string {
 
 .btn-retry {
   padding: var(--space-2) var(--space-4);
+  min-height: 44px;
   background: var(--color-accent);
   color: #fff;
   border: none;
@@ -304,10 +418,15 @@ function formatDate(dateStr: string | null): string {
   background: var(--color-bg);
 }
 
-@media (max-width: 600px) {
+@container history-panel (max-width: 480px) {
+  .panel-header {
+    padding: var(--space-4);
+  }
+
   .table-footer {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
+    padding: var(--space-3) var(--space-4);
     gap: var(--space-3);
   }
 }

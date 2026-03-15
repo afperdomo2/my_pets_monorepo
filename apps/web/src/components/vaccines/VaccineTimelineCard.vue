@@ -22,6 +22,7 @@ const URGENCY_LABELS: Record<string, string> = {
 </script>
 
 <template>
+  <div class="timeline-card-wrapper">
   <div class="timeline-card" :class="`timeline-card--${urgency}`">
     <div class="timeline-card__strip" />
     <div class="timeline-card__content">
@@ -58,9 +59,16 @@ const URGENCY_LABELS: Record<string, string> = {
       </button>
     </div>
   </div>
+  </div>
 </template>
 
 <style scoped>
+/* ── Wrapper: container real ─────────────────────────────── */
+.timeline-card-wrapper {
+  container-type: inline-size;
+  container-name: timeline-card;
+}
+
 .timeline-card {
   display: flex;
   background: var(--color-surface);
@@ -101,7 +109,7 @@ const URGENCY_LABELS: Record<string, string> = {
   gap: var(--space-3);
 }
 
-@media (min-width: 640px) {
+@container timeline-card (min-width: 40em) {
   .timeline-card__content {
     flex-direction: row;
     align-items: center;
@@ -180,7 +188,7 @@ const URGENCY_LABELS: Record<string, string> = {
   gap: var(--space-3);
 }
 
-@media (min-width: 640px) {
+@container timeline-card (min-width: 40em) {
   .timeline-card__meta {
     flex-direction: column;
     align-items: flex-end;
@@ -194,7 +202,7 @@ const URGENCY_LABELS: Record<string, string> = {
   gap: 1px;
 }
 
-@media (min-width: 640px) {
+@container timeline-card (min-width: 40em) {
   .due-info {
     text-align: right;
   }
@@ -232,6 +240,7 @@ const URGENCY_LABELS: Record<string, string> = {
 /* ── Botón ───────────────────────── */
 .btn-register {
   padding: var(--space-2) var(--space-4);
+  min-height: 44px;
   background: var(--color-surface);
   color: var(--color-accent);
   border: 1.5px solid var(--color-accent-muted);
@@ -245,7 +254,7 @@ const URGENCY_LABELS: Record<string, string> = {
   align-self: flex-start;
 }
 
-@media (min-width: 640px) {
+@container timeline-card (min-width: 40em) {
   .btn-register {
     align-self: center;
     flex-shrink: 0;
