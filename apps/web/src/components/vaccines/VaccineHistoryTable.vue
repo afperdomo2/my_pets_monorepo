@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { useGetAllHealthRecords } from '@/composables/useHealthRecords'
 import type { HealthRecordStatusType } from '@/constants/healthRecord'
 import { HealthRecordStatus } from '@/constants/healthRecord'
+import { getSpeciesLabel } from '@/constants/species'
 import PetAvatar from '@/components/pets/PetAvatar.vue'
 import AppPagination from '@/components/ui/AppPagination.vue'
 import PerPageSelector from '@/components/ui/PerPageSelector.vue'
@@ -52,7 +53,10 @@ function formatDate(dateStr: string | null): string {
             <td>
               <div class="pet-cell">
                 <PetAvatar :species="record.pet.species" :name="record.pet.name" size="sm" />
-                <span class="pet-cell-name">{{ record.pet.name }}</span>
+                <div class="pet-cell-info">
+                  <span class="pet-cell-name">{{ record.pet.name }}</span>
+                  <span class="pet-cell-species">{{ getSpeciesLabel(record.pet.species) }}</span>
+                </div>
               </div>
             </td>
             <td>
@@ -88,10 +92,11 @@ function formatDate(dateStr: string | null): string {
     <div class="table-footer">
       <PerPageSelector v-model="perPage" :options="[10, 25, 50]" />
       <AppPagination
-        v-model:current-page="page"
+        :current-page="page"
         :total-pages="totalPages"
         :total-items="total"
         :per-page="perPage"
+        @update:page="page = $event"
       />
     </div>
   </div>
@@ -186,10 +191,21 @@ function formatDate(dateStr: string | null): string {
   gap: var(--space-2);
 }
 
+.pet-cell-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
 .pet-cell-name {
   font-size: var(--text-sm);
   font-weight: 600;
   color: var(--color-text-primary);
+}
+
+.pet-cell-species {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
 }
 
 .vaccine-cell {

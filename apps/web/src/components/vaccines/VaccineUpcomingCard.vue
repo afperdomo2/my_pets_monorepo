@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { IconCheck } from '@tabler/icons-vue'
 import PetAvatar from '@/components/pets/PetAvatar.vue'
-import { getHealthRecordStatusColor } from '@/utils/healthRecord'
+import { getSpeciesLabel } from '@/constants/species'
 import { formatDate } from '@/utils/date'
+import { IconAlertTriangle, IconCheck } from '@tabler/icons-vue'
+import { computed } from 'vue'
 
 interface Props {
   petName: string
@@ -37,18 +37,16 @@ const daysUntilDue = computed(() => {
 const urgencyLabel = computed(() => {
   const days = daysUntilDue.value
   if (days < 0) {
-    return `Vencida hace ${Math.abs(days)} ${Math.abs(days) === 1 ? 'día' : 'días'}`
+    return 'Vencida'
   }
-  if (days === 0) {
-    return 'Vence hoy'
-  }
-  if (days === 1) {
-    return 'Vence mañana'
-  }
-  if (days <= 7) {
-    return `Vence en ${days} días`
-  }
-  return `Vence el ${formatDate(props.dueDate, 'es-ES', { day: 'numeric', month: 'short' })}`
+  return 'Programado'
+})
+
+// Badge class según estado
+const badgeClass = computed(() => {
+  const days = daysUntilDue.value
+  if (days < 0) return 'status-badge--overdue'
+  return 'status-badge--pending'
 })
 
 // Clase CSS según urgencia
@@ -73,20 +71,21 @@ function handleRegister() {
         <PetAvatar :species="petSpecies" :name="petName" size="md" />
         <div class="pet-info__text">
           <span class="pet-info__name">{{ petName }}</span>
-          <span class="pet-info__species">{{ petSpecies }}</span>
+          <span class="pet-info__species">{{ getSpeciesLabel(petSpecies) }}</span>
         </div>
       </div>
 
       <!-- Vacuna -->
       <div class="vaccine-info">
         <span class="vaccine-info__name">{{ vaccineName }}</span>
-        <span class="vaccine-info__label">Próxima dosis</span>
       </div>
 
-      <!-- Fecha de vencimiento -->
+      <!-- Fecha de vencimiento y estado -->
       <div class="due-info">
         <span class="due-info__date">{{ formatDate(dueDate) }}</span>
-        <span class="due-info__label" :class="`due-info__label--${getHealthRecordStatusColor(urgency === 'urgent' || daysUntilDue < 0 ? 'overdue' : 'pending')}`">
+        <span class="status-badge" :class="badgeClass">
+          <IconAlertTriangle v-if="daysUntilDue < 0" :size="12" :stroke-width="2.5" />
+          <IconCheck v-else :size="12" :stroke-width="2.5" />
           {{ urgencyLabel }}
         </span>
       </div>
@@ -105,15 +104,24 @@ function handleRegister() {
 <style scoped>
 /* ── Card container ─────────────────────────────────────── */
 .upcoming-card {
-  display: flex;
+  display: grid;
+  grid-template-columns: 140px 1fr 220px auto;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--space-4);
+  gap: var(--space-6);
   padding: var(--space-4);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  transition: box-shadow var(--transition-fast), transform var(--transition-fast);
+  transition:
+    box-shadow var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+@media (max-width: 768px) {
+  .upcoming-card {
+    grid-template-columns: 1fr;
+    gap: var(--space-3);
+  }
 }
 
 .upcoming-card:hover {
@@ -140,16 +148,13 @@ function handleRegister() {
 
 /* ── Content layout ─────────────────────────────────────── */
 .upcoming-card__content {
-  display: flex;
-  align-items: center;
-  gap: var(--space-6);
-  flex: 1;
+  display: contents;
 }
 
 @media (max-width: 768px) {
   .upcoming-card__content {
+    display: flex;
     flex-direction: column;
-    align-items: flex-start;
     gap: var(--space-3);
   }
 }
@@ -159,7 +164,7 @@ function handleRegister() {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  min-width: 140px;
+  min-width: 0;
 }
 
 .pet-info__text {
@@ -185,49 +190,53 @@ function handleRegister() {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  flex: 1;
+  min-width: 0;
 }
 
 .vaccine-info__name {
   font-size: var(--text-sm);
   font-weight: 500;
   color: var(--color-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.vaccine-info__label {
+/* ── Badges de estado ───────────────── */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 3px var(--space-2);
+  border-radius: var(--radius-full);
   font-size: var(--text-xs);
-  color: var(--color-text-tertiary);
+  font-weight: 600;
+  white-space: nowrap;
+  width: fit-content;
 }
 
-/* ── Due date info ──────────────────────────────────────── */
+.status-badge--pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-badge--overdue {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+/* ── Due date info ───────────────── */
 .due-info {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  min-width: 120px;
+  gap: 6px;
 }
 
 .due-info__date {
   font-size: var(--text-sm);
   font-weight: 500;
   color: var(--color-text-primary);
-}
-
-.due-info__label {
-  font-size: var(--text-xs);
-  font-weight: 500;
-}
-
-.due-info__label--red {
-  color: var(--color-error);
-}
-
-.due-info__label--yellow {
-  color: var(--color-warning);
-}
-
-.due-info__label--green {
-  color: var(--color-success);
 }
 
 /* ── Action button ──────────────────────────────────────── */
@@ -247,7 +256,9 @@ function handleRegister() {
   font-size: var(--text-sm);
   font-weight: 600;
   cursor: pointer;
-  transition: background var(--transition-fast), transform var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    transform var(--transition-fast);
   white-space: nowrap;
 }
 

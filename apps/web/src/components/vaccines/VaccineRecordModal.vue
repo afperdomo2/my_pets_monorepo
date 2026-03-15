@@ -370,12 +370,22 @@ async function save() {
               <!-- Calendario para Fecha de Aplicación -->
               <div class="date-field">
                 <label class="field-label">Fecha de aplicación <span style="color:red; margin-left: 4px;">*</span></label>
-                <DatePicker
-                  v-model="applicationDate"
-                  :max-date="new Date()"
-                  placeholder="Seleccionar fecha"
-                  unique-id="application-date"
-                />
+                <div class="date-picker-with-action">
+                  <DatePicker
+                    v-model="applicationDate"
+                    :max-date="new Date()"
+                    placeholder="Seleccionar fecha"
+                    unique-id="application-date"
+                  />
+                  <button
+                    type="button"
+                    class="btn-today"
+                    title="Establecer fecha de hoy"
+                    @click="applicationDate = new Date().toISOString().split('T')[0]"
+                  >
+                    Hoy
+                  </button>
+                </div>
               </div>
 
               <!-- Calendario para Refuerzo, condicionado al toggle -->
@@ -801,6 +811,37 @@ async function save() {
 .note-field {
   display: flex;
   flex-direction: column;
+}
+
+.date-picker-with-action {
+  display: flex;
+  gap: var(--space-2);
+  align-items: flex-start;
+}
+
+.date-picker-with-action :deep(.date-picker) {
+  flex: 1;
+}
+
+.btn-today {
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-accent-light);
+  color: var(--color-accent-dark);
+  border: 1.5px solid var(--color-accent);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast),
+    color var(--transition-fast);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.btn-today:hover {
+  background: var(--color-accent);
+  color: #fff;
+  border-color: var(--color-accent);
 }
 
 .note-input {
