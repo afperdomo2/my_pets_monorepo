@@ -306,17 +306,13 @@ const TABS = [
   gap: var(--space-6);
 }
 
-/* ── Health card (tabs + content) ────── */
+/* ── Tabs navigation ─────────────────── */
 .detail-content {
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-xl);
-  overflow: hidden;
-  box-shadow: var(--shadow-md);
+  gap: var(--space-4);
 }
 
 .tabs-nav {
@@ -325,8 +321,6 @@ const TABS = [
   border-bottom: 1px solid var(--color-border-light);
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
-  padding: 0 var(--space-2);
-  flex-shrink: 0;
 }
 
 .tab-link {
@@ -356,7 +350,6 @@ const TABS = [
 .tab-content {
   flex: 1;
   min-width: 0;
-  overflow: hidden;
 }
 
 /* ── Species avatar ──────────────────── */

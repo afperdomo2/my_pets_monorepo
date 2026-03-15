@@ -70,7 +70,8 @@ async function markAsApplied(record: HealthRecord) {
 
 <template>
   <div class="tab-view">
-    <!-- Header -->
+    <div class="content-card">
+      <!-- Header -->
       <div class="tab-header">
         <h2 class="tab-title">
           <IconPill :size="20" :stroke-width="1.75" />
@@ -178,6 +179,7 @@ async function markAsApplied(record: HealthRecord) {
             <button class="btn-edit-record" title="Editar" @click="openEdit(record)">
               ✏️
             </button>
+          </div>
         </div>
       </div>
     </div>
@@ -200,6 +202,14 @@ async function markAsApplied(record: HealthRecord) {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
+}
+
+.content-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
 }
 
 .tab-header {

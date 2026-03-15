@@ -177,7 +177,8 @@ async function markAsDone(exam: HealthRecord) {
 
 <template>
   <div class="tab-view">
-    <!-- Header -->
+    <div class="content-card">
+      <!-- Header -->
       <div class="tab-header">
         <h2 class="tab-title">
           <IconStethoscope :size="20" :stroke-width="1.75" />
@@ -312,6 +313,7 @@ async function markAsDone(exam: HealthRecord) {
           @update:page="page = $event"
         />
       </div>
+    </div>
 
     <!-- Modal: Create/Edit Exam -->
     <Teleport to="body">
@@ -426,6 +428,14 @@ async function markAsDone(exam: HealthRecord) {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
+}
+
+.content-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
 }
 
 .tab-header {
