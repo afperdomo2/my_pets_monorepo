@@ -1118,9 +1118,13 @@ paths:
   /api/v1/health-records/upcoming:
     get:
       parameters:
-      - description: 'Cantidad de registros a retornar (default: 10, max: 50)'
+      - description: 'Número de página (default: 1)'
         in: query
-        name: limit
+        name: page
+        type: integer
+      - description: 'Registros por página (default: 10, max: 50)'
+        in: query
+        name: per_page
         type: integer
       - description: Filtrar por categoría (vaccine, deworming, exam)
         in: query
@@ -1130,9 +1134,15 @@ paths:
       - application/json
       responses:
         "200":
-          description: 'data: []HealthRecord, total: int'
+          description: data, total, page, per_page, total_pages
           schema:
             additionalProperties: true
+            type: object
+        "400":
+          description: categoría inválida
+          schema:
+            additionalProperties:
+              type: string
             type: object
         "401":
           description: autenticación requerida
@@ -1148,7 +1158,7 @@ paths:
             type: object
       security:
       - CookieAuth: []
-      summary: Listar próximos registros pendientes (sin paginación)
+      summary: Listar próximos registros pendientes
       tags:
       - health-records
   /api/v1/pets:

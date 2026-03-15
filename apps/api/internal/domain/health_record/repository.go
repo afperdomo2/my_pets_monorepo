@@ -41,7 +41,8 @@ type Repository interface {
 
 	// GetUpcomingRecords retorna los próximos registros pendientes de aplicación del usuario.
 	// Si category no está vacío, filtra por esa categoría.
-	// Retorna máximo 'limit' registros, ordenados por due_date ASC.
-	// No tiene paginación.
-	GetUpcomingRecords(ctx context.Context, ownerID, category string, limit int) ([]models.HealthRecord, error)
+	// Soporta paginación estándar: page y perPage definen la página a obtener.
+	// Los registros se ordenan por due_date ASC (los más próximos primero).
+	// Retorna los registros, el total de registros disponibles y un error si ocurre.
+	GetUpcomingRecords(ctx context.Context, ownerID, category string, page, perPage int) ([]models.HealthRecord, int64, error)
 }

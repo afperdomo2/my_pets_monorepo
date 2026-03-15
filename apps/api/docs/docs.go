@@ -1082,12 +1082,18 @@ const docTemplate = `{
                 "tags": [
                     "health-records"
                 ],
-                "summary": "Listar próximos registros pendientes (sin paginación)",
+                "summary": "Listar próximos registros pendientes",
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "Cantidad de registros a retornar (default: 10, max: 50)",
-                        "name": "limit",
+                        "description": "Número de página (default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Registros por página (default: 10, max: 50)",
+                        "name": "per_page",
                         "in": "query"
                     },
                     {
@@ -1099,10 +1105,19 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "data: []HealthRecord, total: int",
+                        "description": "data, total, page, per_page, total_pages",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "categoría inválida",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     },
                     "401": {

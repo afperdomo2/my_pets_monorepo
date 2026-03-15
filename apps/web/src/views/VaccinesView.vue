@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { IconShieldCheck, IconAlertTriangle, IconClockExclamation, IconPlus } from '@tabler/icons-vue'
+import { IconShieldCheck, IconAlertTriangle, IconClockExclamation, IconPlus, IconChevronDown } from '@tabler/icons-vue'
 import VaccineStatCard from '@/components/vaccines/VaccineStatCard.vue'
 import VaccineUpcomingCard from '@/components/vaccines/VaccineUpcomingCard.vue'
 import VaccineHistoryTable from '@/components/vaccines/VaccineHistoryTable.vue'
 import VaccineRecordModal from '@/components/vaccines/VaccineRecordModal.vue'
-import { useGetUpcomingVaccines } from '@/composables/useHealthRecords'
+import { useGetUpcomingVaccinesPaged } from '@/composables/useHealthRecords'
 
 // ── Estado del modal ────────────────────────────
 const showModal = ref(false)
@@ -24,8 +24,18 @@ function closeModal() {
   preselectedVaccine.value = undefined
 }
 
-// ── Próximas vacunas (datos reales) ─────────────────────
-const { records, total, isLoading, isError, refresh } = useGetUpcomingVaccines(10)
+// ── Próximas vacunas con paginación acumulativa ─────────────────────
+const {
+  records,
+  total,
+  hasMore,
+  loadMore,
+  isLoading,
+  isLoadingMore,
+  isFetching,
+  isError,
+  refresh,
+} = useGetUpcomingVaccinesPaged(5)
 </script>
 
 <template>
@@ -101,6 +111,20 @@ const { records, total, isLoading, isError, refresh } = useGetUpcomingVaccines(1
           :due-date="record.due_date"
           @register="openModal(record.pet_id, record.name)"
         />
+
+        <!-- Botón Ver más -->
+        <button
+          v-if="hasMore"
+          class="btn-load-more"
+          :disabled="isLoadingMore || isFetching"
+          @click="loadMore"
+        >
+          <span v-if="isLoadingMore || isFetching" class="btn-load-more__spinner" />
+          <template v-else>
+            <IconChevronDown :size="18" :stroke-width="2" />
+            Ver más
+          </template>
+        </button>
       </div>
     </section>
 
@@ -232,6 +256,52 @@ const { records, total, isLoading, isError, refresh } = useGetUpcomingVaccines(1
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
+}
+
+/* ── Botón ver más ────────────────── */
+.btn-load-more {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  align-self: center;
+  padding: var(--space-2) var(--space-6);
+  min-height: 44px;
+  background: var(--color-surface);
+  color: var(--color-accent);
+  border: 1.5px solid var(--color-accent-muted);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast),
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
+  white-space: nowrap;
+}
+
+.btn-load-more:hover:not(:disabled) {
+  background: var(--color-accent);
+  color: #fff;
+  border-color: var(--color-accent);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-load-more:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-load-more__spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--color-accent-muted);
+  border-top-color: var(--color-accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
 }
 
 /* ── History section ──────────────── */

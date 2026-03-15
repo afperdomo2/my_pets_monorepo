@@ -382,27 +382,35 @@ func (h *Handler) DeleteHealthRecord(c *gin.Context) {
 }
 
 // GetUpcomingRecords maneja GET /api/v1/health-records/upcoming
-// Lista los próximos registros pendientes de aplicación (sin paginación).
-// Retorna máximo 50 registros, ordenados por due_date ASC.
+// Lista los próximos registros pendientes de aplicación con paginación estándar.
+// Los registros se ordenan por due_date ASC (los más próximos primero).
 //
-//	@Summary	Listar próximos registros pendientes (sin paginación)
+//	@Summary	Listar próximos registros pendientes
 //	@Tags		health-records
 //	@Produce	json
 //	@Security	CookieAuth
-//	@Param		limit		query		int						false	"Cantidad de registros a retornar (default: 10, max: 50)"
+//	@Param		page		query		int						false	"Número de página (default: 1)"
+//	@Param		per_page	query		int						false	"Registros por página (default: 10, max: 50)"
 //	@Param		category	query		string					false	"Filtrar por categoría (vaccine, deworming, exam)"
-//	@Success	200		{object}	map[string]interface{}	"data: []HealthRecord, total: int"
+//	@Success	200		{object}	map[string]interface{}	"data, total, page, per_page, total_pages"
+//	@Failure	400		{object}	map[string]string		"categoría inválida"
 //	@Failure	401		{object}	map[string]string		"autenticación requerida"
 //	@Failure	500		{object}	map[string]string		"mensaje de error"
 //	@Router		/api/v1/health-records/upcoming [get]
 func (h *Handler) GetUpcomingRecords(c *gin.Context) {
-	// Parsear y validar limit
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
-	if limit < 1 {
-		limit = 10
+	// Parsear y validar page
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	if page < 1 {
+		page = 1
 	}
-	if limit > 50 {
-		limit = 50
+
+	// Parsear y validar per_page
+	perPage, _ := strconv.Atoi(c.DefaultQuery("per_page", "10"))
+	if perPage < 1 {
+		perPage = 10
+	}
+	if perPage > 50 {
+		perPage = 50
 	}
 
 	// Obtener categoría (opcional)
@@ -415,8 +423,8 @@ func (h *Handler) GetUpcomingRecords(c *gin.Context) {
 		}
 	}
 
-	// Obtener próximos registros pendientes del usuario
-	records, err := h.repo.GetUpcomingRecords(c.Request.Context(), ownerID(c), category, limit)
+	// Obtener próximos registros pendientes del usuario con paginación
+	records, total, err := h.repo.GetUpcomingRecords(c.Request.Context(), ownerID(c), category, page, perPage)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error al obtener próximos registros"})
 		return
@@ -427,8 +435,13 @@ func (h *Handler) GetUpcomingRecords(c *gin.Context) {
 		records[i] = resolveOverdue(rec)
 	}
 
+	totalPages := int(math.Ceil(float64(total) / float64(perPage)))
+
 	c.JSON(http.StatusOK, gin.H{
-		"data":  records,
-		"total": len(records),
+		"data":        records,
+		"total":       total,
+		"page":        page,
+		"per_page":    perPage,
+		"total_pages": totalPages,
 	})
 }

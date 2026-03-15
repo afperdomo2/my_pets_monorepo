@@ -1,14 +1,12 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { IconArrowLeft, IconEdit, IconTrash, IconPaw } from '@tabler/icons-vue'
+import { useRoute, RouterLink } from 'vue-router'
+import { IconArrowLeft, IconEdit, IconTrash, IconPaw, IconVaccine, IconPill, IconStethoscope } from '@tabler/icons-vue'
 import { useGetPet, useDeletePet } from '@/composables/usePets'
 import PetFormModal from '@/components/pets/PetFormModal.vue'
 import { calcAge, formatAge, formatBirthDate, formatWeight, isBirthdayToday, lifeStageLabel } from '@/utils/pet'
 
 const route = useRoute()
-const router = useRouter()
-
 const id = String(route.params.id)
 const showEditModal = ref(false)
 
@@ -47,18 +45,15 @@ const isBirthday = computed(
 )
 
 const LIFE_STAGE_COLORS: Record<string, { bg: string; text: string }> = {
-  // Perro
   puppy:        { bg: '#fef9c3', text: '#854d0e' },
   junior:       { bg: '#dcfce7', text: '#166534' },
   adult:        { bg: '#dbeafe', text: '#1e40af' },
   senior:       { bg: '#ede9fe', text: '#5b21b6' },
   geriatric:    { bg: '#fee2e2', text: '#991b1b' },
-  // Gato
   kitten:       { bg: '#fef9c3', text: '#854d0e' },
   young_adult:  { bg: '#dcfce7', text: '#166534' },
   mature_adult: { bg: '#dbeafe', text: '#1e40af' },
   end_of_life:  { bg: '#fee2e2', text: '#991b1b' },
-  // Conejo
   infant:       { bg: '#fef9c3', text: '#854d0e' },
   juvenile:     { bg: '#dcfce7', text: '#166534' },
   teenager:     { bg: '#d1fae5', text: '#065f46' },
@@ -71,8 +66,14 @@ function lifeStageStyle(stage: string) {
 async function handleDelete() {
   if (!confirm(`¿Eliminar a ${pet.value?.name}? Esta acción no se puede deshacer.`)) return
   await deletePet.mutateAsync(id)
-  router.push('/pets')
+  window.location.href = '/pets'
 }
+
+const TABS = [
+  { label: 'Vacunas', name: 'pet-detail-vaccines', icon: IconVaccine },
+  { label: 'Desparasitación', name: 'pet-detail-deworming', icon: IconPill },
+  { label: 'Exámenes', name: 'pet-detail-exams', icon: IconStethoscope },
+]
 </script>
 
 <template>
@@ -179,6 +180,28 @@ async function handleDelete() {
             </div>
           </div>
         </div>
+
+        <!-- Right: tabs + content -->
+        <div class="detail-content">
+          <!-- Tabs navigation -->
+          <nav class="tabs-nav">
+            <RouterLink
+              v-for="tab in TABS"
+              :key="tab.name"
+              :to="{ name: tab.name, params: { id } }"
+              class="tab-link"
+              :class="{ 'tab-link--active': route.name === tab.name }"
+            >
+              <component :is="tab.icon" :size="18" :stroke-width="1.75" />
+              {{ tab.label }}
+            </RouterLink>
+          </nav>
+
+          <!-- Tab content -->
+          <div class="tab-content">
+            <RouterView />
+          </div>
+        </div>
       </div>
     </template>
 
@@ -229,6 +252,13 @@ async function handleDelete() {
   display: flex;
   gap: var(--space-6);
   align-items: flex-start;
+  width: 100%;
+}
+
+@media (max-width: 900px) {
+  .detail-layout {
+    flex-direction: column;
+  }
 }
 
 /* ── Detail card ─────────────────────── */
@@ -238,8 +268,14 @@ async function handleDelete() {
   border-radius: var(--radius-xl);
   overflow: hidden;
   box-shadow: var(--shadow-md);
-  max-width: 560px;
-  width: 100%;
+  width: 340px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 900px) {
+  .detail-card {
+    width: 100%;
+  }
 }
 
 @media (max-width: 768px) {
@@ -268,6 +304,59 @@ async function handleDelete() {
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
+}
+
+/* ── Health card (tabs + content) ────── */
+.detail-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+}
+
+.tabs-nav {
+  display: flex;
+  gap: var(--space-1);
+  border-bottom: 1px solid var(--color-border-light);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 var(--space-2);
+  flex-shrink: 0;
+}
+
+.tab-link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text-tertiary);
+  text-decoration: none;
+  white-space: nowrap;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.tab-link:hover {
+  color: var(--color-text-secondary);
+}
+
+.tab-link--active {
+  color: var(--color-accent);
+  border-bottom-color: var(--color-accent);
+}
+
+.tab-content {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
 }
 
 /* ── Species avatar ──────────────────── */

@@ -1,7 +1,7 @@
-import { computed, nextTick, type Ref } from "vue";
+import { computed, nextTick, ref, watch, type Ref } from "vue";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/vue-query";
 import { healthRecordService } from "@/services/healthRecordService";
-import type { CreateHealthRecordPayload, UpdateHealthRecordPayload, UpdateStatusPayload } from "@/types/healthRecord";
+import type { HealthRecord, CreateHealthRecordPayload, UpdateHealthRecordPayload, UpdateStatusPayload } from "@/types/healthRecord";
 
 // ═══════════════════════════════════════════════════════════════════════════════════
 // Cache time constants — ajusta estos valores según los SLAs del módulo
@@ -139,6 +139,100 @@ export function useDeleteHealthRecord() {
 }
 
 /**
+ * Obtiene los próximos registros pendientes con paginación acumulativa ("ver más").
+ * Cada llamada a loadMore() carga la siguiente página y concatena los resultados.
+ * Al invalidar el cache (ej: tras crear un registro), se reinicia a la página 1.
+ *
+ * @param perPage - Registros por página (default: 5)
+ * @param category - Filtrar por categoría (opcional): 'vaccine', 'deworming', 'exam'
+ */
+export function useGetUpcomingRecordsPaged(perPage = 5, category?: string) {
+  const queryClient = useQueryClient();
+
+  // Página actual — siempre arranca en 1 al montar
+  const currentPage = ref(1);
+  const totalRef = ref(0);
+  const totalPagesRef = ref(0);
+  const isLoadingMore = ref(false);
+
+  const queryKey = computed(() => ["health-records", "upcoming", { page: currentPage.value, perPage, category }]);
+
+  // Inicializar desde cache si ya existe data para página 1 (evita flash de empty state al volver)
+  const cachedPage1 = queryClient.getQueryData<{ data: HealthRecord[]; total: number; total_pages: number }>(
+    ["health-records", "upcoming", { page: 1, perPage, category }]
+  );
+  const accumulatedRecords = ref<HealthRecord[]>(cachedPage1?.data ?? []);
+  if (cachedPage1) {
+    totalRef.value = cachedPage1.total;
+    totalPagesRef.value = cachedPage1.total_pages;
+  }
+
+  const query = useQuery({
+    queryKey,
+    queryFn: () => healthRecordService.getUpcoming(currentPage.value, perPage, category),
+    staleTime: HEALTH_RECORD_UPCOMING_STALE_TIME,
+  });
+
+  // Acumular resultados cuando llega nueva data
+  watch(query.data, (newData) => {
+    if (!newData) return;
+    totalRef.value = newData.total;
+    totalPagesRef.value = newData.total_pages;
+    if (currentPage.value === 1) {
+      // Reset: reemplazar todo (ocurre tras invalidación del cache o al montar)
+      accumulatedRecords.value = newData.data;
+    } else {
+      // Append: agregar nuevos registros a los existentes
+      accumulatedRecords.value = [...accumulatedRecords.value, ...newData.data];
+    }
+    isLoadingMore.value = false;
+  });
+
+  const hasMore = computed(() => currentPage.value < totalPagesRef.value);
+
+  async function loadMore() {
+    if (!hasMore.value || isLoadingMore.value || query.isFetching.value) return;
+    isLoadingMore.value = true;
+    currentPage.value++;
+  }
+
+  // Al invalidar el cache desde afuera (ej: useCreateHealthRecord), resetear a página 1
+  async function refresh() {
+    currentPage.value = 1;
+    accumulatedRecords.value = [];
+    await nextTick();
+    await queryClient.invalidateQueries({ queryKey: ["health-records", "upcoming"], refetchType: "active" });
+  }
+
+  // isLoading solo es true cuando no hay data en cache y está fetching (primera carga real)
+  // Si hay datos acumulados, nunca mostrar el spinner de carga inicial
+  const isLoading = computed(() => query.isLoading.value && accumulatedRecords.value.length === 0);
+
+  return {
+    records: accumulatedRecords,
+    total: totalRef,
+    totalPages: totalPagesRef,
+    currentPage,
+    hasMore,
+    loadMore,
+    refresh,
+    isLoading,
+    isLoadingMore,
+    isFetching: computed(() => query.isFetching.value),
+    isError: computed(() => query.isError.value),
+  };
+}
+
+/**
+ * Obtiene las próximas vacunas pendientes con paginación acumulativa ("ver más").
+ * @param perPage - Registros por página (default: 5)
+ */
+export function useGetUpcomingVaccinesPaged(perPage = 5) {
+  return useGetUpcomingRecordsPaged(perPage, 'vaccine');
+}
+
+/**
+ * @deprecated Usar useGetUpcomingRecordsPaged en su lugar.
  * Obtiene los próximos registros pendientes de aplicación.
  * @param limit - Cantidad de registros a retornar (default: 10, max: 50)
  * @param category - Filtrar por categoría (opcional): 'vaccine', 'deworming', 'exam'
@@ -149,7 +243,7 @@ export function useGetUpcomingRecords(limit = 10, category?: string) {
 
   const query = useQuery({
     queryKey,
-    queryFn: () => healthRecordService.getUpcoming(limit, category),
+    queryFn: () => healthRecordService.getUpcoming(1, limit, category),
     staleTime: HEALTH_RECORD_UPCOMING_STALE_TIME,
   });
 
@@ -176,6 +270,7 @@ export function useGetUpcomingRecords(limit = 10, category?: string) {
 }
 
 /**
+ * @deprecated Usar useGetUpcomingVaccinesPaged en su lugar.
  * Obtiene las próximas vacunas pendientes de aplicación.
  * @param limit - Cantidad de registros a retornar (default: 10, max: 50)
  */

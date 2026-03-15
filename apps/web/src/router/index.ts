@@ -55,6 +55,27 @@ const router = createRouter({
           path: 'pets/:id',
           name: 'pet-detail',
           component: () => import('../views/PetDetailView.vue'),
+          children: [
+            {
+              path: '',
+              redirect: (to) => ({ name: 'pet-detail-vaccines', params: { id: to.params.id } }),
+            },
+            {
+              path: 'vaccines',
+              name: 'pet-detail-vaccines',
+              component: () => import('../views/pet-detail/PetVaccinesView.vue'),
+            },
+            {
+              path: 'deworming',
+              name: 'pet-detail-deworming',
+              component: () => import('../views/pet-detail/PetDewormingView.vue'),
+            },
+            {
+              path: 'exams',
+              name: 'pet-detail-exams',
+              component: () => import('../views/pet-detail/PetExamsView.vue'),
+            },
+          ],
         },
         {
           path: 'vaccines',

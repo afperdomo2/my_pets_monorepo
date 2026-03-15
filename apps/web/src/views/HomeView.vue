@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
-import { IconPaw, IconVaccine, IconAlertTriangle, IconUsers, IconPlus } from '@tabler/icons-vue'
+import { IconPaw, IconShieldCheck, IconAlertTriangle, IconPlus, IconStethoscope, IconPill, IconVaccine } from '@tabler/icons-vue'
+import PetAvatar from '@/components/pets/PetAvatar.vue'
+import { getSpeciesLabel } from '@/constants/species'
 import type { Component } from 'vue'
 
 const stats: {
@@ -22,46 +24,58 @@ const stats: {
     to: '/pets',
   },
   {
-    label: 'Vacunas al día',
+    label: 'Mascotas al día',
     value: '9',
-    change: '75% del total',
+    change: '75% con salud al día',
     positive: true,
-    icon: IconVaccine,
+    icon: IconShieldCheck,
     color: 'green',
-    to: '/vaccines',
+    to: '/health-records',
   },
   {
-    label: 'Vacunas pendientes',
+    label: 'Tareas pendientes',
     value: '3',
     change: 'Requieren atención',
     positive: false,
     icon: IconAlertTriangle,
     color: 'orange',
-    to: '/vaccines',
-  },
-  {
-    label: 'Propietarios activos',
-    value: '8',
-    change: 'Registrados',
-    positive: true,
-    icon: IconUsers,
-    color: 'blue',
-    to: '/pets',
+    to: '/health-records',
   },
 ]
 
-const recentPets = [
-  { name: 'Luna', species: 'Perro', breed: 'Golden Retriever', owner: 'Ana M.', status: 'Saludable', initials: 'LU' },
-  { name: 'Simba', species: 'Gato', breed: 'Siamés', owner: 'Carlos R.', status: 'Vacuna pendiente', initials: 'SI' },
-  { name: 'Manchas', species: 'Perro', breed: 'Dálmata', owner: 'Laura G.', status: 'Saludable', initials: 'MA' },
-  { name: 'Kira', species: 'Gato', breed: 'Persa', owner: 'Pedro L.', status: 'En revisión', initials: 'KI' },
+const upcomingHealthTasks = [
+  { pet: 'Romeo', species: 'dog', task: 'Desparasitante interno', category: 'deworming', due: 'En 2 días', urgent: false },
+  { pet: 'Negra', species: 'dog', task: 'Perfil Senior', category: 'exam', due: 'En 5 días', urgent: false },
+  { pet: 'Simba', species: 'cat', task: 'Antirrábica', category: 'vaccine', due: 'En 3 días', urgent: true },
+  { pet: 'Manchas', species: 'dog', task: 'Polivalente', category: 'vaccine', due: 'En 8 días', urgent: false },
 ]
 
-const upcomingVaccines = [
-  { pet: 'Simba', vaccine: 'Antirrábica', due: 'En 3 días', urgent: true },
-  { pet: 'Manchas', vaccine: 'Polivalente', due: 'En 8 días', urgent: false },
-  { pet: 'Bolt', vaccine: 'Bivalente felina', due: 'En 15 días', urgent: false },
-]
+const getCategoryIcon = (category: string) => {
+  switch (category) {
+    case 'vaccine': return IconVaccine
+    case 'deworming': return IconPill
+    case 'exam': return IconStethoscope
+    default: return IconShieldCheck
+  }
+}
+
+const getCategoryColor = (category: string) => {
+  switch (category) {
+    case 'vaccine': return 'var(--color-accent)'
+    case 'deworming': return '#c4714a'
+    case 'exam': return '#2980b9'
+    default: return 'var(--color-accent)'
+  }
+}
+
+const getCategoryLabel = (category: string) => {
+  switch (category) {
+    case 'vaccine': return 'Vacuna'
+    case 'deworming': return 'Desparasitación'
+    case 'exam': return 'Examen'
+    default: return 'Salud'
+  }
+}
 </script>
 
 <template>
@@ -100,61 +114,38 @@ const upcomingVaccines = [
 
     <!-- Content grid -->
     <div class="content-grid">
-      <!-- Mascotas recientes -->
+      <!-- Próximas tareas de salud -->
       <div class="panel">
         <div class="panel-header">
-          <h2>Mascotas recientes</h2>
-          <RouterLink to="/pets" class="panel-link">Ver todas</RouterLink>
+          <h2>Próximas tareas de salud</h2>
+          <RouterLink to="/health-records" class="panel-link">Ver todas</RouterLink>
         </div>
         <div class="panel-body">
-          <div
-            v-for="pet in recentPets"
-            :key="pet.name"
-            class="pet-row"
-          >
-            <div class="pet-avatar">{{ pet.initials }}</div>
-            <div class="pet-info">
-              <span class="pet-name">{{ pet.name }}</span>
-              <span class="pet-meta">{{ pet.species }} · {{ pet.breed }} · {{ pet.owner }}</span>
+          <div v-for="task in upcomingHealthTasks" :key="task.pet + task.task" class="task-row">
+            <div class="task-indicator" :class="{ 'task-indicator--urgent': task.urgent }" />
+            <!-- Mascota -->
+            <div class="task-pet-info">
+              <PetAvatar :species="task.species" :name="task.pet" size="md" />
+              <div class="task-pet-text">
+                <span class="task-pet-name">{{ task.pet }}</span>
+                <span class="task-pet-species">{{ getSpeciesLabel(task.species) }}</span>
+              </div>
             </div>
-            <span
-              class="pet-status"
-              :class="{
-                'pet-status--ok': pet.status === 'Saludable',
-                'pet-status--warn': pet.status === 'Vacuna pendiente',
-                'pet-status--info': pet.status === 'En revisión',
-              }"
-            >{{ pet.status }}</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Vacunas próximas -->
-      <div class="panel">
-        <div class="panel-header">
-          <h2>Vacunas próximas</h2>
-          <RouterLink to="/vaccines" class="panel-link">Ver calendario</RouterLink>
-        </div>
-        <div class="panel-body">
-          <div
-            v-for="vax in upcomingVaccines"
-            :key="vax.pet + vax.vaccine"
-            class="vax-row"
-          >
-            <div class="vax-indicator" :class="{ 'vax-indicator--urgent': vax.urgent }" />
-            <div class="vax-info">
-              <span class="vax-name">{{ vax.vaccine }}</span>
-              <span class="vax-pet">Para <strong>{{ vax.pet }}</strong></span>
+            <!-- Tarea de salud -->
+            <div class="task-icon" :style="{ color: getCategoryColor(task.category) }">
+              <component :is="getCategoryIcon(task.category)" :size="16" :stroke-width="1.75" />
             </div>
-            <span class="vax-due" :class="{ 'vax-due--urgent': vax.urgent }">{{ vax.due }}</span>
+            <div class="task-info">
+              <span class="task-name">{{ task.task }}</span>
+              <span class="task-category">{{ getCategoryLabel(task.category) }}</span>
+            </div>
+            <span class="task-due" :class="{ 'task-due--urgent': task.urgent }">{{ task.due }}</span>
           </div>
         </div>
 
-        <!-- CTA vacunas -->
+        <!-- CTA -->
         <div class="panel-footer">
-          <RouterLink to="/vaccines" class="btn-secondary">
-            Gestionar vacunas
-          </RouterLink>
+          <RouterLink to="/health-records" class="btn-secondary"> Gestionar salud </RouterLink>
         </div>
       </div>
     </div>
@@ -225,7 +216,9 @@ const upcomingVaccines = [
   font-size: var(--text-sm);
   font-weight: 600;
   text-decoration: none;
-  transition: background var(--transition-fast), box-shadow var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    box-shadow var(--transition-fast);
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -239,16 +232,21 @@ const upcomingVaccines = [
 /* ── Stats ────────────────────────────────────────────────── */
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: var(--space-4);
 }
 
-@media (max-width: 1200px) {
-  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+@media (max-width: 900px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 @media (max-width: 480px) {
-  .stats-grid { grid-template-columns: 1fr 1fr; gap: var(--space-3); }
+  .stats-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-3);
+  }
 }
 
 .stat-card {
@@ -260,7 +258,10 @@ const upcomingVaccines = [
   flex-direction: column;
   gap: var(--space-4);
   text-decoration: none;
-  transition: box-shadow var(--transition-base), transform var(--transition-base), border-color var(--transition-base);
+  transition:
+    box-shadow var(--transition-base),
+    transform var(--transition-base),
+    border-color var(--transition-base);
   cursor: pointer;
 }
 
@@ -279,10 +280,22 @@ const upcomingVaccines = [
   justify-content: center;
 }
 
-.stat-card--accent .stat-icon { background: var(--color-accent-light); color: var(--color-accent); }
-.stat-card--green  .stat-icon { background: #E8F5EE; color: #2E7D52; }
-.stat-card--orange .stat-icon { background: #FEF3E2; color: #C4714A; }
-.stat-card--blue   .stat-icon { background: #EBF4FB; color: #2980B9; }
+.stat-card--accent .stat-icon {
+  background: var(--color-accent-light);
+  color: var(--color-accent);
+}
+.stat-card--green .stat-icon {
+  background: #e8f5ee;
+  color: #2e7d52;
+}
+.stat-card--orange .stat-icon {
+  background: #fef3e2;
+  color: #c4714a;
+}
+.stat-card--blue .stat-icon {
+  background: #ebf4fb;
+  color: #2980b9;
+}
 
 .stat-body {
   display: flex;
@@ -327,11 +340,15 @@ const upcomingVaccines = [
 }
 
 @media (max-width: 900px) {
-  .content-grid { grid-template-columns: 1fr; }
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 768px) {
-  .content-grid { gap: var(--space-4); }
+  .content-grid {
+    gap: var(--space-4);
+  }
 }
 
 /* ── Panels ───────────────────────────────────────────────── */
@@ -380,8 +397,8 @@ const upcomingVaccines = [
   border-top: 1px solid var(--color-border-light);
 }
 
-/* ── Pet rows ─────────────────────────────────────────────── */
-.pet-row {
+/* ── Task rows ────────────────────────────────────────────── */
+.task-row {
   display: flex;
   align-items: center;
   gap: var(--space-3);
@@ -389,74 +406,11 @@ const upcomingVaccines = [
   transition: background var(--transition-fast);
 }
 
-.pet-row:hover {
+.task-row:hover {
   background: var(--color-bg-alt);
 }
 
-.pet-avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: var(--radius-full);
-  background: var(--color-accent-light);
-  color: var(--color-accent-dark);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: var(--text-xs);
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  flex-shrink: 0;
-}
-
-.pet-info {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
-.pet-name {
-  font-size: var(--text-sm);
-  font-weight: 600;
-  color: var(--color-text-primary);
-}
-
-.pet-meta {
-  font-size: var(--text-xs);
-  color: var(--color-text-tertiary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.pet-status {
-  font-size: var(--text-xs);
-  font-weight: 500;
-  padding: 3px var(--space-2);
-  border-radius: var(--radius-full);
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.pet-status--ok   { background: #E8F5EE; color: #2E7D52; }
-.pet-status--warn { background: #FEF3E2; color: #C4714A; }
-.pet-status--info { background: #EBF4FB; color: #2980B9; }
-
-/* ── Vaccine rows ─────────────────────────────────────────── */
-.vax-row {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-4) var(--space-6);
-  transition: background var(--transition-fast);
-}
-
-.vax-row:hover {
-  background: var(--color-bg-alt);
-}
-
-.vax-indicator {
+.task-indicator {
   width: 8px;
   height: 8px;
   border-radius: var(--radius-full);
@@ -464,38 +418,105 @@ const upcomingVaccines = [
   flex-shrink: 0;
 }
 
-.vax-indicator--urgent {
+.task-indicator--urgent {
   background: var(--color-secondary);
   box-shadow: 0 0 0 3px var(--color-secondary-light);
 }
 
-.vax-info {
+/* Mascota */
+.task-pet-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 110px;
+  flex-shrink: 0;
+}
+
+.task-pet-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.task-pet-name {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.task-pet-species {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+  text-transform: capitalize;
+}
+
+/* Icono de tarea */
+.task-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-md);
+  background: var(--color-bg-alt);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Info de la tarea */
+.task-info {
   flex: 1;
   display: flex;
   flex-direction: column;
   gap: 2px;
+  min-width: 0;
+  margin-right: var(--space-3);
 }
 
-.vax-name {
+.task-name {
   font-size: var(--text-sm);
-  font-weight: 600;
+  font-weight: 500;
   color: var(--color-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.vax-pet {
+.task-category {
   font-size: var(--text-xs);
   color: var(--color-text-tertiary);
 }
 
-.vax-due {
+.task-due {
   font-size: var(--text-xs);
   font-weight: 500;
   color: var(--color-text-secondary);
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
-.vax-due--urgent {
+.task-due--urgent {
   color: var(--color-secondary);
   font-weight: 600;
+}
+
+/* ── Responsive: más espacio en pantallas grandes ─────────── */
+@media (min-width: 768px) {
+  .task-row {
+    gap: var(--space-4);
+  }
+  
+  .task-pet-info {
+    min-width: 130px;
+    gap: var(--space-3);
+  }
+  
+  .task-info {
+    margin-right: var(--space-4);
+  }
 }
 
 /* ── Secondary button ─────────────────────────────────────── */
@@ -512,7 +533,10 @@ const upcomingVaccines = [
   font-weight: 500;
   border-radius: var(--radius-md);
   text-decoration: none;
-  transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast);
 }
 
 .btn-secondary:hover {

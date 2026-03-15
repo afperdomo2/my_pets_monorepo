@@ -41,9 +41,9 @@ export const healthRecordService = {
     return del(`/health-records/${id}`)
   },
 
-  // Obtener próximos registros pendientes (sin paginación)
-  getUpcoming(limit = 10, category?: string): Promise<{ data: HealthRecord[]; total: number }> {
-    const params = new URLSearchParams({ limit: String(limit) })
+  // Obtener próximos registros pendientes con paginación
+  getUpcoming(page = 1, perPage = 10, category?: string): Promise<PaginatedResponse<HealthRecord>> {
+    const params = new URLSearchParams({ page: String(page), per_page: String(perPage) })
     if (category) {
       params.append('category', category)
     }

@@ -235,8 +235,9 @@ func (r *gormRepo) Delete(ctx context.Context, id, ownerID string) error {
 	return nil
 }
 
-func (r *gormRepo) GetUpcomingRecords(ctx context.Context, ownerID, category string, limit int) ([]models.HealthRecord, error) {
+func (r *gormRepo) GetUpcomingRecords(ctx context.Context, ownerID, category string, page, perPage int) ([]models.HealthRecord, int64, error) {
 	var records []models.HealthRecord
+	var total int64
 
 	// Construir query base: solo pendientes, sin aplicación, del usuario
 	query := r.db.WithContext(ctx).
@@ -248,14 +249,19 @@ func (r *gormRepo) GetUpcomingRecords(ctx context.Context, ownerID, category str
 		query = query.Where("category = ?", category)
 	}
 
-	// Ordenar por due_date ASC y limitar resultados
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, fmt.Errorf("health_record.GetUpcomingRecords count: %w", err)
+	}
+
+	offset := (page - 1) * perPage
 	if err := query.
 		Preload("Pet").
 		Order("due_date ASC").
-		Limit(limit).
+		Limit(perPage).
+		Offset(offset).
 		Find(&records).Error; err != nil {
-		return nil, fmt.Errorf("health_record.GetUpcomingRecords: %w", err)
+		return nil, 0, fmt.Errorf("health_record.GetUpcomingRecords: %w", err)
 	}
 
-	return records, nil
+	return records, total, nil
 }
