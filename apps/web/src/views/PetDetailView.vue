@@ -181,25 +181,35 @@ const TABS = [
           </div>
         </div>
 
-        <!-- Right: tabs + content -->
-        <div class="detail-content">
-          <!-- Tabs navigation -->
-          <nav class="tabs-nav">
-            <RouterLink
-              v-for="tab in TABS"
-              :key="tab.name"
-              :to="{ name: tab.name, params: { id } }"
-              class="tab-link"
-              :class="{ 'tab-link--active': route.name === tab.name }"
-            >
-              <component :is="tab.icon" :size="18" :stroke-width="1.75" />
-              {{ tab.label }}
-            </RouterLink>
-          </nav>
+        <!-- Right: health card with tabs -->
+        <div class="health-card">
+          <div class="card-strip" :class="`strip--${pet.species}`" />
 
-          <!-- Tab content -->
-          <div class="tab-content">
-            <RouterView />
+          <div class="health-card-content">
+            <!-- Health header -->
+            <div class="health-header">
+              <h2 class="health-title">Gestión de salud</h2>
+              <p class="health-subtitle">Historial médico de {{ pet.name }}</p>
+            </div>
+
+            <!-- Tabs navigation -->
+            <nav class="tabs-nav">
+              <RouterLink
+                v-for="tab in TABS"
+                :key="tab.name"
+                :to="{ name: tab.name, params: { id } }"
+                class="tab-link"
+                :class="{ 'tab-link--active': route.name === tab.name }"
+              >
+                <component :is="tab.icon" :size="18" :stroke-width="1.75" />
+                <span class="tab-label">{{ tab.label }}</span>
+              </RouterLink>
+            </nav>
+
+            <!-- Tab content -->
+            <div class="tab-content">
+              <RouterView />
+            </div>
           </div>
         </div>
       </div>
@@ -306,19 +316,62 @@ const TABS = [
   gap: var(--space-6);
 }
 
-/* ── Tabs navigation ─────────────────── */
-.detail-content {
+/* ── Health card ──────────────────────── */
+.health-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
 }
 
+@media (max-width: 900px) {
+  .health-card {
+    width: 100%;
+  }
+}
+
+.health-card-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-6);
+}
+
+/* ── Health header ─────────────────────── */
+.health-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.health-title {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.health-subtitle {
+  font-size: var(--text-sm);
+  color: var(--color-text-tertiary);
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* ── Tabs navigation ─────────────────── */
 .tabs-nav {
   display: flex;
-  gap: var(--space-1);
-  border-bottom: 1px solid var(--color-border-light);
+  gap: var(--space-2);
+  padding: var(--space-1);
+  background: var(--color-bg-alt);
+  border-radius: var(--radius-lg);
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
 }
@@ -326,25 +379,42 @@ const TABS = [
 .tab-link {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: var(--space-2);
-  padding: var(--space-3) var(--space-4);
+  padding: var(--space-3) var(--space-5);
   font-size: var(--text-sm);
   font-weight: 600;
   color: var(--color-text-tertiary);
   text-decoration: none;
   white-space: nowrap;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -1px;
-  transition: color var(--transition-fast), border-color var(--transition-fast);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+  flex: 1;
 }
 
-.tab-link:hover {
+.tab-link:hover:not(.tab-link--active) {
   color: var(--color-text-secondary);
+  background: var(--color-surface);
 }
 
 .tab-link--active {
-  color: var(--color-accent);
-  border-bottom-color: var(--color-accent);
+  color: var(--color-accent-dark);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.tab-label {
+  display: inline;
+}
+
+@media (max-width: 480px) {
+  .tab-label {
+    display: none;
+  }
+  
+  .tab-link {
+    padding: var(--space-3) var(--space-4);
+  }
 }
 
 .tab-content {

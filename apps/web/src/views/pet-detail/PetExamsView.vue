@@ -431,11 +431,11 @@ async function markAsDone(exam: HealthRecord) {
 }
 
 .content-card {
-  background: var(--color-surface);
+  background: transparent;
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-xl);
   overflow: hidden;
-  box-shadow: var(--shadow-md);
+  box-shadow: none;
 }
 
 .tab-header {

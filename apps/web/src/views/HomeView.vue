@@ -1,9 +1,18 @@
 <script setup lang="ts">
-import { RouterLink } from 'vue-router'
-import { IconPaw, IconShieldCheck, IconAlertTriangle, IconPlus, IconStethoscope, IconPill, IconVaccine } from '@tabler/icons-vue'
 import PetAvatar from '@/components/pets/PetAvatar.vue'
+import { useGetUpcomingRecordsPaged } from '@/composables/useHealthRecords'
 import { getSpeciesLabel } from '@/constants/species'
+import {
+  IconAlertTriangle,
+  IconPaw,
+  IconPill,
+  IconPlus,
+  IconShieldCheck,
+  IconStethoscope,
+  IconVaccine,
+} from '@tabler/icons-vue'
 import type { Component } from 'vue'
+import { RouterLink } from 'vue-router'
 
 const stats: {
   label: string
@@ -43,38 +52,93 @@ const stats: {
   },
 ]
 
-const upcomingHealthTasks = [
-  { pet: 'Romeo', species: 'dog', task: 'Desparasitante interno', category: 'deworming', due: 'En 2 días', urgent: false },
-  { pet: 'Negra', species: 'dog', task: 'Perfil Senior', category: 'exam', due: 'En 5 días', urgent: false },
-  { pet: 'Simba', species: 'cat', task: 'Antirrábica', category: 'vaccine', due: 'En 3 días', urgent: true },
-  { pet: 'Manchas', species: 'dog', task: 'Polivalente', category: 'vaccine', due: 'En 8 días', urgent: false },
-]
+// API - Próximas tareas de salud (sin filtrar por categoría)
+const { records: upcomingRecords, isLoading, isError, refresh } = useGetUpcomingRecordsPaged(5)
 
 const getCategoryIcon = (category: string) => {
   switch (category) {
-    case 'vaccine': return IconVaccine
-    case 'deworming': return IconPill
-    case 'exam': return IconStethoscope
-    default: return IconShieldCheck
+    case 'vaccine':
+      return IconVaccine
+    case 'deworming':
+      return IconPill
+    case 'exam':
+      return IconStethoscope
+    default:
+      return IconShieldCheck
   }
 }
 
 const getCategoryColor = (category: string) => {
   switch (category) {
-    case 'vaccine': return 'var(--color-accent)'
-    case 'deworming': return '#c4714a'
-    case 'exam': return '#2980b9'
-    default: return 'var(--color-accent)'
+    case 'vaccine':
+      return 'var(--color-accent)'
+    case 'deworming':
+      return '#c4714a'
+    case 'exam':
+      return '#2980b9'
+    default:
+      return 'var(--color-accent)'
   }
 }
 
 const getCategoryLabel = (category: string) => {
   switch (category) {
-    case 'vaccine': return 'Vacuna'
-    case 'deworming': return 'Desparasitación'
-    case 'exam': return 'Examen'
-    default: return 'Salud'
+    case 'vaccine':
+      return 'Vacuna'
+    case 'deworming':
+      return 'Desparasitación'
+    case 'exam':
+      return 'Examen'
+    default:
+      return 'Salud'
   }
+}
+
+const getCategoryRoute = (petId: string, category: string) => {
+  switch (category) {
+    case 'vaccine':
+      return { name: 'pet-detail-vaccines', params: { id: petId } }
+    case 'deworming':
+      return { name: 'pet-detail-deworming', params: { id: petId } }
+    case 'exam':
+      return { name: 'pet-detail-exams', params: { id: petId } }
+    default:
+      return { name: 'pet-detail', params: { id: petId } }
+  }
+}
+
+function formatDueDate(dueDate: string): string {
+  const due = new Date(dueDate)
+  const now = new Date()
+  due.setUTCHours(0, 0, 0, 0)
+  now.setUTCHours(0, 0, 0, 0)
+  const diffMs = due.getTime() - now.getTime()
+  const days = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
+
+  if (days < 0) return `Vencida hace ${Math.abs(days)} días`
+  if (days === 0) return 'Hoy'
+  if (days === 1) return 'Mañana'
+  return `En ${days} días`
+}
+
+function isUrgent(dueDate: string): boolean {
+  const due = new Date(dueDate)
+  const now = new Date()
+  due.setUTCHours(0, 0, 0, 0)
+  now.setUTCHours(0, 0, 0, 0)
+  const diffMs = due.getTime() - now.getTime()
+  const days = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
+  return days <= 7 && days >= 0
+}
+
+function isOverdue(dueDate: string): boolean {
+  const due = new Date(dueDate)
+  const now = new Date()
+  due.setUTCHours(0, 0, 0, 0)
+  now.setUTCHours(0, 0, 0, 0)
+  const diffMs = due.getTime() - now.getTime()
+  const days = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
+  return days < 0
 }
 </script>
 
@@ -118,34 +182,66 @@ const getCategoryLabel = (category: string) => {
       <div class="panel">
         <div class="panel-header">
           <h2>Próximas tareas de salud</h2>
-          <RouterLink to="/health-records" class="panel-link">Ver todas</RouterLink>
         </div>
-        <div class="panel-body">
-          <div v-for="task in upcomingHealthTasks" :key="task.pet + task.task" class="task-row">
-            <div class="task-indicator" :class="{ 'task-indicator--urgent': task.urgent }" />
+
+        <!-- Loading state -->
+        <div v-if="isLoading" class="panel-loading">
+          <div class="spinner" />
+          <p>Cargando tareas...</p>
+        </div>
+
+        <!-- Error state -->
+        <div v-else-if="isError" class="panel-error">
+          <p>Error al cargar las tareas</p>
+          <button class="btn-retry" @click="refresh">Reintentar</button>
+        </div>
+
+        <!-- Empty state -->
+        <div v-else-if="upcomingRecords.length === 0" class="panel-empty">
+          <p>¡No hay tareas pendientes! 🎉</p>
+          <span>Todas las mascotas están al día.</span>
+        </div>
+
+        <!-- Records list -->
+        <div v-else class="panel-body">
+          <RouterLink
+            v-for="record in upcomingRecords"
+            :key="record.id"
+            :to="getCategoryRoute(record.pet_id, record.category)"
+            class="task-row"
+            :class="{
+              'task-row--urgent': isUrgent(record.due_date),
+              'task-row--overdue': isOverdue(record.due_date),
+            }"
+          >
             <!-- Mascota -->
             <div class="task-pet-info">
-              <PetAvatar :species="task.species" :name="task.pet" size="md" />
+              <PetAvatar :species="record.pet.species" :name="record.pet.name" size="md" />
               <div class="task-pet-text">
-                <span class="task-pet-name">{{ task.pet }}</span>
-                <span class="task-pet-species">{{ getSpeciesLabel(task.species) }}</span>
+                <span class="task-pet-name">{{ record.pet.name }}</span>
+                <span class="task-pet-species">{{ getSpeciesLabel(record.pet.species) }}</span>
               </div>
             </div>
             <!-- Tarea de salud -->
-            <div class="task-icon" :style="{ color: getCategoryColor(task.category) }">
-              <component :is="getCategoryIcon(task.category)" :size="16" :stroke-width="1.75" />
+            <div class="task-details">
+              <div class="task-icon" :style="{ color: getCategoryColor(record.category) }">
+                <component :is="getCategoryIcon(record.category)" :size="16" :stroke-width="1.75" />
+              </div>
+              <div class="task-info">
+                <span class="task-name">{{ record.name }}</span>
+                <span class="task-category">{{ getCategoryLabel(record.category) }}</span>
+              </div>
             </div>
-            <div class="task-info">
-              <span class="task-name">{{ task.task }}</span>
-              <span class="task-category">{{ getCategoryLabel(task.category) }}</span>
-            </div>
-            <span class="task-due" :class="{ 'task-due--urgent': task.urgent }">{{ task.due }}</span>
-          </div>
+            <!-- Fecha -->
+            <span class="task-due" :class="{ 'task-due--urgent': isUrgent(record.due_date) }">
+              {{ formatDueDate(record.due_date) }}
+            </span>
+          </RouterLink>
         </div>
 
         <!-- CTA -->
         <div class="panel-footer">
-          <RouterLink to="/health-records" class="btn-secondary"> Gestionar salud </RouterLink>
+          <RouterLink to="/vaccines" class="btn-secondary"> Ver vacunación </RouterLink>
         </div>
       </div>
     </div>
@@ -397,30 +493,93 @@ const getCategoryLabel = (category: string) => {
   border-top: 1px solid var(--color-border-light);
 }
 
-/* ── Task rows ────────────────────────────────────────────── */
-.task-row {
+/* ── Loading / Error / Empty states ───────────────────────── */
+.panel-loading,
+.panel-error,
+.panel-empty {
   display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  padding: var(--space-8) var(--space-4);
+  text-align: center;
+}
+
+.panel-loading p,
+.panel-error p,
+.panel-empty p {
+  font-size: var(--text-sm);
+  color: var(--color-text-tertiary);
+  margin: 0;
+}
+
+.panel-empty span {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+}
+
+.spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid var(--color-border);
+  border-top-color: var(--color-accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.btn-retry {
+  padding: var(--space-2) var(--space-4);
+  min-height: 40px;
+  background: var(--color-accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.btn-retry:hover {
+  background: var(--color-accent-hover);
+}
+
+/* ── Task rows: grid de 4 columnas (mascota | tarea x2 | fecha) ─ */
+.task-row {
+  display: grid;
+  grid-template-columns: 1fr 2fr 1fr;
   align-items: center;
   gap: var(--space-3);
   padding: var(--space-3) var(--space-6);
-  transition: background var(--transition-fast);
+  text-decoration: none;
+  border-left: 3px solid transparent;
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast);
 }
 
 .task-row:hover {
   background: var(--color-bg-alt);
 }
 
-.task-indicator {
-  width: 8px;
-  height: 8px;
-  border-radius: var(--radius-full);
-  background: var(--color-accent-muted);
-  flex-shrink: 0;
+.task-row--urgent {
+  border-left-color: var(--color-warning, #f59e0b);
 }
 
-.task-indicator--urgent {
-  background: var(--color-secondary);
-  box-shadow: 0 0 0 3px var(--color-secondary-light);
+.task-row--overdue {
+  border-left-color: var(--color-error);
+}
+
+.task-row--overdue .task-due {
+  color: var(--color-error);
+  font-weight: 600;
 }
 
 /* Mascota */
@@ -428,8 +587,7 @@ const getCategoryLabel = (category: string) => {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  min-width: 110px;
-  flex-shrink: 0;
+  min-width: 0;
 }
 
 .task-pet-text {
@@ -454,6 +612,14 @@ const getCategoryLabel = (category: string) => {
   text-transform: capitalize;
 }
 
+/* Detalles de tarea (icono + info) */
+.task-details {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
 /* Icono de tarea */
 .task-icon {
   width: 28px;
@@ -468,12 +634,10 @@ const getCategoryLabel = (category: string) => {
 
 /* Info de la tarea */
 .task-info {
-  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 2px;
   min-width: 0;
-  margin-right: var(--space-3);
 }
 
 .task-name {
@@ -494,7 +658,7 @@ const getCategoryLabel = (category: string) => {
   font-size: var(--text-xs);
   font-weight: 500;
   color: var(--color-text-secondary);
-  flex-shrink: 0;
+  text-align: right;
   white-space: nowrap;
 }
 
@@ -503,19 +667,33 @@ const getCategoryLabel = (category: string) => {
   font-weight: 600;
 }
 
-/* ── Responsive: más espacio en pantallas grandes ─────────── */
-@media (min-width: 768px) {
+/* ── Responsive ───────────────────────────────────────────── */
+@media (max-width: 600px) {
   .task-row {
-    gap: var(--space-4);
+    grid-template-columns: 1fr;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 1px solid var(--color-border-light);
   }
-  
+
+  .task-row:last-child {
+    border-bottom: none;
+  }
+
   .task-pet-info {
-    min-width: 130px;
-    gap: var(--space-3);
+    gap: var(--space-2);
   }
-  
-  .task-info {
-    margin-right: var(--space-4);
+
+  .task-details {
+    order: 3;
+    margin-top: var(--space-1);
+    gap: var(--space-1);
+  }
+
+  .task-due {
+    text-align: left;
+    order: 4;
+    margin-top: var(--space-1);
   }
 }
 
