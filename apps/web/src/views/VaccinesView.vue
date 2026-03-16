@@ -1,10 +1,10 @@
 <script setup lang="ts">
+import { IconPlus } from '@tabler/icons-vue'
 import { ref } from 'vue'
-import { IconShieldCheck, IconAlertTriangle, IconClockExclamation, IconPlus, IconChevronDown } from '@tabler/icons-vue'
-import VaccineStatCard from '@/components/vaccines/VaccineStatCard.vue'
-import VaccineUpcomingCard from '@/components/vaccines/VaccineUpcomingCard.vue'
+
 import VaccineHistoryTable from '@/components/vaccines/VaccineHistoryTable.vue'
 import VaccineRecordModal from '@/components/vaccines/VaccineRecordModal.vue'
+import VaccineUpcomingCard from '@/components/vaccines/VaccineUpcomingCard.vue'
 import { useGetUpcomingVaccinesPaged } from '@/composables/useHealthRecords'
 
 // ── Estado del modal ────────────────────────────
@@ -52,31 +52,6 @@ const {
       </button>
     </div>
 
-    <!-- Quick Stats -->
-    <section class="stats-section">
-      <VaccineStatCard
-        label="Al día"
-        value="5"
-        description="Todo en orden"
-        color="green"
-        :icon="IconShieldCheck"
-      />
-      <VaccineStatCard
-        label="Por vencer"
-        value="2"
-        description="Próximos 15 días"
-        color="amber"
-        :icon="IconAlertTriangle"
-      />
-      <VaccineStatCard
-        label="Vencidas"
-        value="1"
-        description="Requiere atención"
-        color="red"
-        :icon="IconClockExclamation"
-      />
-    </section>
-
     <!-- Timeline de próximas aplicaciones -->
     <section class="timeline-section">
       <div class="section-header">
@@ -121,7 +96,7 @@ const {
         >
           <span v-if="isLoadingMore || isFetching" class="btn-load-more__spinner" />
           <template v-else>
-            <IconChevronDown :size="18" :stroke-width="2" />
+            <IconPlus :size="18" :stroke-width="2" />
             Ver más
           </template>
         </button>
@@ -190,7 +165,9 @@ const {
   font-size: var(--text-sm);
   font-weight: 600;
   cursor: pointer;
-  transition: background var(--transition-fast), transform var(--transition-fast),
+  transition:
+    background var(--transition-fast),
+    transform var(--transition-fast),
     box-shadow var(--transition-fast);
   white-space: nowrap;
   flex-shrink: 0;
@@ -213,14 +190,6 @@ const {
     justify-content: center;
     width: 100%;
   }
-}
-
-/* ── Stats section ────────────────── */
-.stats-section {
-  display: grid;
-  /* auto-fit + minmax: 3 cols en desktop, 2 en tablet, 1 en móvil — sin media queries */
-  grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
-  gap: var(--space-4);
 }
 
 /* ── Section headers ──────────────── */

@@ -2,6 +2,7 @@
 import PetAvatar from '@/components/pets/PetAvatar.vue'
 import { useGetUpcomingRecordsPaged } from '@/composables/useHealthRecords'
 import { getSpeciesLabel } from '@/constants/species'
+import { useAuthStore } from '@/stores/auth'
 import {
   IconAlertTriangle,
   IconPaw,
@@ -13,6 +14,9 @@ import {
 } from '@tabler/icons-vue'
 import type { Component } from 'vue'
 import { RouterLink } from 'vue-router'
+
+const authStore = useAuthStore()
+const userName = authStore.user?.name ?? ''
 
 const stats: {
   label: string
@@ -44,11 +48,20 @@ const stats: {
   {
     label: 'Tareas pendientes',
     value: '3',
-    change: 'Requieren atención',
+    change: 'Próximos 7 días',
     positive: false,
     icon: IconAlertTriangle,
     color: 'orange',
-    to: '/health-records',
+    to: '/vaccines',
+  },
+  {
+    label: 'Tareas vencidas',
+    value: '2',
+    change: 'Requieren atención',
+    positive: false,
+    icon: IconAlertTriangle,
+    color: 'red',
+    to: '/vaccines',
   },
 ]
 
@@ -147,7 +160,7 @@ function isOverdue(dueDate: string): boolean {
     <!-- Page header -->
     <div class="page-header">
       <div class="page-header-text">
-        <h1>Buenos días, Juan</h1>
+        <h1>Buenos días, {{ userName }}</h1>
         <p>Aquí está el resumen de hoy — <span class="date">Lunes, 2 de marzo de 2026</span></p>
       </div>
       <RouterLink to="/pets" class="btn-new-pet">
@@ -328,11 +341,11 @@ function isOverdue(dueDate: string): boolean {
 /* ── Stats ────────────────────────────────────────────────── */
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: var(--space-4);
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1200px) {
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -387,6 +400,10 @@ function isOverdue(dueDate: string): boolean {
 .stat-card--orange .stat-icon {
   background: #fef3e2;
   color: #c4714a;
+}
+.stat-card--red .stat-icon {
+  background: #fef2f2;
+  color: #dc2626;
 }
 .stat-card--blue .stat-icon {
   background: #ebf4fb;
