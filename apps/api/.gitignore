@@ -4,3 +4,4 @@ tmp/
 *.swo
 *~
 .DS_Store
+server

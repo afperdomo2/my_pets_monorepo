@@ -46,10 +46,6 @@ const {
         <h1 class="page-title">Vacunas</h1>
         <p class="page-subtitle">Estado de inmunidad de tus mascotas</p>
       </div>
-      <button class="btn-register-vaccine" @click="openModal()">
-        <IconPlus :size="16" :stroke-width="2.5" />
-        Registrar vacuna
-      </button>
     </div>
 
     <!-- Timeline de próximas aplicaciones -->

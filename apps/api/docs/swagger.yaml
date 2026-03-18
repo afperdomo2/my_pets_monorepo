@@ -481,6 +481,33 @@ paths:
       summary: Renovar token de acceso usando la cookie de refresh
       tags:
       - auth
+  /api/v1/dashboard/summary:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'data: DashboardSummary'
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: autenticación requerida
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: mensaje de error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - CookieAuth: []
+      summary: Obtener resumen del dashboard
+      tags:
+      - dashboard
   /api/v1/health-catalogs:
     post:
       consumes:

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import PetAvatar from '@/components/pets/PetAvatar.vue'
+import { useDashboardSummary } from '@/composables/useDashboard'
 import { useGetUpcomingRecordsPaged } from '@/composables/useHealthRecords'
 import { getSpeciesLabel } from '@/constants/species'
 import { useAuthStore } from '@/stores/auth'
@@ -12,25 +13,21 @@ import {
   IconStethoscope,
   IconVaccine,
 } from '@tabler/icons-vue'
-import type { Component } from 'vue'
+import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 
 const authStore = useAuthStore()
 const userName = authStore.user?.name ?? ''
 
-const stats: {
-  label: string
-  value: string
-  change: string
-  positive: boolean
-  icon: Component
-  color: string
-  to: string
-}[] = [
+// Dashboard summary
+const { totalPets, healthyPets, pendingTasks, overdueTasks } = useDashboardSummary()
+
+// Stats computados basados en datos del dashboard
+const stats = computed(() => [
   {
     label: 'Mascotas registradas',
-    value: '12',
-    change: '+2 este mes',
+    value: String(totalPets.value),
+    change: totalPets.value > 0 ? `+${totalPets.value} en total` : 'No hay mascotas registradas',
     positive: true,
     icon: IconPaw,
     color: 'accent',
@@ -38,8 +35,11 @@ const stats: {
   },
   {
     label: 'Mascotas al día',
-    value: '9',
-    change: '75% con salud al día',
+    value: String(healthyPets.value),
+    change:
+      totalPets.value > 0
+        ? `${Math.round((healthyPets.value / totalPets.value) * 100)}% con salud al día`
+        : '0% con salud al día',
     positive: true,
     icon: IconShieldCheck,
     color: 'green',
@@ -47,8 +47,8 @@ const stats: {
   },
   {
     label: 'Tareas pendientes',
-    value: '3',
-    change: 'Próximos 7 días',
+    value: String(pendingTasks.value),
+    change: 'Tareas que están programadas',
     positive: false,
     icon: IconAlertTriangle,
     color: 'orange',
@@ -56,14 +56,14 @@ const stats: {
   },
   {
     label: 'Tareas vencidas',
-    value: '2',
+    value: String(overdueTasks.value),
     change: 'Requieren atención',
     positive: false,
     icon: IconAlertTriangle,
     color: 'red',
     to: '/vaccines',
   },
-]
+])
 
 // API - Próximas tareas de salud (sin filtrar por categoría)
 const { records: upcomingRecords, isLoading, isError, refresh } = useGetUpcomingRecordsPaged(5)
@@ -183,7 +183,11 @@ function isOverdue(dueDate: string): boolean {
           <span class="stat-value">{{ stat.value }}</span>
           <span class="stat-label">{{ stat.label }}</span>
         </div>
-        <span class="stat-change" :class="{ 'stat-change--negative': !stat.positive }">
+        <span
+          v-if="stat.change"
+          class="stat-change"
+          :class="{ 'stat-change--negative': !stat.positive }"
+        >
           {{ stat.change }}
         </span>
       </RouterLink>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { IconCheck, IconClock, IconAlertTriangle } from '@tabler/icons-vue'
 import { useGetAllHealthRecords } from '@/composables/useHealthRecords'
 import type { HealthRecordStatusType } from '@/constants/healthRecord'
 import { HealthRecordStatus } from '@/constants/healthRecord'
@@ -17,10 +18,10 @@ const records = computed(() => data.value?.data ?? [])
 const total = computed(() => data.value?.total ?? 0)
 const totalPages = computed(() => data.value?.total_pages ?? 0)
 
-const STATUS_CONFIG: Record<HealthRecordStatusType, { label: string; className: string }> = {
-  [HealthRecordStatus.Applied]: { label: 'Aplicada', className: 'status--uptodate' },
-  [HealthRecordStatus.Pending]: { label: 'Pendiente', className: 'status--upcoming' },
-  [HealthRecordStatus.Overdue]: { label: 'Vencida', className: 'status--overdue' },
+const STATUS_CONFIG: Record<HealthRecordStatusType, { label: string; className: string; icon: typeof IconCheck }> = {
+  [HealthRecordStatus.Applied]: { label: 'Aplicada', className: 'status--uptodate', icon: IconCheck },
+  [HealthRecordStatus.Pending]: { label: 'Pendiente', className: 'status--upcoming', icon: IconClock },
+  [HealthRecordStatus.Overdue]: { label: 'Vencida', className: 'status--overdue', icon: IconAlertTriangle },
 }
 
 function formatDate(dateStr: string | null): string {
@@ -60,7 +61,14 @@ function formatDate(dateStr: string | null): string {
               </div>
             </td>
             <td>
-              <span class="vaccine-cell">{{ record.name }}</span>
+              <div class="vaccine-cell">
+                <span class="vaccine-name">{{ record.name }}</span>
+                <span
+                  v-if="record.notes"
+                  class="vaccine-note"
+                  :title="record.notes"
+                >{{ record.notes }}</span>
+              </div>
             </td>
             <td class="td-center">
               <span class="date-cell">{{ formatDate(record.application_date) }}</span>
@@ -70,6 +78,11 @@ function formatDate(dateStr: string | null): string {
             </td>
             <td class="td-center">
               <span class="status-badge" :class="STATUS_CONFIG[record.status as HealthRecordStatusType]?.className">
+                <component
+                  :is="STATUS_CONFIG[record.status as HealthRecordStatusType]?.icon"
+                  :size="12"
+                  :stroke-width="2.5"
+                />
                 {{ STATUS_CONFIG[record.status as HealthRecordStatusType]?.label }}
               </span>
             </td>
@@ -95,18 +108,26 @@ function formatDate(dateStr: string | null): string {
           <PetAvatar :species="record.pet.species" :name="record.pet.name" size="sm" />
           <span class="record-card__vaccine">{{ record.pet.name }} — {{ record.name }}</span>
         </div>
-        <div class="record-card__dates">
-          <div class="record-card__date-item">
-            <span class="record-card__date-label">Aplicada</span>
-            <span class="record-card__date-value">{{ formatDate(record.application_date) }}</span>
+          <div class="record-card__dates">
+            <div class="record-card__date-item">
+              <span class="record-card__date-label">Aplicada</span>
+              <span class="record-card__date-value">{{ formatDate(record.application_date) }}</span>
+            </div>
+            <div class="record-card__date-item">
+              <span class="record-card__date-label">Próxima</span>
+              <span class="record-card__date-value">{{ formatDate(record.due_date) }}</span>
+            </div>
           </div>
-          <div class="record-card__date-item">
-            <span class="record-card__date-label">Próxima</span>
-            <span class="record-card__date-value">{{ formatDate(record.due_date) }}</span>
-          </div>
-        </div>
+          <p v-if="record.notes" class="record-card__note" :title="record.notes">
+            {{ record.notes }}
+          </p>
         <div class="record-card__status">
           <span class="status-badge" :class="STATUS_CONFIG[record.status as HealthRecordStatusType]?.className">
+            <component
+              :is="STATUS_CONFIG[record.status as HealthRecordStatusType]?.icon"
+              :size="12"
+              :stroke-width="2.5"
+            />
             {{ STATUS_CONFIG[record.status as HealthRecordStatusType]?.label }}
           </span>
         </div>
@@ -240,8 +261,25 @@ function formatDate(dateStr: string | null): string {
 }
 
 .vaccine-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.vaccine-name {
   font-size: var(--text-sm);
   color: var(--color-text-primary);
+  font-weight: 500;
+}
+
+.vaccine-note {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.4;
 }
 
 .date-cell {
@@ -254,6 +292,7 @@ function formatDate(dateStr: string | null): string {
 .status-badge {
   display: inline-flex;
   align-items: center;
+  gap: 4px;
   padding: 3px var(--space-3);
   border-radius: var(--radius-full);
   font-size: var(--text-xs);
@@ -346,6 +385,17 @@ function formatDate(dateStr: string | null): string {
   .record-card__date-value {
     font-size: var(--text-xs);
     color: var(--color-text-secondary);
+  }
+
+  .record-card__note {
+    font-size: var(--text-xs);
+    color: var(--color-text-tertiary);
+    margin: 0;
+    line-height: 1.4;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    grid-column: 1;
   }
 
   .record-card__status {

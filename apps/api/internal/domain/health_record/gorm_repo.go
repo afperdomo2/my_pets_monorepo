@@ -91,7 +91,7 @@ func (r *gormRepo) GetByPetIDAndCategory(ctx context.Context, petID, category, o
 	}
 
 	offset := (page - 1) * perPage
-	if err := base.Preload("Pet").Order("due_date ASC").Limit(perPage).Offset(offset).Find(&records).Error; err != nil {
+	if err := base.Preload("Pet").Order("created_at DESC").Limit(perPage).Offset(offset).Find(&records).Error; err != nil {
 		return nil, 0, fmt.Errorf("health_record.GetByPetIDAndCategory: %w", err)
 	}
 

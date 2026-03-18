@@ -9,6 +9,7 @@ import (
 	"github.com/my-pets/api/internal/config"
 	"github.com/my-pets/api/internal/database"
 	domainAuth "github.com/my-pets/api/internal/domain/auth"
+	"github.com/my-pets/api/internal/domain/dashboard"
 	"github.com/my-pets/api/internal/domain/health"
 	healthCatalog "github.com/my-pets/api/internal/domain/health_catalog"
 	healthRecord "github.com/my-pets/api/internal/domain/health_record"
@@ -87,6 +88,11 @@ func Run(cfg *config.Config, db *gorm.DB) {
 		healthRecordRepo := healthRecord.NewGormRepo(db)
 		healthRecordHandler := healthRecord.NewHandler(healthRecordRepo, healthCatalogRepo)
 		healthRecord.RegisterRoutes(protected, healthRecordHandler)
+
+		// Dashboard domain (resumen para dashboard)
+		dashboardRepo := dashboard.NewGormRepo(db)
+		dashboardHandler := dashboard.NewHandler(dashboardRepo)
+		dashboard.RegisterRoutes(protected, dashboardHandler)
 	}
 
 	log.Printf("Server running on :%s", cfg.Port)

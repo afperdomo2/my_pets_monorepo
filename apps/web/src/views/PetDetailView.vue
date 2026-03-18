@@ -4,11 +4,13 @@ import { useRoute, RouterLink } from 'vue-router'
 import { IconArrowLeft, IconEdit, IconTrash, IconPaw, IconVaccine, IconPill, IconStethoscope } from '@tabler/icons-vue'
 import { useGetPet, useDeletePet } from '@/composables/usePets'
 import PetFormModal from '@/components/pets/PetFormModal.vue'
+import ConfirmDeleteModal from '@/components/pets/ConfirmDeleteModal.vue'
 import { calcAge, formatAge, formatBirthDate, formatWeight, isBirthdayToday, lifeStageLabel } from '@/utils/pet'
 
 const route = useRoute()
 const id = String(route.params.id)
 const showEditModal = ref(false)
+const showConfirmDelete = ref(false)
 
 const { data: pet, isLoading, isError } = useGetPet(id)
 const deletePet = useDeletePet()
@@ -63,9 +65,13 @@ function lifeStageStyle(stage: string) {
   return LIFE_STAGE_COLORS[stage] ?? { bg: 'var(--color-bg-alt)', text: 'var(--color-text-secondary)' }
 }
 
+function openDeleteConfirm() {
+  showConfirmDelete.value = true
+}
+
 async function handleDelete() {
-  if (!confirm(`¿Eliminar a ${pet.value?.name}? Esta acción no se puede deshacer.`)) return
   await deletePet.mutateAsync(id)
+  showConfirmDelete.value = false
   window.location.href = '/pets'
 }
 
@@ -172,7 +178,7 @@ const TABS = [
                 <IconEdit :size="15" :stroke-width="2" />
                 Editar
               </button>
-              <button class="btn-delete" :disabled="deletePet.isPending.value" @click="handleDelete">
+              <button class="btn-delete" :disabled="deletePet.isPending.value" @click="openDeleteConfirm">
                 <span v-if="deletePet.isPending.value" class="spinner-sm" />
                 <IconTrash v-else :size="15" :stroke-width="2" />
                 Eliminar
@@ -221,6 +227,14 @@ const TABS = [
       v-model="showEditModal"
       mode="edit"
       :pet="pet"
+    />
+
+    <!-- Delete confirmation modal -->
+    <ConfirmDeleteModal
+      v-model="showConfirmDelete"
+      :pet="pet"
+      :deleting="deletePet.isPending.value"
+      @confirm="handleDelete"
     />
   </div>
 </template>
