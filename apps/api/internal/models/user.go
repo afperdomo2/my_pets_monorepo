@@ -24,4 +24,7 @@ type User struct {
 	PetLimit     int          `json:"pet_limit"      gorm:"not null;default:5"`
 	CreatedAt    time.Time    `json:"created_at" gorm:"type:timestamptz;not null;default:now()"`
 	UpdatedAt    time.Time    `json:"updated_at" gorm:"type:timestamptz;not null;default:now()"`
+
+	// Relaciones
+	Exams []Exam `json:"-" gorm:"foreignKey:UserID"`
 }

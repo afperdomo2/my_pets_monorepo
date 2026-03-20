@@ -41,6 +41,87 @@ definitions:
     - email
     - name
     type: object
+  exam.CompletePayload:
+    properties:
+      completed_date:
+        type: string
+      results:
+        items:
+          $ref: '#/definitions/exam.ResultPayload'
+        type: array
+    required:
+    - completed_date
+    type: object
+  exam.CreatePayload:
+    properties:
+      completed_date:
+        type: string
+      name:
+        maxLength: 100
+        minLength: 1
+        type: string
+      notes:
+        maxLength: 1000
+        type: string
+      pet_id:
+        type: string
+      reason:
+        maxLength: 1000
+        type: string
+      results:
+        items:
+          $ref: '#/definitions/exam.ResultPayload'
+        type: array
+      scheduled_date:
+        type: string
+      status:
+        enum:
+        - scheduled
+        - completed
+        type: string
+    required:
+    - name
+    - pet_id
+    type: object
+  exam.ResultPayload:
+    properties:
+      parameter_name:
+        maxLength: 100
+        minLength: 1
+        type: string
+      unit:
+        maxLength: 50
+        type: string
+      value:
+        maxLength: 100
+        minLength: 1
+        type: string
+    required:
+    - parameter_name
+    - value
+    type: object
+  exam.SchedulePayload:
+    properties:
+      scheduled_date:
+        type: string
+    required:
+    - scheduled_date
+    type: object
+  exam.UpdatePayload:
+    properties:
+      name:
+        maxLength: 100
+        minLength: 1
+        type: string
+      notes:
+        maxLength: 1000
+        type: string
+      reason:
+        maxLength: 1000
+        type: string
+      scheduled_date:
+        type: string
+    type: object
   health_catalog.CreateHealthCatalogPayload:
     properties:
       category:
@@ -111,27 +192,20 @@ definitions:
         enum:
         - vaccine
         - deworming
-        - exam
-        type: string
-      due_date:
         type: string
       health_catalog_id:
         type: string
       name:
         maxLength: 100
         type: string
+      next_dose_date:
+        type: string
       notes:
         maxLength: 1000
         type: string
       pet_id:
         type: string
-      status:
-        enum:
-        - pending
-        - applied
-        type: string
     required:
-    - due_date
     - pet_id
     type: object
   health_record.UpdateHealthRecordPayload:
@@ -142,38 +216,19 @@ definitions:
         enum:
         - vaccine
         - deworming
-        - exam
-        type: string
-      due_date:
         type: string
       name:
         maxLength: 100
         minLength: 1
         type: string
+      next_dose_date:
+        type: string
       notes:
         maxLength: 1000
         type: string
-      status:
-        enum:
-        - pending
-        - applied
-        type: string
     required:
     - category
-    - due_date
     - name
-    type: object
-  health_record.UpdateStatusPayload:
-    properties:
-      application_date:
-        type: string
-      status:
-        enum:
-        - pending
-        - applied
-        type: string
-    required:
-    - status
     type: object
   pet.CreatePetPayload:
     properties:
@@ -276,6 +331,27 @@ definitions:
     required:
     - email
     - name
+    type: object
+  vaccine_application.CreatePayload:
+    properties:
+      application_date:
+        type: string
+      health_record_id:
+        type: string
+      notes:
+        maxLength: 1000
+        type: string
+    required:
+    - application_date
+    - health_record_id
+    type: object
+  vaccine_application.UpdatePayload:
+    properties:
+      application_date:
+        type: string
+      notes:
+        maxLength: 1000
+        type: string
     type: object
 host: localhost:8080
 info:
@@ -508,6 +584,386 @@ paths:
       summary: Obtener resumen del dashboard
       tags:
       - dashboard
+  /api/v1/exams:
+    get:
+      parameters:
+      - description: Número de página (por defecto 1)
+        in: query
+        name: page
+        type: integer
+      - description: Elementos por página (por defecto 10)
+        in: query
+        name: per_page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'data: []Exam, total: int, page: int, per_page: int, total_pages:
+            int'
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: autenticación requerida
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: mensaje de error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - CookieAuth: []
+      summary: Listar todos los exámenes del usuario (paginado)
+      tags:
+      - exams
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Datos del examen
+        in: body
+        name: exam
+        required: true
+        schema:
+          $ref: '#/definitions/exam.CreatePayload'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: 'data: Exam'
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: error de validación
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: autenticación requerida
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: mascota no encontrada
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: mensaje de error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - CookieAuth: []
+      summary: Crear un examen
+      tags:
+      - exams
+  /api/v1/exams/{id}:
+    delete:
+      parameters:
+      - description: ID del examen
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'message: examen eliminado'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: id inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: autenticación requerida
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: examen no encontrado
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: mensaje de error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - CookieAuth: []
+      summary: Eliminar un examen
+      tags:
+      - exams
+    get:
+      parameters:
+      - description: ID del examen
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'data: Exam, results: []ExamResult'
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: id inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: autenticación requerida
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: examen no encontrado
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: mensaje de error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - CookieAuth: []
+      summary: Obtener examen por ID con resultados
+      tags:
+      - exams
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID del examen
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Datos del examen
+        in: body
+        name: exam
+        required: true
+        schema:
+          $ref: '#/definitions/exam.UpdatePayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'data: Exam'
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: error de validación
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: autenticación requerida
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: examen no encontrado
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: mensaje de error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - CookieAuth: []
+      summary: Actualizar un examen
+      tags:
+      - exams
+  /api/v1/exams/{id}/complete:
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID del examen
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Fecha de completado y resultados
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/exam.CompletePayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'data: Exam'
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: error de validación
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: autenticación requerida
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: examen no encontrado
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: mensaje de error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - CookieAuth: []
+      summary: Completar un examen
+      tags:
+      - exams
+  /api/v1/exams/{id}/schedule:
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID del examen
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Fecha programada
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/exam.SchedulePayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'data: Exam'
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: error de validación
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: autenticación requerida
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: examen no encontrado
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: mensaje de error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - CookieAuth: []
+      summary: Programar un examen
+      tags:
+      - exams
+  /api/v1/exams/pets/{pet_id}:
+    get:
+      parameters:
+      - description: ID de la mascota
+        in: path
+        name: pet_id
+        required: true
+        type: string
+      - description: Número de página (por defecto 1)
+        in: query
+        name: page
+        type: integer
+      - description: Elementos por página (por defecto 10)
+        in: query
+        name: per_page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'data: []Exam, total: int, page: int, per_page: int, total_pages:
+            int'
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: pet_id inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: autenticación requerida
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: mensaje de error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - CookieAuth: []
+      summary: Listar exámenes de una mascota (paginado)
+      tags:
+      - exams
   /api/v1/health-catalogs:
     post:
       consumes:
@@ -986,59 +1442,6 @@ paths:
       security:
       - CookieAuth: []
       summary: Actualizar un registro de salud
-      tags:
-      - health-records
-  /api/v1/health-records/{record_id}/status:
-    patch:
-      consumes:
-      - application/json
-      parameters:
-      - description: ID del registro de salud
-        in: path
-        name: record_id
-        required: true
-        type: string
-      - description: Nuevo status
-        in: body
-        name: status
-        required: true
-        schema:
-          $ref: '#/definitions/health_record.UpdateStatusPayload'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 'data: HealthRecord'
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: error de validación
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "401":
-          description: autenticación requerida
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "404":
-          description: registro no encontrado
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: mensaje de error
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      security:
-      - CookieAuth: []
-      summary: Actualizar el status de un registro de salud
       tags:
       - health-records
   /api/v1/health-records/pets/{pet_id}:
@@ -1731,6 +2134,229 @@ paths:
       summary: Actualizar un usuario existente
       tags:
       - users
+  /api/v1/vaccine-applications:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Datos de la aplicación
+        in: body
+        name: app
+        required: true
+        schema:
+          $ref: '#/definitions/vaccine_application.CreatePayload'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: 'data: VaccineApplication'
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: error de validación
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: autenticación requerida
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: mensaje de error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - CookieAuth: []
+      summary: Crear una aplicación de vacuna
+      tags:
+      - vaccine-applications
+  /api/v1/vaccine-applications/{id}:
+    delete:
+      parameters:
+      - description: ID de la aplicación
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'message: aplicación eliminada'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: id inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: autenticación requerida
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: aplicación no encontrada
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: mensaje de error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - CookieAuth: []
+      summary: Eliminar una aplicación de vacuna
+      tags:
+      - vaccine-applications
+    get:
+      parameters:
+      - description: ID de la aplicación
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'data: VaccineApplication'
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: id inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: autenticación requerida
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: aplicación no encontrada
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: mensaje de error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - CookieAuth: []
+      summary: Obtener aplicación por ID
+      tags:
+      - vaccine-applications
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: ID de la aplicación
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Datos de la aplicación
+        in: body
+        name: app
+        required: true
+        schema:
+          $ref: '#/definitions/vaccine_application.UpdatePayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'data: VaccineApplication'
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: error de validación
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: autenticación requerida
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: aplicación no encontrada
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: mensaje de error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - CookieAuth: []
+      summary: Actualizar una aplicación de vacuna
+      tags:
+      - vaccine-applications
+  /api/v1/vaccine-applications/health-record/{id}:
+    get:
+      parameters:
+      - description: ID del health_record
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'data: []VaccineApplication'
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: id inválido
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: autenticación requerida
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: mensaje de error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - CookieAuth: []
+      summary: Listar aplicaciones de un registro de salud
+      tags:
+      - vaccine-applications
   /health:
     get:
       produces:

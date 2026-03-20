@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { ref, computed, type Ref } from 'vue'
 import { useRoute } from 'vue-router'
-import { IconPlus, IconPill, IconDroplet, IconCheck, IconClock, IconAlertTriangle } from '@tabler/icons-vue'
-import { useGetHealthRecordsByPetAndCategory, useUpdateHealthRecordStatus } from '@/composables/useHealthRecords'
+import { IconPlus, IconPill, IconDroplet } from '@tabler/icons-vue'
+import { useGetHealthRecordsByPetAndCategory } from '@/composables/useHealthRecords'
 import { useGetPet } from '@/composables/usePets'
-import { HealthRecordStatus, HealthCatalogCategory } from '@/constants/healthRecord'
+import { HealthCatalogCategory } from '@/constants/healthRecord'
 import type { HealthRecord } from '@/types'
 import HealthRecordFormModal from '@/components/health-tabs/HealthRecordFormModal.vue'
 
@@ -25,12 +25,6 @@ const { data, isLoading, isError, refresh } = useGetHealthRecordsByPetAndCategor
 )
 
 const records = computed(() => data.value?.data ?? [])
-
-const STATUS_CONFIG = {
-  [HealthRecordStatus.Applied]: { label: 'Aplicado', className: 'status--uptodate', icon: IconCheck },
-  [HealthRecordStatus.Pending]: { label: 'Pendiente', className: 'status--upcoming', icon: IconClock },
-  [HealthRecordStatus.Overdue]: { label: 'Vencido', className: 'status--overdue', icon: IconAlertTriangle },
-}
 
 function formatDate(dateStr: string | null): string {
   if (!dateStr) return '—'
@@ -55,17 +49,6 @@ function openEdit(record: HealthRecord) {
   editingRecord.value = record
   showCreateModal.value = true
 }
-
-async function markAsApplied(record: HealthRecord) {
-  const updateStatus = useUpdateHealthRecordStatus()
-  await updateStatus.mutateAsync({
-    id: record.id,
-    payload: {
-      status: HealthRecordStatus.Applied,
-      application_date: new Date().toISOString().split('T')[0],
-    },
-  })
-}
 </script>
 
 <template>
@@ -81,22 +64,6 @@ async function markAsApplied(record: HealthRecord) {
           <IconPlus :size="16" :stroke-width="2.5" />
           Registrar aplicación
         </button>
-      </div>
-
-      <!-- Quick action: Mark today -->
-      <div class="quick-action">
-        <div class="quick-action-card">
-          <div class="quick-action-icon">
-            <IconCheck :size="20" :stroke-width="2" />
-          </div>
-          <div class="quick-action-content">
-            <span class="quick-action-title">Aplicación de hoy</span>
-            <span class="quick-action-desc">¿Aplicaste algún antiparasitario hoy?</span>
-          </div>
-          <button class="btn-quick-action" @click="openCreate">
-            Registrar
-          </button>
-        </div>
       </div>
 
       <!-- Loading -->
@@ -148,36 +115,14 @@ async function markAsApplied(record: HealthRecord) {
               </span>
               <span class="record-date">
                 <span class="record-date-label">Próxima:</span>
-                {{ formatDate(record.due_date) }}
+                {{ formatDate(record.next_dose_date) }}
               </span>
             </div>
           </div>
 
-          <div class="record-status">
-            <span
-              class="status-badge"
-              :class="STATUS_CONFIG[record.status as keyof typeof STATUS_CONFIG]?.className"
-            >
-              <component
-                :is="STATUS_CONFIG[record.status as keyof typeof STATUS_CONFIG]?.icon"
-                :size="12"
-                :stroke-width="2.5"
-              />
-              {{ STATUS_CONFIG[record.status as keyof typeof STATUS_CONFIG]?.label }}
-            </span>
-          </div>
-
           <div class="record-actions">
-            <button
-              v-if="record.status === HealthRecordStatus.Pending"
-              class="btn-mark-applied"
-              title="Marcar como aplicado hoy"
-              @click="markAsApplied(record)"
-            >
-              <IconCheck :size="14" :stroke-width="2.5" />
-            </button>
             <button class="btn-edit-record" title="Editar" @click="openEdit(record)">
-              ✏️
+              ✏️ Editar
             </button>
           </div>
         </div>

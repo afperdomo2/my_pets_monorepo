@@ -12,6 +12,8 @@ export * from './user'
 export * from './healthRecord'
 export * from './healthCatalog'
 export * from './dashboard'
+export * from './vaccineApplication'
+export * from './exam'
 // Auth se exporta al final para evitar conflictos con user.ts
 export type {
   LoginCredentials,

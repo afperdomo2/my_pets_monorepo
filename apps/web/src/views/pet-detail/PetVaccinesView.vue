@@ -5,15 +5,12 @@ import {
   IconPlus,
   IconRefresh,
   IconVaccine,
-  IconCheck,
-  IconClock,
-  IconAlertTriangle,
   IconPencil,
   IconTrash,
 } from '@tabler/icons-vue'
 import { useGetHealthRecordsByPetAndCategory } from '@/composables/useHealthRecords'
 import { useGetPet } from '@/composables/usePets'
-import { HealthRecordStatus, HealthCatalogCategory } from '@/constants/healthRecord'
+import { HealthCatalogCategory } from '@/constants/healthRecord'
 import type { HealthRecord } from '@/types'
 import AppPagination from '@/components/ui/AppPagination.vue'
 import PerPageSelector from '@/components/ui/PerPageSelector.vue'
@@ -39,12 +36,6 @@ const { data, isLoading, isError, refresh } = useGetHealthRecordsByPetAndCategor
 const records = computed(() => data.value?.data ?? [])
 const total = computed(() => data.value?.total ?? 0)
 const totalPages = computed(() => data.value?.total_pages ?? 0)
-
-const STATUS_CONFIG = {
-  [HealthRecordStatus.Applied]: { label: 'Aplicada', className: 'status--uptodate', icon: IconCheck },
-  [HealthRecordStatus.Pending]: { label: 'Pendiente', className: 'status--upcoming', icon: IconClock },
-  [HealthRecordStatus.Overdue]: { label: 'Vencida', className: 'status--overdue', icon: IconAlertTriangle },
-}
 
 function formatDate(dateStr: string | null): string {
   if (!dateStr) return '—'
@@ -97,7 +88,6 @@ function openEdit(record: HealthRecord) {
               <th>Vacuna</th>
               <th class="th-center">Fecha aplicación</th>
               <th class="th-center">Próxima dosis</th>
-              <th class="th-center">Estado</th>
               <th class="th-center">Acciones</th>
             </tr>
           </thead>
@@ -118,20 +108,7 @@ function openEdit(record: HealthRecord) {
               </td>
               <td class="td-center">
                 <span class="date-cell">
-                  {{ formatDate(record.due_date) }}
-                </span>
-              </td>
-              <td class="td-center">
-                <span
-                  class="status-badge"
-                  :class="STATUS_CONFIG[record.status as keyof typeof STATUS_CONFIG]?.className"
-                >
-                  <component
-                    :is="STATUS_CONFIG[record.status as keyof typeof STATUS_CONFIG]?.icon"
-                    :size="12"
-                    :stroke-width="2.5"
-                  />
-                  {{ STATUS_CONFIG[record.status as keyof typeof STATUS_CONFIG]?.label }}
+                  {{ formatDate(record.next_dose_date) }}
                 </span>
               </td>
               <td class="td-center">
@@ -178,17 +155,6 @@ function openEdit(record: HealthRecord) {
         <div v-for="record in records" :key="`card-${record.id}`" class="record-card">
           <div class="record-card__top">
             <span class="record-card__vaccine">{{ record.name }}</span>
-            <span
-              class="status-badge"
-              :class="STATUS_CONFIG[record.status as keyof typeof STATUS_CONFIG]?.className"
-            >
-              <component
-                :is="STATUS_CONFIG[record.status as keyof typeof STATUS_CONFIG]?.icon"
-                :size="12"
-                :stroke-width="2.5"
-              />
-              {{ STATUS_CONFIG[record.status as keyof typeof STATUS_CONFIG]?.label }}
-            </span>
           </div>
           <div class="record-card__dates">
             <div class="record-card__date-item">
@@ -198,7 +164,7 @@ function openEdit(record: HealthRecord) {
             <div class="record-card__date-item">
               <span class="record-card__date-label">Próxima</span>
               <span class="record-card__date-value">
-                {{ formatDate(record.due_date) }}
+                {{ formatDate(record.next_dose_date) }}
               </span>
             </div>
           </div>

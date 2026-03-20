@@ -33,16 +33,13 @@ type Repository interface {
 	// Update actualiza todos los campos editables de un registro. No permite cambiar pet_id.
 	Update(ctx context.Context, id, ownerID string, payload UpdateHealthRecordPayload) (models.HealthRecord, error)
 
-	// UpdateStatus actualiza únicamente el campo status de un registro.
-	UpdateStatus(ctx context.Context, id, ownerID string, payload UpdateStatusPayload) (models.HealthRecord, error)
-
 	// Delete elimina un registro de salud validando que pertenezca al usuario.
 	Delete(ctx context.Context, id, ownerID string) error
 
-	// GetUpcomingRecords retorna los próximos registros pendientes de aplicación del usuario.
+	// GetUpcomingRecords retorna los próximos registros con próxima dosis programada del usuario.
 	// Si category no está vacío, filtra por esa categoría.
 	// Soporta paginación estándar: page y perPage definen la página a obtener.
-	// Los registros se ordenan por due_date ASC (los más próximos primero).
+	// Los registros se ordenan por next_dose_date ASC (los más próximos primero).
 	// Retorna los registros, el total de registros disponibles y un error si ocurre.
 	GetUpcomingRecords(ctx context.Context, ownerID, category string, page, perPage int) ([]models.HealthRecord, int64, error)
 }

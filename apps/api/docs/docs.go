@@ -369,6 +369,593 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/exams": {
+            "get": {
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "exams"
+                ],
+                "summary": "Listar todos los exámenes del usuario (paginado)",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Número de página (por defecto 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Elementos por página (por defecto 10)",
+                        "name": "per_page",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "data: []Exam, total: int, page: int, per_page: int, total_pages: int",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "autenticación requerida",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "mensaje de error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "exams"
+                ],
+                "summary": "Crear un examen",
+                "parameters": [
+                    {
+                        "description": "Datos del examen",
+                        "name": "exam",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/exam.CreatePayload"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "data: Exam",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "error de validación",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "autenticación requerida",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "mascota no encontrada",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "mensaje de error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/exams/pets/{pet_id}": {
+            "get": {
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "exams"
+                ],
+                "summary": "Listar exámenes de una mascota (paginado)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID de la mascota",
+                        "name": "pet_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Número de página (por defecto 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Elementos por página (por defecto 10)",
+                        "name": "per_page",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "data: []Exam, total: int, page: int, per_page: int, total_pages: int",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "pet_id inválido",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "autenticación requerida",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "mensaje de error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/exams/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "exams"
+                ],
+                "summary": "Obtener examen por ID con resultados",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID del examen",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "data: Exam, results: []ExamResult",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "id inválido",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "autenticación requerida",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "examen no encontrado",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "mensaje de error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "exams"
+                ],
+                "summary": "Actualizar un examen",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID del examen",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Datos del examen",
+                        "name": "exam",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/exam.UpdatePayload"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "data: Exam",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "error de validación",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "autenticación requerida",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "examen no encontrado",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "mensaje de error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "exams"
+                ],
+                "summary": "Eliminar un examen",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID del examen",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "message: examen eliminado",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "id inválido",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "autenticación requerida",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "examen no encontrado",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "mensaje de error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/exams/{id}/complete": {
+            "patch": {
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "exams"
+                ],
+                "summary": "Completar un examen",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID del examen",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Fecha de completado y resultados",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/exam.CompletePayload"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "data: Exam",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "error de validación",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "autenticación requerida",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "examen no encontrado",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "mensaje de error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/exams/{id}/schedule": {
+            "patch": {
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "exams"
+                ],
+                "summary": "Programar un examen",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID del examen",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Fecha programada",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/exam.SchedulePayload"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "data: Exam",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "error de validación",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "autenticación requerida",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "examen no encontrado",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "mensaje de error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/health-catalogs": {
             "post": {
                 "security": [
@@ -1336,88 +1923,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/health-records/{record_id}/status": {
-            "patch": {
-                "security": [
-                    {
-                        "CookieAuth": []
-                    }
-                ],
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "health-records"
-                ],
-                "summary": "Actualizar el status de un registro de salud",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "ID del registro de salud",
-                        "name": "record_id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Nuevo status",
-                        "name": "status",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/health_record.UpdateStatusPayload"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "data: HealthRecord",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "error de validación",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "autenticación requerida",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "registro no encontrado",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "mensaje de error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
         "/api/v1/pets": {
             "get": {
                 "security": [
@@ -2256,6 +2761,353 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/vaccine-applications": {
+            "post": {
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "vaccine-applications"
+                ],
+                "summary": "Crear una aplicación de vacuna",
+                "parameters": [
+                    {
+                        "description": "Datos de la aplicación",
+                        "name": "app",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/vaccine_application.CreatePayload"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "data: VaccineApplication",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "error de validación",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "autenticación requerida",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "mensaje de error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/vaccine-applications/health-record/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "vaccine-applications"
+                ],
+                "summary": "Listar aplicaciones de un registro de salud",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID del health_record",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "data: []VaccineApplication",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "id inválido",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "autenticación requerida",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "mensaje de error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/vaccine-applications/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "vaccine-applications"
+                ],
+                "summary": "Obtener aplicación por ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID de la aplicación",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "data: VaccineApplication",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "id inválido",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "autenticación requerida",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "aplicación no encontrada",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "mensaje de error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "vaccine-applications"
+                ],
+                "summary": "Actualizar una aplicación de vacuna",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID de la aplicación",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Datos de la aplicación",
+                        "name": "app",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/vaccine_application.UpdatePayload"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "data: VaccineApplication",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "error de validación",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "autenticación requerida",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "aplicación no encontrada",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "mensaje de error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "CookieAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "vaccine-applications"
+                ],
+                "summary": "Eliminar una aplicación de vacuna",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID de la aplicación",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "message: aplicación eliminada",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "id inválido",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "autenticación requerida",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "aplicación no encontrada",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "mensaje de error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/health": {
             "get": {
                 "produces": [
@@ -2334,6 +3186,122 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 100,
                     "minLength": 2
+                }
+            }
+        },
+        "exam.CompletePayload": {
+            "type": "object",
+            "required": [
+                "completed_date"
+            ],
+            "properties": {
+                "completed_date": {
+                    "type": "string"
+                },
+                "results": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/exam.ResultPayload"
+                    }
+                }
+            }
+        },
+        "exam.CreatePayload": {
+            "type": "object",
+            "required": [
+                "name",
+                "pet_id"
+            ],
+            "properties": {
+                "completed_date": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 1
+                },
+                "notes": {
+                    "type": "string",
+                    "maxLength": 1000
+                },
+                "pet_id": {
+                    "type": "string"
+                },
+                "reason": {
+                    "type": "string",
+                    "maxLength": 1000
+                },
+                "results": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/exam.ResultPayload"
+                    }
+                },
+                "scheduled_date": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "scheduled",
+                        "completed"
+                    ]
+                }
+            }
+        },
+        "exam.ResultPayload": {
+            "type": "object",
+            "required": [
+                "parameter_name",
+                "value"
+            ],
+            "properties": {
+                "parameter_name": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 1
+                },
+                "unit": {
+                    "type": "string",
+                    "maxLength": 50
+                },
+                "value": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 1
+                }
+            }
+        },
+        "exam.SchedulePayload": {
+            "type": "object",
+            "required": [
+                "scheduled_date"
+            ],
+            "properties": {
+                "scheduled_date": {
+                    "type": "string"
+                }
+            }
+        },
+        "exam.UpdatePayload": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 1
+                },
+                "notes": {
+                    "type": "string",
+                    "maxLength": 1000
+                },
+                "reason": {
+                    "type": "string",
+                    "maxLength": 1000
+                },
+                "scheduled_date": {
+                    "type": "string"
                 }
             }
         },
@@ -2424,7 +3392,6 @@ const docTemplate = `{
         "health_record.CreateHealthRecordPayload": {
             "type": "object",
             "required": [
-                "due_date",
                 "pet_id"
             ],
             "properties": {
@@ -2435,12 +3402,8 @@ const docTemplate = `{
                     "type": "string",
                     "enum": [
                         "vaccine",
-                        "deworming",
-                        "exam"
+                        "deworming"
                     ]
-                },
-                "due_date": {
-                    "type": "string"
                 },
                 "health_catalog_id": {
                     "type": "string"
@@ -2449,19 +3412,15 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 100
                 },
+                "next_dose_date": {
+                    "type": "string"
+                },
                 "notes": {
                     "type": "string",
                     "maxLength": 1000
                 },
                 "pet_id": {
                     "type": "string"
-                },
-                "status": {
-                    "type": "string",
-                    "enum": [
-                        "pending",
-                        "applied"
-                    ]
                 }
             }
         },
@@ -2469,7 +3428,6 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "category",
-                "due_date",
                 "name"
             ],
             "properties": {
@@ -2480,46 +3438,20 @@ const docTemplate = `{
                     "type": "string",
                     "enum": [
                         "vaccine",
-                        "deworming",
-                        "exam"
+                        "deworming"
                     ]
-                },
-                "due_date": {
-                    "type": "string"
                 },
                 "name": {
                     "type": "string",
                     "maxLength": 100,
                     "minLength": 1
                 },
+                "next_dose_date": {
+                    "type": "string"
+                },
                 "notes": {
                     "type": "string",
                     "maxLength": 1000
-                },
-                "status": {
-                    "type": "string",
-                    "enum": [
-                        "pending",
-                        "applied"
-                    ]
-                }
-            }
-        },
-        "health_record.UpdateStatusPayload": {
-            "type": "object",
-            "required": [
-                "status"
-            ],
-            "properties": {
-                "application_date": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string",
-                    "enum": [
-                        "pending",
-                        "applied"
-                    ]
                 }
             }
         },
@@ -2661,6 +3593,37 @@ const docTemplate = `{
                 "pet_limit": {
                     "type": "integer",
                     "minimum": 0
+                }
+            }
+        },
+        "vaccine_application.CreatePayload": {
+            "type": "object",
+            "required": [
+                "application_date",
+                "health_record_id"
+            ],
+            "properties": {
+                "application_date": {
+                    "type": "string"
+                },
+                "health_record_id": {
+                    "type": "string"
+                },
+                "notes": {
+                    "type": "string",
+                    "maxLength": 1000
+                }
+            }
+        },
+        "vaccine_application.UpdatePayload": {
+            "type": "object",
+            "properties": {
+                "application_date": {
+                    "type": "string"
+                },
+                "notes": {
+                    "type": "string",
+                    "maxLength": 1000
                 }
             }
         }

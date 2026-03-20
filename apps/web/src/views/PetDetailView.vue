@@ -226,13 +226,13 @@ const TABS = [
       v-if="pet"
       v-model="showEditModal"
       mode="edit"
-      :pet="pet"
+      :pet="pet ?? null"
     />
 
     <!-- Delete confirmation modal -->
     <ConfirmDeleteModal
       v-model="showConfirmDelete"
-      :pet="pet"
+      :pet="pet ?? null"
       :deleting="deletePet.isPending.value"
       @confirm="handleDelete"
     />

@@ -72,7 +72,7 @@ func (r *gormRepo) GetByPetID(ctx context.Context, petID, ownerID string, page, 
 	}
 
 	offset := (page - 1) * perPage
-	if err := base.Preload("Pet").Order("due_date ASC").Limit(perPage).Offset(offset).Find(&records).Error; err != nil {
+	if err := base.Preload("Pet").Order("created_at DESC").Limit(perPage).Offset(offset).Find(&records).Error; err != nil {
 		return nil, 0, fmt.Errorf("health_record.GetByPetID: %w", err)
 	}
 
@@ -118,11 +118,6 @@ func (r *gormRepo) Create(ctx context.Context, ownerID string, payload CreateHea
 		return models.HealthRecord{}, err
 	}
 
-	dueDate, err := parseDateString(payload.DueDate)
-	if err != nil {
-		return models.HealthRecord{}, fmt.Errorf("health_record.Create: formato de due_date inválido: %w", err)
-	}
-
 	var applicationDate *time.Time
 	if payload.ApplicationDate != nil {
 		t, err := parseDateString(*payload.ApplicationDate)
@@ -132,9 +127,13 @@ func (r *gormRepo) Create(ctx context.Context, ownerID string, payload CreateHea
 		applicationDate = &t
 	}
 
-	status := "pending"
-	if payload.Status != "" {
-		status = payload.Status
+	var nextDoseDate *time.Time
+	if payload.NextDoseDate != nil {
+		t, err := parseDateString(*payload.NextDoseDate)
+		if err != nil {
+			return models.HealthRecord{}, fmt.Errorf("health_record.Create: formato de next_dose_date inválido: %w", err)
+		}
+		nextDoseDate = &t
 	}
 
 	rec := models.HealthRecord{
@@ -143,9 +142,8 @@ func (r *gormRepo) Create(ctx context.Context, ownerID string, payload CreateHea
 		HealthCatalogID: payload.HealthCatalogID,
 		Category:        payload.Category,
 		Name:            payload.Name,
-		Status:          status,
 		ApplicationDate: applicationDate,
-		DueDate:         dueDate,
+		NextDoseDate:    nextDoseDate,
 		Notes:           payload.Notes,
 	}
 
@@ -165,59 +163,30 @@ func (r *gormRepo) Update(ctx context.Context, id, ownerID string, payload Updat
 		return models.HealthRecord{}, fmt.Errorf("health_record.Update: %w", result.Error)
 	}
 
-	dueDate, err := parseDateString(payload.DueDate)
-	if err != nil {
-		return models.HealthRecord{}, fmt.Errorf("health_record.Update: formato de due_date inválido: %w", err)
-	}
+	rec.Category = payload.Category
+	rec.Name = payload.Name
+	rec.Notes = payload.Notes
 
-	var applicationDate *time.Time
+	// Actualizar application_date si se proporciona
 	if payload.ApplicationDate != nil {
 		t, err := parseDateString(*payload.ApplicationDate)
 		if err != nil {
 			return models.HealthRecord{}, fmt.Errorf("health_record.Update: formato de application_date inválido: %w", err)
 		}
-		applicationDate = &t
+		rec.ApplicationDate = &t
 	}
 
-	rec.Category = payload.Category
-	rec.Name = payload.Name
-	rec.DueDate = dueDate
-	rec.ApplicationDate = applicationDate
-	rec.Notes = payload.Notes
-
-	if payload.Status != "" {
-		rec.Status = payload.Status
+	// Actualizar next_dose_date si se proporciona
+	if payload.NextDoseDate != nil {
+		t, err := parseDateString(*payload.NextDoseDate)
+		if err != nil {
+			return models.HealthRecord{}, fmt.Errorf("health_record.Update: formato de next_dose_date inválido: %w", err)
+		}
+		rec.NextDoseDate = &t
 	}
 
 	if result := r.db.WithContext(ctx).Save(&rec); result.Error != nil {
 		return models.HealthRecord{}, fmt.Errorf("health_record.Update: %w", result.Error)
-	}
-	return rec, nil
-}
-
-func (r *gormRepo) UpdateStatus(ctx context.Context, id, ownerID string, payload UpdateStatusPayload) (models.HealthRecord, error) {
-	var rec models.HealthRecord
-	result := r.db.WithContext(ctx).Where("id = ? AND user_id = ?", id, ownerID).First(&rec)
-	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-		return models.HealthRecord{}, ErrNotFound
-	}
-	if result.Error != nil {
-		return models.HealthRecord{}, fmt.Errorf("health_record.UpdateStatus: %w", result.Error)
-	}
-
-	rec.Status = payload.Status
-
-	// Si se provee application_date, actualizarla.
-	if payload.ApplicationDate != nil {
-		t, err := parseDateString(*payload.ApplicationDate)
-		if err != nil {
-			return models.HealthRecord{}, fmt.Errorf("health_record.UpdateStatus: formato de application_date inválido: %w", err)
-		}
-		rec.ApplicationDate = &t
-	}
-
-	if result := r.db.WithContext(ctx).Save(&rec); result.Error != nil {
-		return models.HealthRecord{}, fmt.Errorf("health_record.UpdateStatus: %w", result.Error)
 	}
 	return rec, nil
 }
@@ -239,10 +208,10 @@ func (r *gormRepo) GetUpcomingRecords(ctx context.Context, ownerID, category str
 	var records []models.HealthRecord
 	var total int64
 
-	// Construir query base: solo pendientes, sin aplicación, del usuario
+	// Construir query base: registros con próxima dosis programada y sin aplicación
 	query := r.db.WithContext(ctx).
 		Model(&models.HealthRecord{}).
-		Where("user_id = ? AND status = 'pending' AND application_date IS NULL", ownerID)
+		Where("user_id = ? AND next_dose_date IS NOT NULL AND application_date IS NULL", ownerID)
 
 	// Filtrar por categoría si se proporciona
 	if category != "" {
@@ -256,7 +225,7 @@ func (r *gormRepo) GetUpcomingRecords(ctx context.Context, ownerID, category str
 	offset := (page - 1) * perPage
 	if err := query.
 		Preload("Pet").
-		Order("due_date ASC").
+		Order("next_dose_date ASC").
 		Limit(perPage).
 		Offset(offset).
 		Find(&records).Error; err != nil {

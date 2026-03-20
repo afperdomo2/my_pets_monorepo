@@ -18,6 +18,7 @@ func NewGormRepo(db *gorm.DB) Repository {
 
 // GetSummary implementa Repository.GetSummary.
 // Ejecuta 4 consultas optimizadas usando el campo user_id para evitar JOINs innecesarios.
+// Nota: Usa next_dose_date y application_date en lugar de status y due_date (eliminados).
 func (r *gormRepo) GetSummary(ctx context.Context, ownerID string) (DashboardSummary, error) {
 	var summary DashboardSummary
 
@@ -28,8 +29,9 @@ func (r *gormRepo) GetSummary(ctx context.Context, ownerID string) (DashboardSum
 	}
 	summary.TotalPets = totalPets
 
-	// 2. Mascotas saludables: pets que NO tienen ningún registro con status 'pending'
+	// 2. Mascotas saludables: pets que NO tienen próxima dosis pendiente
 	// Usamos el campo user_id de health_records para evitar JOINs
+	// Un pet está saludable si no tiene next_dose_date programada o ya está aplicada
 	var healthyPets int64
 	query := `
 		SELECT COUNT(*) FROM pets p
@@ -38,7 +40,8 @@ func (r *gormRepo) GetSummary(ctx context.Context, ownerID string) (DashboardSum
 			SELECT 1 FROM health_records hr
 			WHERE hr.pet_id = p.id
 			AND hr.user_id = ?
-			AND hr.status = 'pending'
+			AND hr.next_dose_date IS NOT NULL
+			AND hr.application_date IS NULL
 		)
 	`
 	if err := r.db.Raw(query, ownerID, ownerID).Scan(&healthyPets).Error; err != nil {
@@ -46,21 +49,21 @@ func (r *gormRepo) GetSummary(ctx context.Context, ownerID string) (DashboardSum
 	}
 	summary.HealthyPets = healthyPets
 
-	// 3. Total de tareas pendientes (status = 'pending')
+	// 3. Total de tareas pendientes (next_dose_date IS NOT NULL AND application_date IS NULL)
 	// Filtramos por user_id directamente sin necesidad de JOIN
 	var pendingTasks int64
 	if err := r.db.Table("health_records").
-		Where("user_id = ? AND status = ?", ownerID, "pending").
+		Where("user_id = ? AND next_dose_date IS NOT NULL AND application_date IS NULL", ownerID).
 		Count(&pendingTasks).Error; err != nil {
 		return summary, err
 	}
 	summary.PendingTasks = pendingTasks
 
-	// 4. Total de tareas vencidas (status = 'pending' y due_date < hoy)
+	// 4. Total de tareas vencidas (next_dose_date < hoy y application_date IS NULL)
 	// Filtramos por user_id directamente sin necesidad de JOIN
 	var overdueTasks int64
 	if err := r.db.Table("health_records").
-		Where("user_id = ? AND status = ? AND due_date < CURRENT_DATE", ownerID, "pending").
+		Where("user_id = ? AND next_dose_date < CURRENT_DATE AND application_date IS NULL", ownerID).
 		Count(&overdueTasks).Error; err != nil {
 		return summary, err
 	}

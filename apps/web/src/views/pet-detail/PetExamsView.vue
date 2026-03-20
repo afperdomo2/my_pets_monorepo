@@ -1,20 +1,17 @@
 <script setup lang="ts">
 import { ref, computed, type Ref } from 'vue'
 import { useRoute } from 'vue-router'
-import { 
-  IconPlus, 
-  IconStethoscope, 
-  IconCheck, 
-  IconClock, 
-  IconAlertTriangle,
+import {
+  IconPlus,
+  IconStethoscope,
+  IconCheck,
   IconChevronDown,
   IconChevronUp,
   IconFileText,
   IconTrash
 } from '@tabler/icons-vue'
-import { useGetHealthRecordsByPetAndCategory, useUpdateHealthRecordStatus, useDeleteHealthRecord, useCreateHealthRecord, useUpdateHealthRecord } from '@/composables/useHealthRecords'
-import { HealthRecordStatus, HealthCatalogCategory } from '@/constants/healthRecord'
-import type { HealthRecord } from '@/types'
+import { useGetExamsByPet, useCreateExam, useUpdateExam, useDeleteExam, useCompleteExam } from '@/composables/useExams'
+import { ExamStatus, type ExamStatusType, type Exam } from '@/types/exam'
 import DatePicker from '@/components/ui/DatePicker.vue'
 import AppPagination from '@/components/ui/AppPagination.vue'
 
@@ -23,23 +20,16 @@ const petId = computed(() => String(route.params.id))
 
 const page = ref(1)
 const perPage = ref(10)
-const category = ref(HealthCatalogCategory.Exam)
 
-const { data, isLoading, isError, refresh } = useGetHealthRecordsByPetAndCategory(
-  petId as Ref<string>,
-  category as Ref<string>,
-  page,
-  perPage,
-)
+const { data, isLoading, isError, refresh } = useGetExamsByPet(petId as Ref<string>, page, perPage)
 
 const records = computed(() => data.value?.data ?? [])
 const total = computed(() => data.value?.total ?? 0)
 const totalPages = computed(() => data.value?.total_pages ?? 0)
 
-const STATUS_CONFIG = {
-  [HealthRecordStatus.Applied]: { label: 'Realizado', className: 'status--uptodate', icon: IconCheck },
-  [HealthRecordStatus.Pending]: { label: 'Pendiente', className: 'status--upcoming', icon: IconClock },
-  [HealthRecordStatus.Overdue]: { label: 'Vencido', className: 'status--overdue', icon: IconAlertTriangle },
+const STATUS_CONFIG: Record<ExamStatusType, { label: string; className: string; icon: typeof IconFileText }> = {
+  [ExamStatus.Scheduled]: { label: 'Programado', className: 'status--scheduled', icon: IconFileText },
+  [ExamStatus.Completed]: { label: 'Completado', className: 'status--completed', icon: IconCheck },
 }
 
 function formatDate(dateStr: string | null): string {
@@ -48,26 +38,25 @@ function formatDate(dateStr: string | null): string {
   return date.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
-const expandedRecords = ref<Set<string>>(new Set())
+const expandedExamId = ref<string | null>(null)
 
 function toggleExpand(id: string) {
-  if (expandedRecords.value.has(id)) {
-    expandedRecords.value.delete(id)
-  } else {
-    expandedRecords.value.add(id)
-  }
+  expandedExamId.value = expandedExamId.value === id ? null : id
 }
 
 function isExpanded(id: string): boolean {
-  return expandedRecords.value.has(id)
+  return expandedExamId.value === id
 }
 
 // Modal para crear/editar examen
 const showExamModal = ref(false)
-const editingExam = ref<HealthRecord | null>(null)
+const editingExam = ref<Exam | null>(null)
 const examName = ref('')
-const examDate = ref('')
+const examReason = ref('')
+const examScheduledDate = ref('')
 const examNotes = ref('')
+const isCompleted = ref(false)
+const examCompletedDate = ref('')
 
 // Campos dinámicos del examen
 const examFields = ref<{ name: string; value: string; unit: string }[]>([
@@ -85,93 +74,101 @@ function removeField(index: number) {
 function openCreate() {
   editingExam.value = null
   examName.value = ''
-  examDate.value = ''
+  examReason.value = ''
+  examScheduledDate.value = ''
   examNotes.value = ''
+  isCompleted.value = false
+  examCompletedDate.value = ''
   examFields.value = [{ name: '', value: '', unit: '' }]
   showExamModal.value = true
 }
 
-function openEdit(exam: HealthRecord) {
+function openEdit(exam: Exam) {
   editingExam.value = exam
   examName.value = exam.name
-  examDate.value = exam.application_date || ''
-  examNotes.value = exam.notes || ''
-  
-  // Parse results from notes (simple format: "campo: valor")
-  const lines = (exam.notes || '').split('\n').filter(l => l.includes(':'))
-  if (lines.length > 0) {
-    examFields.value = lines.map(line => {
-      const parts = line.split(':')
-      const name = parts[0] || ''
-      const rest = parts.slice(1).join(':')
-      const [value, unit] = rest ? rest.trim().split(' ') : ['', '']
-      return { name: name.trim(), value: value || '', unit: unit || '' }
-    })
-  } else {
-    examFields.value = [{ name: '', value: '', unit: '' }]
-  }
-  
+  examReason.value = exam.reason ?? ''
+  examScheduledDate.value = exam.scheduled_date ?? ''
+  examNotes.value = exam.notes ?? ''
+  isCompleted.value = exam.status === ExamStatus.Completed
+  examCompletedDate.value = exam.completed_date ?? ''
   showExamModal.value = true
 }
 
-function getResultsFromFields(): string {
+function getResultsFromFields(): Array<{ parameter_name: string; value: string; unit?: string }> {
   return examFields.value
     .filter(f => f.name.trim() && f.value.trim())
-    .map(f => `${f.name.trim()}: ${f.value.trim()}${f.unit ? ' ' + f.unit : ''}`)
-    .join('\n')
+    .map(f => ({
+      parameter_name: f.name.trim(),
+      value: f.value.trim(),
+      unit: f.unit.trim() || undefined,
+    }))
 }
 
-const createRecord = useCreateHealthRecord()
-const updateRecord = useUpdateHealthRecord()
-const updateStatusRecord = useUpdateHealthRecordStatus()
+const createExam = useCreateExam()
+const updateExam = useUpdateExam()
+const completeExam = useCompleteExam()
 
 async function saveExam() {
   const results = getResultsFromFields()
-  const notes = examNotes.value ? `${examNotes.value}\n\n${results}` : results
-  
+
   if (editingExam.value) {
-    await updateRecord.mutateAsync({
+    // Actualizar examen existente
+    await updateExam.mutateAsync({
       id: editingExam.value.id,
       payload: {
-        category: HealthCatalogCategory.Exam,
-        name: editingExam.value.name,
-        status: HealthRecordStatus.Applied,
-        application_date: examDate.value || undefined,
-        due_date: examDate.value || '',
-        notes: notes || undefined,
+        name: examName.value,
+        reason: examReason.value || undefined,
+        scheduled_date: examScheduledDate.value || undefined,
+        notes: examNotes.value || undefined,
       },
     })
+
+    // Si está completado y tiene resultados, usar el endpoint complete
+    if (isCompleted.value && results.length > 0) {
+      await completeExam.mutateAsync({
+        id: editingExam.value.id,
+        payload: {
+          completed_date: examCompletedDate.value || new Date().toISOString().split('T')[0],
+          results,
+        },
+      })
+    }
   } else {
-    await createRecord.mutateAsync({
+    // Crear nuevo examen
+    const payload: {
+      pet_id: string
+      name: string
+      reason?: string
+      scheduled_date?: string
+      notes?: string
+      status?: 'scheduled' | 'completed'
+      completed_date?: string
+      results?: Array<{ parameter_name: string; value: string; unit?: string }>
+    } = {
       pet_id: petId.value,
-      category: HealthCatalogCategory.Exam,
       name: examName.value,
-      status: HealthRecordStatus.Applied,
-      application_date: examDate.value,
-      due_date: examDate.value,
-      notes: notes || undefined,
-    })
+      reason: examReason.value || undefined,
+      scheduled_date: examScheduledDate.value || undefined,
+      notes: examNotes.value || undefined,
+    }
+
+    if (isCompleted.value) {
+      payload.status = 'completed'
+      payload.completed_date = examCompletedDate.value || undefined
+      payload.results = results
+    }
+
+    await createExam.mutateAsync(payload)
   }
-  
+
   showExamModal.value = false
 }
 
-const deleteRecord = useDeleteHealthRecord()
+const deleteExam = useDeleteExam()
 
-async function handleDelete(exam: HealthRecord) {
+async function handleDelete(exam: Exam) {
   if (!confirm(`¿Eliminar el examen "${exam.name}"?`)) return
-  await deleteRecord.mutateAsync({ id: exam.id, petId: petId.value })
-}
-
-// Pending exam: mark as done
-async function markAsDone(exam: HealthRecord) {
-  await updateStatusRecord.mutateAsync({
-    id: exam.id,
-    payload: {
-      status: HealthRecordStatus.Applied,
-      application_date: new Date().toISOString().split('T')[0],
-    },
-  })
+  await deleteExam.mutateAsync({ id: exam.id, petId: petId.value })
 }
 </script>
 
@@ -228,20 +225,20 @@ async function markAsDone(exam: HealthRecord) {
               </div>
               <div class="accordion-info">
                 <span class="accordion-title">{{ exam.name }}</span>
-                <span class="accordion-date">{{ formatDate(exam.application_date) }}</span>
+                <span class="accordion-date">{{ formatDate(exam.scheduled_date || exam.completed_date) }}</span>
               </div>
             </div>
             <div class="accordion-header-right">
               <span
                 class="status-badge"
-                :class="STATUS_CONFIG[exam.status as keyof typeof STATUS_CONFIG]?.className"
+                :class="STATUS_CONFIG[exam.status as ExamStatusType]?.className"
               >
                 <component
-                  :is="STATUS_CONFIG[exam.status as keyof typeof STATUS_CONFIG]?.icon"
+                  :is="STATUS_CONFIG[exam.status as ExamStatusType]?.icon"
                   :size="12"
                   :stroke-width="2.5"
                 />
-                {{ STATUS_CONFIG[exam.status as keyof typeof STATUS_CONFIG]?.label }}
+                {{ STATUS_CONFIG[exam.status as ExamStatusType]?.label }}
               </span>
               <component
                 :is="isExpanded(exam.id) ? IconChevronUp : IconChevronDown"
@@ -254,43 +251,20 @@ async function markAsDone(exam: HealthRecord) {
 
           <!-- Content -->
           <div v-if="isExpanded(exam.id)" class="accordion-content">
-            <!-- Results table from notes -->
-            <div v-if="exam.notes" class="results-section">
-              <h4 class="results-title">Resultados</h4>
-              <div class="results-table-wrapper">
-                <table class="results-table">
-                  <thead>
-                    <tr>
-                      <th>Parámetro</th>
-                      <th>Valor</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr v-for="(line, idx) in (exam.notes || '').split('\n').filter(l => l.includes(':'))" :key="idx">
-                      <td class="result-name">{{ (line.split(':')[0] || '').trim() }}</td>
-                      <td class="result-value">{{ line.split(':').slice(1).join(':').trim() }}</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
+            <!-- Reason -->
+            <div v-if="exam.reason" class="reason-section">
+              <h4 class="reason-title">Motivo</h4>
+              <p class="reason-text">{{ exam.reason }}</p>
             </div>
 
             <!-- Notes -->
-            <div v-if="exam.notes && !exam.notes.includes(':')" class="notes-section">
+            <div v-if="exam.notes" class="notes-section">
               <h4 class="notes-title">Notas</h4>
               <p class="notes-text">{{ exam.notes }}</p>
             </div>
 
             <!-- Actions -->
             <div class="accordion-actions">
-              <button
-                v-if="exam.status === HealthRecordStatus.Pending"
-                class="btn-mark-done"
-                @click="markAsDone(exam)"
-              >
-                <IconCheck :size="14" :stroke-width="2.5" />
-                Marcar como realizado
-              </button>
               <button class="btn-edit-exam" @click="openEdit(exam)">
                 ✏️ Editar
               </button>
@@ -335,62 +309,92 @@ async function markAsDone(exam: HealthRecord) {
             </div>
 
             <div class="field">
-              <label class="field-label">Fecha de realización *</label>
+              <label class="field-label">Motivo/Razón (opcional)</label>
+              <textarea
+                v-model="examReason"
+                class="field-textarea"
+                rows="2"
+                placeholder="Motivo del examen..."
+              />
+            </div>
+
+            <div class="field">
+              <label class="field-label">Fecha programada</label>
               <div class="date-picker-row">
                 <DatePicker
-                  v-model="examDate"
-                  :max-date="new Date()"
+                  v-model="examScheduledDate"
                   placeholder="Seleccionar fecha"
-                  unique-id="exam-date"
+                  unique-id="exam-scheduled-date"
                 />
-                <button
-                  type="button"
-                  class="btn-today"
-                  @click="examDate = new Date().toISOString().split('T')[0] ?? ''"
-                >
-                  Hoy
-                </button>
               </div>
             </div>
 
-            <div class="fields-section">
-              <div class="fields-header">
-                <label class="field-label">Resultados (campos dinámicos)</label>
-                <button type="button" class="btn-add-field" @click="addField">
-                  <IconPlus :size="14" :stroke-width="2.5" />
-                  Añadir campo
-                </button>
-              </div>
+            <div class="field">
+              <label class="field-toggle">
+                <input v-model="isCompleted" type="checkbox" class="toggle-checkbox" />
+                <span class="toggle-label">El examen ya está completado</span>
+              </label>
+            </div>
 
-              <div class="dynamic-fields">
-                <div
-                  v-for="(field, idx) in examFields"
-                  :key="idx"
-                  class="dynamic-field-row"
-                >
-                  <input
-                    v-model="field.name"
-                    class="field-input field-name"
-                    placeholder="Parámetro (ej: Glucosa)"
-                  />
-                  <input
-                    v-model="field.value"
-                    class="field-input field-value"
-                    placeholder="Valor"
-                  />
-                  <input
-                    v-model="field.unit"
-                    class="field-input field-unit"
-                    placeholder="Unidad"
+            <div v-if="isCompleted" class="completed-section">
+              <div class="field">
+                <label class="field-label">Fecha de realización *</label>
+                <div class="date-picker-row">
+                  <DatePicker
+                    v-model="examCompletedDate"
+                    :max-date="new Date()"
+                    placeholder="Seleccionar fecha"
+                    unique-id="exam-completed-date"
                   />
                   <button
-                    v-if="examFields.length > 1"
                     type="button"
-                    class="btn-remove-field"
-                    @click="removeField(idx)"
+                    class="btn-today"
+                    @click="examCompletedDate = new Date().toISOString().split('T')[0] ?? ''"
                   >
-                    ✕
+                    Hoy
                   </button>
+                </div>
+              </div>
+
+              <div class="fields-section">
+                <div class="fields-header">
+                  <label class="field-label">Resultados (campos dinámicos)</label>
+                  <button type="button" class="btn-add-field" @click="addField">
+                    <IconPlus :size="14" :stroke-width="2.5" />
+                    Añadir campo
+                  </button>
+                </div>
+
+                <div class="dynamic-fields">
+                  <div
+                    v-for="(field, idx) in examFields"
+                    :key="idx"
+                    class="dynamic-field-row"
+                  >
+                    <input
+                      v-model="field.name"
+                      class="field-input field-name"
+                      placeholder="Parámetro (ej: Glucosa)"
+                    />
+                    <input
+                      v-model="field.value"
+                      class="field-input field-value"
+                      placeholder="Valor"
+                    />
+                    <input
+                      v-model="field.unit"
+                      class="field-input field-unit"
+                      placeholder="Unidad"
+                    />
+                    <button
+                      v-if="examFields.length > 1"
+                      type="button"
+                      class="btn-remove-field"
+                      @click="removeField(idx)"
+                    >
+                      ✕
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -410,10 +414,10 @@ async function markAsDone(exam: HealthRecord) {
             <button class="btn-cancel" @click="showExamModal = false">Cancelar</button>
             <button
               class="btn-save"
-              :disabled="!examName || !examDate || createRecord.isPending.value"
+              :disabled="!examName || (isCompleted && !examCompletedDate) || createExam.isPending.value"
               @click="saveExam"
             >
-              <span v-if="createRecord.isPending.value" class="spinner-sm" />
+              <span v-if="createExam.isPending.value" class="spinner-sm" />
               {{ editingExam ? 'Guardar cambios' : 'Registrar examen' }}
             </button>
           </div>
@@ -424,6 +428,7 @@ async function markAsDone(exam: HealthRecord) {
 </template>
 
 <style scoped>
+/* Estilos similares a los existentes, adaptados para la nueva estructura */
 .tab-view {
   display: flex;
   flex-direction: column;
@@ -622,19 +627,14 @@ async function markAsDone(exam: HealthRecord) {
   flex-shrink: 0;
 }
 
-.status--uptodate {
-  background: #e8f5ee;
-  color: #2e7d52;
-}
-
-.status--upcoming {
+.status--scheduled {
   background: #fef3e2;
   color: #c4714a;
 }
 
-.status--overdue {
-  background: #fef2f2;
-  color: #dc2626;
+.status--completed {
+  background: #e8f5ee;
+  color: #2e7d52;
 }
 
 .accordion-chevron {
@@ -651,11 +651,12 @@ async function markAsDone(exam: HealthRecord) {
   border-top: 1px solid var(--color-border-light);
 }
 
-.results-section {
+.reason-section,
+.notes-section {
   padding-top: var(--space-4);
 }
 
-.results-title,
+.reason-title,
 .notes-title {
   font-size: var(--text-xs);
   font-weight: 600;
@@ -665,42 +666,7 @@ async function markAsDone(exam: HealthRecord) {
   margin: 0 0 var(--space-2) 0;
 }
 
-.results-table-wrapper {
-  overflow-x: auto;
-}
-
-.results-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: var(--text-sm);
-}
-
-.results-table th,
-.results-table td {
-  padding: var(--space-2) var(--space-3);
-  text-align: left;
-  border-bottom: 1px solid var(--color-border-light);
-}
-
-.results-table th {
-  font-weight: 600;
-  color: var(--color-text-tertiary);
-  background: var(--color-bg);
-}
-
-.result-name {
-  font-weight: 500;
-  color: var(--color-text-primary);
-}
-
-.result-value {
-  color: var(--color-text-secondary);
-}
-
-.notes-section {
-  margin-top: var(--space-4);
-}
-
+.reason-text,
 .notes-text {
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
@@ -714,24 +680,6 @@ async function markAsDone(exam: HealthRecord) {
   margin-top: var(--space-4);
   padding-top: var(--space-3);
   border-top: 1px solid var(--color-border-light);
-}
-
-.btn-mark-done {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  padding: var(--space-2) var(--space-3);
-  background: #22c55e;
-  color: #fff;
-  border: none;
-  border-radius: var(--radius-md);
-  font-size: var(--text-xs);
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.btn-mark-done:hover {
-  background: #16a34a;
 }
 
 .btn-edit-exam,
@@ -872,6 +820,34 @@ async function markAsDone(exam: HealthRecord) {
   font-size: var(--text-sm);
   font-weight: 600;
   cursor: pointer;
+}
+
+.field-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+}
+
+.toggle-checkbox {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.toggle-label {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.completed-section {
+  padding: var(--space-3);
+  background: var(--color-bg);
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
 }
 
 .fields-section {

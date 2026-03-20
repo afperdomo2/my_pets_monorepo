@@ -79,7 +79,7 @@ const {
           :pet-name="record.pet.name"
           :pet-species="record.pet.species"
           :vaccine-name="record.name"
-          :due-date="record.due_date"
+          :next-dose-date="record.next_dose_date || null"
           @register="openModal(record.pet_id, record.name)"
         />
 

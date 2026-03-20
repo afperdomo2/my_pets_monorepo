@@ -17,8 +17,8 @@ type DashboardSummary struct {
 type Repository interface {
 	// GetSummary retorna un resumen de los datos principales del dashboard para el usuario.
 	// - total_pets: total de mascotas del usuario
-	// - healthy_pets: mascotas sin tareas pendientes ni vencidas
-	// - pending_tasks: total de registros de salud con status 'pending'
-	// - overdue_tasks: total de registros de salud vencidos (due_date < hoy y status 'pending')
+	// - healthy_pets: mascotas sin próxima dosis pendiente de aplicación
+	// - pending_tasks: total de registros con próxima dosis programada y no aplicada
+	// - overdue_tasks: total de registros con próxima dosis vencida y no aplicada
 	GetSummary(ctx context.Context, ownerID string) (DashboardSummary, error)
 }

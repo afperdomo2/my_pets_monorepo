@@ -1,33 +1,16 @@
 /**
  * Utilidades para registros de salud (health records).
  * Funciones puras, sin dependencias de Vue.
+ * 
+ * Nota: Las funciones relacionadas con status fueron eliminadas
+ * ya que el campo status fue removido de health_records.
  */
 
-import type { HealthRecordStatusType, HealthCatalogCategoryType } from '@/constants/healthRecord'
+import type { HealthCatalogCategoryType } from '@/constants/healthRecord'
 import {
-  HEALTH_RECORD_STATUS_LABELS,
   HEALTH_CATALOG_CATEGORY_LABELS,
-  HEALTH_RECORD_STATUS_COLORS,
   HEALTH_CATALOG_CATEGORY_ICONS,
 } from '@/constants/healthRecord'
-
-/**
- * Obtiene el label en español para un estado de registro de salud.
- * @param status - El estado del registro
- * @returns Label en español
- */
-export function getHealthRecordStatusLabel(status: HealthRecordStatusType | string): string {
-  return HEALTH_RECORD_STATUS_LABELS[status as HealthRecordStatusType] ?? status
-}
-
-/**
- * Obtiene el color UI para un estado de registro de salud.
- * @param status - El estado del registro
- * @returns Color para UI (tailwind/css)
- */
-export function getHealthRecordStatusColor(status: HealthRecordStatusType | string): string {
-  return HEALTH_RECORD_STATUS_COLORS[status as HealthRecordStatusType] ?? 'gray'
-}
 
 /**
  * Obtiene el label en español para una categoría de registro de salud.
@@ -50,16 +33,16 @@ export function getHealthCatalogCategoryIcon(category: HealthCatalogCategoryType
 /**
  * Verifica si un registro de salud está vencido.
  * Un registro está vencido si:
- * - Su estado no es 'applied'
- * - Su due_date es anterior a hoy
- * @param dueDate - Fecha de vencimiento (ISO string)
- * @param status - Estado actual del registro
+ * - Su next_dose_date es anterior a hoy
+ * - No tiene application_date
+ * @param nextDoseDate - Fecha de próxima dosis (ISO string)
+ * @param applicationDate - Fecha de aplicación (ISO string)
  * @returns true si está vencido
  */
-export function isOverdue(dueDate: string, status: string): boolean {
-  if (status === 'applied') return false
+export function isOverdue(nextDoseDate: string | null, applicationDate?: string | null): boolean {
+  if (!nextDoseDate || applicationDate) return false
 
-  const due = new Date(dueDate)
+  const due = new Date(nextDoseDate)
   const now = new Date()
 
   // Comparar solo fechas (sin horas)
@@ -71,11 +54,13 @@ export function isOverdue(dueDate: string, status: string): boolean {
 
 /**
  * Calcula los días restantes hasta la fecha de vencimiento.
- * @param dueDate - Fecha de vencimiento (ISO string)
+ * @param nextDoseDate - Fecha de próxima dosis (ISO string)
  * @returns Número de días restantes (negativo si ya venció)
  */
-export function daysUntilDue(dueDate: string): number {
-  const due = new Date(dueDate)
+export function daysUntilDue(nextDoseDate: string | null): number {
+  if (!nextDoseDate) return 0
+  
+  const due = new Date(nextDoseDate)
   const now = new Date()
 
   due.setUTCHours(0, 0, 0, 0)
@@ -86,17 +71,31 @@ export function daysUntilDue(dueDate: string): number {
 }
 
 /**
- * Formatea un mensaje de estado para la fecha de vencimiento.
- * @param dueDate - Fecha de vencimiento (ISO string)
- * @param status - Estado actual del registro
+ * Verifica si un registro es urgente (vence en menos de 7 días).
+ */
+export function isUrgent(nextDoseDate: string | null, applicationDate?: string | null): boolean {
+  if (!nextDoseDate || applicationDate) return false
+  
+  const days = daysUntilDue(nextDoseDate)
+  return days >= 0 && days <= 7
+}
+
+/**
+ * Formatea un mensaje de estado para la fecha de próxima dosis.
+ * @param nextDoseDate - Fecha de próxima dosis (ISO string)
+ * @param applicationDate - Fecha de aplicación (ISO string)
  * @returns Mensaje descriptivo
  */
-export function getDueDateStatusMessage(dueDate: string, status: HealthRecordStatusType | string): string {
-  if (status === 'applied') {
+export function getNextDoseDateStatusMessage(nextDoseDate: string | null, applicationDate?: string | null): string {
+  if (applicationDate) {
     return 'Completado'
   }
 
-  const days = daysUntilDue(dueDate)
+  if (!nextDoseDate) {
+    return 'Sin programar'
+  }
+
+  const days = daysUntilDue(nextDoseDate)
 
   if (days < 0) {
     return `Vencido hace ${Math.abs(days)} ${Math.abs(days) === 1 ? 'día' : 'días'}`
@@ -111,10 +110,10 @@ export function getDueDateStatusMessage(dueDate: string, status: HealthRecordSta
   }
 
   if (days <= 7) {
-    return `Vence en ${days} días`
+    return `Vence en ${days} ${days === 1 ? 'día' : 'días'}`
   }
 
-  return `Vence el ${new Date(dueDate).toLocaleDateString('es-ES', {
+  return `Vence el ${new Date(nextDoseDate).toLocaleDateString('es-ES', {
     day: 'numeric',
     month: 'short',
   })}`

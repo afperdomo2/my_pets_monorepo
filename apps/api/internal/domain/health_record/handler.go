@@ -5,11 +5,9 @@ import (
 	"math"
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	healthCatalog "github.com/my-pets/api/internal/domain/health_catalog"
-	"github.com/my-pets/api/internal/models"
 	"github.com/my-pets/api/internal/validation"
 )
 
@@ -50,16 +48,6 @@ func parseRecordID(c *gin.Context) (string, bool) {
 	return id, true
 }
 
-// resolveOverdue calcula el status efectivo de un registro en runtime.
-// Si el status almacenado es 'pending' y due_date ya pasó, retorna 'overdue'.
-// El valor 'overdue' nunca se persiste en la base de datos.
-func resolveOverdue(rec models.HealthRecord) models.HealthRecord {
-	if rec.Status == "pending" && rec.DueDate.Before(time.Now().Truncate(24*time.Hour)) {
-		rec.Status = "overdue"
-	}
-	return rec
-}
-
 // GetAllHealthRecords maneja GET /api/v1/health-records
 // Lista todos los registros de salud de todas las mascotas del usuario autenticado.
 //
@@ -87,10 +75,6 @@ func (h *Handler) GetAllHealthRecords(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error al obtener registros de salud"})
 		return
-	}
-
-	for i, rec := range records {
-		records[i] = resolveOverdue(rec)
 	}
 
 	totalPages := int(math.Ceil(float64(total) / float64(perPage)))
@@ -139,10 +123,6 @@ func (h *Handler) GetHealthRecordsByPet(c *gin.Context) {
 		return
 	}
 
-	for i, rec := range records {
-		records[i] = resolveOverdue(rec)
-	}
-
 	totalPages := int(math.Ceil(float64(total) / float64(perPage)))
 	c.JSON(http.StatusOK, gin.H{
 		"data":        records,
@@ -176,9 +156,9 @@ func (h *Handler) GetHealthRecordsByPetAndCategory(c *gin.Context) {
 	}
 
 	category := c.Param("category")
-	validCategories := map[string]bool{"vaccine": true, "deworming": true, "exam": true}
+	validCategories := map[string]bool{"vaccine": true, "deworming": true}
 	if !validCategories[category] {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "categoría inválida: debe ser vaccine, deworming o exam"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "categoría inválida: debe ser vaccine o deworming"})
 		return
 	}
 
@@ -195,10 +175,6 @@ func (h *Handler) GetHealthRecordsByPetAndCategory(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error al obtener registros de salud"})
 		return
-	}
-
-	for i, rec := range records {
-		records[i] = resolveOverdue(rec)
 	}
 
 	totalPages := int(math.Ceil(float64(total) / float64(perPage)))
@@ -265,7 +241,7 @@ func (h *Handler) CreateHealthRecord(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"data": resolveOverdue(created)})
+	c.JSON(http.StatusCreated, gin.H{"data": created})
 }
 
 // UpdateHealthRecord maneja PUT /api/v1/health-records/:record_id
@@ -306,47 +282,7 @@ func (h *Handler) UpdateHealthRecord(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": resolveOverdue(updated)})
-}
-
-// UpdateHealthRecordStatus maneja PATCH /api/v1/health-records/:record_id/status
-//
-//	@Summary	Actualizar el status de un registro de salud
-//	@Tags		health-records
-//	@Accept		json
-//	@Produce	json
-//	@Security	CookieAuth
-//	@Param		record_id	path		string				true	"ID del registro de salud"
-//	@Param		status		body		UpdateStatusPayload	true	"Nuevo status"
-//	@Success	200	{object}	map[string]interface{}	"data: HealthRecord"
-//	@Failure	400	{object}	map[string]string		"error de validación"
-//	@Failure	401	{object}	map[string]string		"autenticación requerida"
-//	@Failure	404	{object}	map[string]string		"registro no encontrado"
-//	@Failure	500	{object}	map[string]string		"mensaje de error"
-//	@Router		/api/v1/health-records/{record_id}/status [patch]
-func (h *Handler) UpdateHealthRecordStatus(c *gin.Context) {
-	id, ok := parseRecordID(c)
-	if !ok {
-		return
-	}
-
-	var payload UpdateStatusPayload
-	if err := c.ShouldBindJSON(&payload); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": validation.Translate(err)})
-		return
-	}
-
-	updated, err := h.repo.UpdateStatus(c.Request.Context(), id, ownerID(c), payload)
-	if errors.Is(err, ErrNotFound) {
-		c.JSON(http.StatusNotFound, gin.H{"error": "registro de salud no encontrado"})
-		return
-	}
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "error al actualizar status del registro"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"data": resolveOverdue(updated)})
+	c.JSON(http.StatusOK, gin.H{"data": updated})
 }
 
 // DeleteHealthRecord maneja DELETE /api/v1/health-records/:record_id
@@ -416,23 +352,18 @@ func (h *Handler) GetUpcomingRecords(c *gin.Context) {
 	// Obtener categoría (opcional)
 	category := c.Query("category")
 	if category != "" {
-		validCategories := map[string]bool{"vaccine": true, "deworming": true, "exam": true}
+		validCategories := map[string]bool{"vaccine": true, "deworming": true}
 		if !validCategories[category] {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "categoría inválida: debe ser vaccine, deworming o exam"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": "categoría inválida: debe ser vaccine o deworming"})
 			return
 		}
 	}
 
-	// Obtener próximos registros pendientes del usuario con paginación
+	// Obtener próximos registros del usuario con paginación
 	records, total, err := h.repo.GetUpcomingRecords(c.Request.Context(), ownerID(c), category, page, perPage)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error al obtener próximos registros"})
 		return
-	}
-
-	// Resolver estado overdue para cada registro
-	for i, rec := range records {
-		records[i] = resolveOverdue(rec)
 	}
 
 	totalPages := int(math.Ceil(float64(total) / float64(perPage)))

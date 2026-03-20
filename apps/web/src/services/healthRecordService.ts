@@ -2,10 +2,9 @@ import type {
   HealthRecord,
   CreateHealthRecordPayload,
   UpdateHealthRecordPayload,
-  UpdateStatusPayload,
 } from '@/types/healthRecord'
 import type { PaginatedResponse, ApiResponse } from '@/types/shared'
-import { get, post, put, patch, del } from '@/services/http'
+import { get, post, put, del } from '@/services/http'
 
 const PER_PAGE_DEFAULT = 10
 
@@ -33,15 +32,11 @@ export const healthRecordService = {
     return put(`/health-records/${id}`, payload)
   },
 
-  updateStatus(id: string, payload: UpdateStatusPayload): Promise<ApiResponse<HealthRecord>> {
-    return patch(`/health-records/${id}/status`, payload)
-  },
-
   remove(id: string): Promise<{ message: string }> {
     return del(`/health-records/${id}`)
   },
 
-  // Obtener próximos registros pendientes con paginación
+  // Obtener próximos registros con próxima dosis programada
   getUpcoming(page = 1, perPage = 10, category?: string): Promise<PaginatedResponse<HealthRecord>> {
     const params = new URLSearchParams({ page: String(page), per_page: String(perPage) })
     if (category) {

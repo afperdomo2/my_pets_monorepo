@@ -1,19 +1,19 @@
-import type { HealthRecordStatusType } from '@/constants/healthRecord'
+import type { VaccineApplication } from '@/types/vaccineApplication'
 import type { ApiResponse, PaginatedResponse } from '@/types/shared'
 
 /**
  * Registro de salud completo devuelto por la API.
+ * Solo maneja vacunas (vaccine) y desparasitaciones (deworming).
  */
 export interface HealthRecord {
   id: string
   pet_id: string
   user_id: string
   health_catalog_id: string | null
-  category: string
+  category: 'vaccine' | 'deworming'
   name: string
-  status: HealthRecordStatusType
   application_date: string | null
-  due_date: string
+  next_dose_date: string | null
   notes: string | null
   created_at: string
   updated_at: string
@@ -23,6 +23,8 @@ export interface HealthRecord {
     species: string
     breed: string
   }
+  // Relación con vaccine_applications (opcional, se puede precargar)
+  vaccine_applications?: VaccineApplication[]
 }
 
 /**
@@ -31,11 +33,10 @@ export interface HealthRecord {
 export interface CreateHealthRecordPayload {
   pet_id: string
   health_catalog_id?: string
-  category?: string
+  category?: 'vaccine' | 'deworming'
   name?: string
-  status?: string
   application_date?: string
-  due_date: string
+  next_dose_date?: string
   notes?: string
 }
 
@@ -44,20 +45,11 @@ export interface CreateHealthRecordPayload {
  * Pet_id y health_catalog_id no son actualizables.
  */
 export interface UpdateHealthRecordPayload {
-  category: string
+  category: 'vaccine' | 'deworming'
   name: string
-  status?: string
   application_date?: string
-  due_date: string
+  next_dose_date?: string
   notes?: string
-}
-
-/**
- * Payload para actualizar solo el status de un registro.
- */
-export interface UpdateStatusPayload {
-  status: string
-  application_date?: string
 }
 
 // Re-exportar tipos compartidos para compatibilidad

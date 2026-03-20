@@ -29,7 +29,6 @@ const updateItem = useUpdateHealthCatalog()
 const CATEGORY_OPTIONS: { value: HealthCatalogCategoryType; label: string }[] = [
   { value: HealthCatalogCategory.Vaccine, label: 'Vacuna' },
   { value: HealthCatalogCategory.Deworming, label: 'Desparasitación' },
-  { value: HealthCatalogCategory.Exam, label: 'Examen' },
 ]
 
 // Especies disponibles (centralizadas)
@@ -73,7 +72,7 @@ const handleCreate = handleCreateSubmit(async (values) => {
     const frequencyMonths = values.frequency_months === undefined ? null : values.frequency_months
     await createItem.mutateAsync({
       name: values.name,
-      category: values.category,
+      category: values.category as HealthCatalogCategoryType,
       description: values.description ?? '',
       species: speciesInEnglish,
       frequency_months: frequencyMonths,
@@ -121,7 +120,7 @@ const handleEdit = handleEditSubmit(async (values) => {
       id: props.item.id,
       payload: {
         name: values.name,
-        category: values.category,
+        category: values.category as HealthCatalogCategoryType,
         description: values.description ?? '',
         species: speciesInEnglish,
         frequency_months: frequencyMonths,

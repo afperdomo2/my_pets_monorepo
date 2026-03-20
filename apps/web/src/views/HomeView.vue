@@ -227,8 +227,8 @@ function isOverdue(dueDate: string): boolean {
             :to="getCategoryRoute(record.pet_id, record.category)"
             class="task-row"
             :class="{
-              'task-row--urgent': isUrgent(record.due_date),
-              'task-row--overdue': isOverdue(record.due_date),
+              'task-row--urgent': record.next_dose_date && isUrgent(record.next_dose_date),
+              'task-row--overdue': record.next_dose_date && isOverdue(record.next_dose_date),
             }"
           >
             <!-- Mascota -->
@@ -250,8 +250,8 @@ function isOverdue(dueDate: string): boolean {
               </div>
             </div>
             <!-- Fecha -->
-            <span class="task-due" :class="{ 'task-due--urgent': isUrgent(record.due_date) }">
-              {{ formatDueDate(record.due_date) }}
+            <span class="task-due" :class="{ 'task-due--urgent': record.next_dose_date && isUrgent(record.next_dose_date) }">
+              {{ record.next_dose_date ? formatDueDate(record.next_dose_date) : 'Sin programar' }}
             </span>
           </RouterLink>
         </div>

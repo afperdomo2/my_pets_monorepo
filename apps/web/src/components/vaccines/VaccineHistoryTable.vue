@@ -1,9 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { IconCheck, IconClock, IconAlertTriangle } from '@tabler/icons-vue'
 import { useGetAllHealthRecords } from '@/composables/useHealthRecords'
-import type { HealthRecordStatusType } from '@/constants/healthRecord'
-import { HealthRecordStatus } from '@/constants/healthRecord'
 import { getSpeciesLabel } from '@/constants/species'
 import PetAvatar from '@/components/pets/PetAvatar.vue'
 import AppPagination from '@/components/ui/AppPagination.vue'
@@ -17,12 +14,6 @@ const { data, isLoading, isError, refresh } = useGetAllHealthRecords(page, perPa
 const records = computed(() => data.value?.data ?? [])
 const total = computed(() => data.value?.total ?? 0)
 const totalPages = computed(() => data.value?.total_pages ?? 0)
-
-const STATUS_CONFIG: Record<HealthRecordStatusType, { label: string; className: string; icon: typeof IconCheck }> = {
-  [HealthRecordStatus.Applied]: { label: 'Aplicada', className: 'status--uptodate', icon: IconCheck },
-  [HealthRecordStatus.Pending]: { label: 'Pendiente', className: 'status--upcoming', icon: IconClock },
-  [HealthRecordStatus.Overdue]: { label: 'Vencida', className: 'status--overdue', icon: IconAlertTriangle },
-}
 
 function formatDate(dateStr: string | null): string {
   if (!dateStr) return '—'
@@ -46,7 +37,6 @@ function formatDate(dateStr: string | null): string {
             <th>Vacuna</th>
             <th class="th-center">Fecha aplicación</th>
             <th class="th-center">Próxima dosis</th>
-            <th class="th-center">Estado</th>
           </tr>
         </thead>
         <tbody>
@@ -74,17 +64,7 @@ function formatDate(dateStr: string | null): string {
               <span class="date-cell">{{ formatDate(record.application_date) }}</span>
             </td>
             <td class="td-center">
-              <span class="date-cell">{{ formatDate(record.due_date) }}</span>
-            </td>
-            <td class="td-center">
-              <span class="status-badge" :class="STATUS_CONFIG[record.status as HealthRecordStatusType]?.className">
-                <component
-                  :is="STATUS_CONFIG[record.status as HealthRecordStatusType]?.icon"
-                  :size="12"
-                  :stroke-width="2.5"
-                />
-                {{ STATUS_CONFIG[record.status as HealthRecordStatusType]?.label }}
-              </span>
+              <span class="date-cell">{{ formatDate(record.next_dose_date) }}</span>
             </td>
           </tr>
         </tbody>
@@ -108,29 +88,19 @@ function formatDate(dateStr: string | null): string {
           <PetAvatar :species="record.pet.species" :name="record.pet.name" size="sm" />
           <span class="record-card__vaccine">{{ record.pet.name }} — {{ record.name }}</span>
         </div>
-          <div class="record-card__dates">
-            <div class="record-card__date-item">
-              <span class="record-card__date-label">Aplicada</span>
-              <span class="record-card__date-value">{{ formatDate(record.application_date) }}</span>
-            </div>
-            <div class="record-card__date-item">
-              <span class="record-card__date-label">Próxima</span>
-              <span class="record-card__date-value">{{ formatDate(record.due_date) }}</span>
-            </div>
+        <div class="record-card__dates">
+          <div class="record-card__date-item">
+            <span class="record-card__date-label">Aplicada</span>
+            <span class="record-card__date-value">{{ formatDate(record.application_date) }}</span>
           </div>
-          <p v-if="record.notes" class="record-card__note" :title="record.notes">
-            {{ record.notes }}
-          </p>
-        <div class="record-card__status">
-          <span class="status-badge" :class="STATUS_CONFIG[record.status as HealthRecordStatusType]?.className">
-            <component
-              :is="STATUS_CONFIG[record.status as HealthRecordStatusType]?.icon"
-              :size="12"
-              :stroke-width="2.5"
-            />
-            {{ STATUS_CONFIG[record.status as HealthRecordStatusType]?.label }}
-          </span>
+          <div class="record-card__date-item">
+            <span class="record-card__date-label">Próxima</span>
+            <span class="record-card__date-value">{{ formatDate(record.next_dose_date) }}</span>
+          </div>
         </div>
+        <p v-if="record.notes" class="record-card__note" :title="record.notes">
+          {{ record.notes }}
+        </p>
       </div>
     </div>
 

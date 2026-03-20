@@ -10,7 +10,7 @@ interface Props {
   petSpecies: string
   petId: string
   vaccineName: string
-  dueDate: string
+  nextDoseDate: string | null
   recordId: string
   urgency?: 'urgent' | 'soon' | 'future'
 }
@@ -25,7 +25,8 @@ const emit = defineEmits<{
 
 // Calcular días restantes
 const daysUntilDue = computed(() => {
-  const due = new Date(props.dueDate)
+  if (!props.nextDoseDate) return 0
+  const due = new Date(props.nextDoseDate)
   const now = new Date()
   due.setUTCHours(0, 0, 0, 0)
   now.setUTCHours(0, 0, 0, 0)
@@ -83,7 +84,7 @@ function handleRegister() {
 
       <!-- Fecha de vencimiento y estado -->
       <div class="due-info">
-        <span class="due-info__date">{{ formatDate(dueDate) }}</span>
+        <span class="due-info__date">{{ nextDoseDate ? formatDate(nextDoseDate) : 'Sin programar' }}</span>
         <span class="status-badge" :class="badgeClass">
           <IconAlertTriangle v-if="daysUntilDue < 0" :size="12" :stroke-width="2.5" />
           <IconCheck v-else :size="12" :stroke-width="2.5" />

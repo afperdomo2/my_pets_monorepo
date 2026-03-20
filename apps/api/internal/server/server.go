@@ -10,12 +10,14 @@ import (
 	"github.com/my-pets/api/internal/database"
 	domainAuth "github.com/my-pets/api/internal/domain/auth"
 	"github.com/my-pets/api/internal/domain/dashboard"
+	"github.com/my-pets/api/internal/domain/exam"
 	"github.com/my-pets/api/internal/domain/health"
 	healthCatalog "github.com/my-pets/api/internal/domain/health_catalog"
 	healthRecord "github.com/my-pets/api/internal/domain/health_record"
 	domainPet "github.com/my-pets/api/internal/domain/pet"
 	domainSetup "github.com/my-pets/api/internal/domain/setup"
 	domainUser "github.com/my-pets/api/internal/domain/user"
+	"github.com/my-pets/api/internal/domain/vaccine_application"
 	"github.com/my-pets/api/internal/middleware"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -88,6 +90,16 @@ func Run(cfg *config.Config, db *gorm.DB) {
 		healthRecordRepo := healthRecord.NewGormRepo(db)
 		healthRecordHandler := healthRecord.NewHandler(healthRecordRepo, healthCatalogRepo)
 		healthRecord.RegisterRoutes(protected, healthRecordHandler)
+
+		// Vaccine application domain (aplicaciones de vacunas/desparasitaciones)
+		vaccineAppRepo := vaccine_application.NewGormRepo(db)
+		vaccineAppHandler := vaccine_application.NewHandler(vaccineAppRepo)
+		vaccine_application.RegisterRoutes(protected, vaccineAppHandler)
+
+		// Exam domain (exámenes veterinarios)
+		examRepo := exam.NewGormRepo(db)
+		examHandler := exam.NewHandler(examRepo)
+		exam.RegisterRoutes(protected, examHandler)
 
 		// Dashboard domain (resumen para dashboard)
 		dashboardRepo := dashboard.NewGormRepo(db)

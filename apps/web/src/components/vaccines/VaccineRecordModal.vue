@@ -182,23 +182,13 @@ async function save() {
        notes: note.value || undefined,
      }
 
-     // 1. Aplicada
+     // Crear registro con fecha de aplicación y próxima dosis
      await createHealthRecord.mutateAsync({
        ...basePayload,
-       status: 'applied',
+       category: 'vaccine' as const,
        application_date: applicationDate.value,
-       due_date: applicationDate.value,
+       next_dose_date: wantsReminder.value && boosterDate.value ? boosterDate.value : undefined,
      })
-
-     // 2. Refuerzo
-     if (wantsReminder.value && boosterDate.value) {
-       await createHealthRecord.mutateAsync({
-         ...basePayload,
-         status: 'pending',
-         due_date: boosterDate.value,
-         application_date: undefined
-       })
-     }
 
      emit('close')
   } catch(e) {

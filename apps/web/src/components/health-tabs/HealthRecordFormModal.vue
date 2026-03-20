@@ -12,7 +12,7 @@ import {
 import DatePicker from '@/components/ui/DatePicker.vue'
 import { useGetHealthCatalogs } from '@/composables/useHealthCatalog'
 import { useCreateHealthRecord, useUpdateHealthRecord } from '@/composables/useHealthRecords'
-import { HealthRecordStatus, HealthCatalogCategory, type HealthCatalogCategoryType } from '@/constants/healthRecord'
+import { HealthCatalogCategory, type HealthCatalogCategoryType } from '@/constants/healthRecord'
 import type { HealthRecord } from '@/types'
 
 onMounted(() => {
@@ -133,9 +133,9 @@ watch(() => props.editingRecord, (record) => {
     selectedCatalogId.value = record.health_catalog_id || 'custom'
     customName.value = record.name
     applicationDate.value = record.application_date || ''
-    nextDate.value = record.due_date || ''
+    nextDate.value = record.next_dose_date || ''
     note.value = record.notes || ''
-    wantsNext.value = !!record.due_date && record.status === HealthRecordStatus.Pending
+    wantsNext.value = !!record.next_dose_date
   }
 }, { immediate: true })
 
@@ -171,9 +171,8 @@ async function save() {
         payload: {
           category: props.category,
           name,
-          status: applicationDate.value ? HealthRecordStatus.Applied : HealthRecordStatus.Pending,
           application_date: applicationDate.value || undefined,
-          due_date: nextDate.value || applicationDate.value || '',
+          next_dose_date: nextDate.value || undefined,
           notes: note.value || undefined,
         },
       })
@@ -188,19 +187,9 @@ async function save() {
 
       await createRecord.mutateAsync({
         ...basePayload,
-        status: applicationDate.value ? HealthRecordStatus.Applied : HealthRecordStatus.Pending,
         application_date: applicationDate.value || undefined,
-        due_date: applicationDate.value,
+        next_dose_date: wantsNext.value && nextDate.value ? nextDate.value : undefined,
       })
-
-      if (wantsNext.value && nextDate.value) {
-        await createRecord.mutateAsync({
-          ...basePayload,
-          status: HealthRecordStatus.Pending,
-          application_date: undefined,
-          due_date: nextDate.value,
-        })
-      }
     }
 
     emit('close')
@@ -213,7 +202,6 @@ function formatCategoryLabel(cat: HealthCatalogCategoryType): string {
   const labels: Record<HealthCatalogCategoryType, string> = {
     [HealthCatalogCategory.Vaccine]: 'vacuna',
     [HealthCatalogCategory.Deworming]: 'antiparasitario',
-    [HealthCatalogCategory.Exam]: 'examen',
   }
   return labels[cat] || 'registro'
 }

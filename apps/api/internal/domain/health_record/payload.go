@@ -4,32 +4,25 @@ package health_record
 // pet_id es obligatorio en el body — ya no se recibe por URL.
 // Si se provee health_catalog_id, el handler copiará name y category desde el catálogo.
 // Si no se provee health_catalog_id, name y category son obligatorios en el payload.
+//
+// HealthRecord solo maneja vacunas (vaccine) y desparasitaciones (deworming).
+// Los exámenes se manejan en la tabla exams.
 type CreateHealthRecordPayload struct {
 	PetID           string  `json:"pet_id"            binding:"required,uuid"`
 	HealthCatalogID *string `json:"health_catalog_id" binding:"omitempty,uuid"`
-	Category        string  `json:"category"          binding:"omitempty,oneof=vaccine deworming exam"`
+	Category        string  `json:"category"          binding:"omitempty,oneof=vaccine deworming"`
 	Name            string  `json:"name"              binding:"omitempty,max=100"`
-	Status          string  `json:"status"            binding:"omitempty,oneof=pending applied"`
 	ApplicationDate *string `json:"application_date"  binding:"omitempty"`
-	DueDate         string  `json:"due_date"          binding:"required"`
+	NextDoseDate    *string `json:"next_dose_date"    binding:"omitempty"`
 	Notes           *string `json:"notes"             binding:"omitempty,max=1000"`
 }
 
 // UpdateHealthRecordPayload es el cuerpo aceptado al actualizar un registro de salud completo.
 // pet_id y health_catalog_id no son actualizables para preservar la integridad del historial.
 type UpdateHealthRecordPayload struct {
-	Category        string  `json:"category"         binding:"required,oneof=vaccine deworming exam"`
-	Name            string  `json:"name"             binding:"required,min=1,max=100"`
-	Status          string  `json:"status"           binding:"omitempty,oneof=pending applied"`
+	Category     string  `json:"category"          binding:"required,oneof=vaccine deworming"`
+	Name         string  `json:"name"              binding:"required,min=1,max=100"`
 	ApplicationDate *string `json:"application_date" binding:"omitempty"`
-	DueDate         string  `json:"due_date"         binding:"required"`
-	Notes           *string `json:"notes"            binding:"omitempty,max=1000"`
-}
-
-// UpdateStatusPayload es el cuerpo aceptado al actualizar solo el status de un registro.
-// El status 'overdue' no se persiste en BD; es calculado en runtime por el handler al leer.
-// Solo se permiten 'pending' y 'applied' en este endpoint.
-type UpdateStatusPayload struct {
-	Status          string  `json:"status"           binding:"required,oneof=pending applied"`
-	ApplicationDate *string `json:"application_date" binding:"omitempty"`
+	NextDoseDate *string `json:"next_dose_date"    binding:"omitempty"`
+	Notes        *string `json:"notes"             binding:"omitempty,max=1000"`
 }

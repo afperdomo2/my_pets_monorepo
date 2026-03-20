@@ -6,7 +6,7 @@ import "time"
 // GORM uses the struct tags to manage the schema via AutoMigrate.
 type Pet struct {
 	ID             string    `json:"id"               gorm:"primaryKey;type:uuid;default:gen_random_uuid()"`
-	UserID         string    `json:"user_id"         gorm:"type:uuid;not null;index"`
+	UserID         string    `json:"user_id"         gorm:"type:uuid;not null;index;constraint:OnDelete:CASCADE"`
 	Name           string    `json:"name"             gorm:"type:varchar(100);not null"`
 	Species        string    `json:"species"          gorm:"type:varchar(50);not null"`
 	Breed          string    `json:"breed"            gorm:"type:varchar(100)"`
@@ -17,4 +17,7 @@ type Pet struct {
 	Size           *string   `json:"size"             gorm:"type:varchar(20);default:null"`
 	CreatedAt      time.Time `json:"created_at" gorm:"type:timestamptz;not null;default:now()"`
 	UpdatedAt      time.Time `json:"updated_at" gorm:"type:timestamptz;not null;default:now()"`
+
+	// Relaciones
+	Exams []Exam `json:"exams" gorm:"foreignKey:PetID"`
 }
