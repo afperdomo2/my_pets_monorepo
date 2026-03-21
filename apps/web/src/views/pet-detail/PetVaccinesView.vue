@@ -12,7 +12,7 @@ import { useGetPet } from '@/composables/usePets'
 import { HealthCatalogCategory } from '@/constants/healthRecord'
 import AppPagination from '@/components/ui/AppPagination.vue'
 import PerPageSelector from '@/components/ui/PerPageSelector.vue'
-import VaccineFormModal from '@/components/health-tabs/VaccineFormModal.vue'
+import HealthRecordCreateModal from '@/components/health-tabs/HealthRecordCreateModal.vue'
 import ConfirmDeleteModal from '@/components/health-tabs/ConfirmDeleteModal.vue'
 
 const route = useRoute()
@@ -210,10 +210,11 @@ async function handleDeleteConfirm() {
     </div>
 
     <!-- Modal registrar vacuna -->
-    <VaccineFormModal
+    <HealthRecordCreateModal
       v-if="showVaccineModal"
       :pet-id="petId"
       :pet-species="pet?.species ?? 'dog'"
+      category="vaccine"
       @close="showVaccineModal = false"
     />
 

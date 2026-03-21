@@ -12,7 +12,7 @@ export interface HealthRecord {
   health_catalog_id: string | null
   category: 'vaccine' | 'deworming'
   name: string
-  application_date: string | null
+  application_date: string
   next_dose_date: string | null
   notes: string | null
   created_at: string
@@ -29,13 +29,14 @@ export interface HealthRecord {
 
 /**
  * Payload para crear un registro de salud.
+ * application_date es obligatorio.
  */
 export interface CreateHealthRecordPayload {
   pet_id: string
   health_catalog_id?: string
   category?: 'vaccine' | 'deworming'
   name?: string
-  application_date?: string
+  application_date: string
   next_dose_date?: string
   notes?: string
 }

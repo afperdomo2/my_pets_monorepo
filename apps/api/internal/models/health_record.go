@@ -20,7 +20,7 @@ type HealthRecord struct {
 	HealthCatalogID *string    `json:"health_catalog_id" gorm:"type:uuid;default:null;constraint:OnDelete:SET NULL"`
 	Category        string     `json:"category"          gorm:"type:varchar(20);not null;index"`
 	Name            string     `json:"name"              gorm:"type:varchar(100);not null"`
-	ApplicationDate *time.Time `json:"application_date"  gorm:"type:date;default:null"`
+	ApplicationDate time.Time  `json:"application_date"  gorm:"type:date;not null"`
 	NextDoseDate    *time.Time `json:"next_dose_date"    gorm:"type:date;default:null;index"`
 	Notes           *string    `json:"notes"             gorm:"type:text;default:null"`
 	CreatedAt       time.Time  `json:"created_at"        gorm:"type:timestamptz;not null;default:now()"`

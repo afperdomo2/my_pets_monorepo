@@ -34,6 +34,7 @@ Thumbs.db
 .dockerignore
 
 .agents/
+.qwen/
 pendientes.txt
 
 FAKE_DATA.md

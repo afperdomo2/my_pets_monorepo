@@ -12,7 +12,7 @@ type CreateHealthRecordPayload struct {
 	HealthCatalogID *string `json:"health_catalog_id" binding:"omitempty,uuid"`
 	Category        string  `json:"category"          binding:"omitempty,oneof=vaccine deworming"`
 	Name            string  `json:"name"              binding:"omitempty,max=100"`
-	ApplicationDate *string `json:"application_date"  binding:"omitempty"`
+	ApplicationDate string  `json:"application_date"  binding:"required"`
 	NextDoseDate    *string `json:"next_dose_date"    binding:"omitempty"`
 	Notes           *string `json:"notes"             binding:"omitempty,max=1000"`
 }

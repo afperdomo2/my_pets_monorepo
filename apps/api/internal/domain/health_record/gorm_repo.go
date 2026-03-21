@@ -118,13 +118,10 @@ func (r *gormRepo) Create(ctx context.Context, ownerID string, payload CreateHea
 		return models.HealthRecord{}, err
 	}
 
-	var applicationDate *time.Time
-	if payload.ApplicationDate != nil {
-		t, err := parseDateString(*payload.ApplicationDate)
-		if err != nil {
-			return models.HealthRecord{}, fmt.Errorf("health_record.Create: formato de application_date inválido: %w", err)
-		}
-		applicationDate = &t
+	// application_date es obligatorio
+	t, err := parseDateString(payload.ApplicationDate)
+	if err != nil {
+		return models.HealthRecord{}, fmt.Errorf("health_record.Create: formato de application_date inválido: %w", err)
 	}
 
 	var nextDoseDate *time.Time
@@ -142,7 +139,7 @@ func (r *gormRepo) Create(ctx context.Context, ownerID string, payload CreateHea
 		HealthCatalogID: payload.HealthCatalogID,
 		Category:        payload.Category,
 		Name:            payload.Name,
-		ApplicationDate: applicationDate,
+		ApplicationDate: t,
 		NextDoseDate:    nextDoseDate,
 		Notes:           payload.Notes,
 	}
@@ -173,7 +170,7 @@ func (r *gormRepo) Update(ctx context.Context, id, ownerID string, payload Updat
 		if err != nil {
 			return models.HealthRecord{}, fmt.Errorf("health_record.Update: formato de application_date inválido: %w", err)
 		}
-		rec.ApplicationDate = &t
+		rec.ApplicationDate = t
 	}
 
 	// Actualizar next_dose_date si se proporciona

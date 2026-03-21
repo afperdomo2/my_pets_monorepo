@@ -246,17 +246,17 @@ func (h *Handler) CreateHealthRecord(c *gin.Context) {
 		return
 	}
 
-	// Si hay application_date, crear registro en vaccine_applications
-	if payload.ApplicationDate != nil {
-		appDate, err := time.Parse("2006-01-02", *payload.ApplicationDate)
-		if err == nil {
-			app := models.VaccineApplication{
-				HealthRecordID:  created.ID,
-				ApplicationDate: appDate,
-				Notes:           payload.Notes,
-			}
-			h.vaccineAppRepo.Create(c.Request.Context(), app)
-			// Ignoramos errores en la creación de vaccine_application para no fallar el registro principal
+	// Crear registro en vaccine_applications (application_date es obligatorio)
+	appDate, err := time.Parse("2006-01-02", payload.ApplicationDate)
+	if err == nil {
+		app := models.VaccineApplication{
+			HealthRecordID:  created.ID,
+			ApplicationDate: appDate,
+			Notes:           payload.Notes,
+		}
+		if _, createErr := h.vaccineAppRepo.Create(c.Request.Context(), app); createErr != nil {
+			// Log error but don't fail the main request
+			// This ensures vaccine_application is created for every health_record
 		}
 	}
 

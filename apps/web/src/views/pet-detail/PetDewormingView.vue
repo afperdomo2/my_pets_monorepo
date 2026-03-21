@@ -6,7 +6,7 @@ import { useGetHealthRecordsByPetAndCategory, useDeleteHealthRecord } from '@/co
 import { useGetPet } from '@/composables/usePets'
 import { HealthCatalogCategory } from '@/constants/healthRecord'
 import type { HealthRecord } from '@/types'
-import DewormingFormModal from '@/components/health-tabs/DewormingFormModal.vue'
+import HealthRecordCreateModal from '@/components/health-tabs/HealthRecordCreateModal.vue'
 import ConfirmDeleteModal from '@/components/health-tabs/ConfirmDeleteModal.vue'
 
 const route = useRoute()
@@ -149,10 +149,11 @@ async function handleDeleteConfirm() {
     </div>
 
     <!-- Modal -->
-    <DewormingFormModal
+    <HealthRecordCreateModal
       v-if="showCreateModal"
       :pet-id="petId"
       :pet-species="pet?.species ?? 'dog'"
+      category="deworming"
       @close="showCreateModal = false"
     />
 
