@@ -53,7 +53,7 @@ func (r *gormRepo) GetAllByOwner(ctx context.Context, ownerID string, page, perP
 	}
 
 	offset := (page - 1) * perPage
-	if err := base.Preload("Pet").Order("created_at DESC").Limit(perPage).Offset(offset).Find(&records).Error; err != nil {
+	if err := base.Preload("Pet").Preload("VaccineApplications").Order("created_at DESC").Limit(perPage).Offset(offset).Find(&records).Error; err != nil {
 		return nil, 0, fmt.Errorf("health_record.GetAllByOwner: %w", err)
 	}
 
@@ -72,7 +72,7 @@ func (r *gormRepo) GetByPetID(ctx context.Context, petID, ownerID string, page, 
 	}
 
 	offset := (page - 1) * perPage
-	if err := base.Preload("Pet").Order("created_at DESC").Limit(perPage).Offset(offset).Find(&records).Error; err != nil {
+	if err := base.Preload("Pet").Preload("VaccineApplications").Order("created_at DESC").Limit(perPage).Offset(offset).Find(&records).Error; err != nil {
 		return nil, 0, fmt.Errorf("health_record.GetByPetID: %w", err)
 	}
 
@@ -91,7 +91,7 @@ func (r *gormRepo) GetByPetIDAndCategory(ctx context.Context, petID, category, o
 	}
 
 	offset := (page - 1) * perPage
-	if err := base.Preload("Pet").Order("created_at DESC").Limit(perPage).Offset(offset).Find(&records).Error; err != nil {
+	if err := base.Preload("Pet").Preload("VaccineApplications").Order("created_at DESC").Limit(perPage).Offset(offset).Find(&records).Error; err != nil {
 		return nil, 0, fmt.Errorf("health_record.GetByPetIDAndCategory: %w", err)
 	}
 
@@ -192,16 +192,21 @@ func (r *gormRepo) Update(ctx context.Context, id, ownerID string, payload Updat
 }
 
 func (r *gormRepo) Delete(ctx context.Context, id, ownerID string) error {
-	result := r.db.WithContext(ctx).
-		Where("id = ? AND user_id = ?", id, ownerID).
-		Delete(&models.HealthRecord{})
-	if result.Error != nil {
-		return fmt.Errorf("health_record.Delete: %w", result.Error)
-	}
-	if result.RowsAffected == 0 {
-		return ErrNotFound
-	}
-	return nil
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("health_record_id = ?", id).
+			Delete(&models.VaccineApplication{}).Error; err != nil {
+			return fmt.Errorf("health_record.Delete vaccine_applications: %w", err)
+		}
+		result := tx.Where("id = ? AND user_id = ?", id, ownerID).
+			Delete(&models.HealthRecord{})
+		if result.Error != nil {
+			return fmt.Errorf("health_record.Delete: %w", result.Error)
+		}
+		if result.RowsAffected == 0 {
+			return ErrNotFound
+		}
+		return nil
+	})
 }
 
 func (r *gormRepo) GetUpcomingRecords(ctx context.Context, ownerID, category string, page, perPage int) ([]models.HealthRecord, int64, error) {
@@ -225,6 +230,7 @@ func (r *gormRepo) GetUpcomingRecords(ctx context.Context, ownerID, category str
 	offset := (page - 1) * perPage
 	if err := query.
 		Preload("Pet").
+		Preload("VaccineApplications").
 		Order("next_dose_date ASC").
 		Limit(perPage).
 		Offset(offset).

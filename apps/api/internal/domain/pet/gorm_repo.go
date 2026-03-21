@@ -106,14 +106,51 @@ func (r *gormRepo) Update(ctx context.Context, id, userID string, payload Update
 }
 
 func (r *gormRepo) Delete(ctx context.Context, id, userID string) error {
-	result := r.db.WithContext(ctx).Where("id = ? AND user_id = ?", id, userID).Delete(&models.Pet{})
-	if result.Error != nil {
-		return fmt.Errorf("pet.Delete: %w", result.Error)
-	}
-	if result.RowsAffected == 0 {
-		return ErrNotFound
-	}
-	return nil
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var examIDs []string
+		if err := tx.Model(&models.Exam{}).
+			Where("pet_id = ?", id).
+			Pluck("id", &examIDs).Error; err != nil {
+			return fmt.Errorf("pet.Delete: obtener exam_ids: %w", err)
+		}
+		if len(examIDs) > 0 {
+			if err := tx.Where("exam_id IN ?", examIDs).
+				Delete(&models.ExamResult{}).Error; err != nil {
+				return fmt.Errorf("pet.Delete exam_results: %w", err)
+			}
+		}
+		if err := tx.Where("pet_id = ?", id).
+			Delete(&models.Exam{}).Error; err != nil {
+			return fmt.Errorf("pet.Delete exams: %w", err)
+		}
+
+		var healthRecordIDs []string
+		if err := tx.Model(&models.HealthRecord{}).
+			Where("pet_id = ?", id).
+			Pluck("id", &healthRecordIDs).Error; err != nil {
+			return fmt.Errorf("pet.Delete: obtener health_record_ids: %w", err)
+		}
+		if len(healthRecordIDs) > 0 {
+			if err := tx.Where("health_record_id IN ?", healthRecordIDs).
+				Delete(&models.VaccineApplication{}).Error; err != nil {
+				return fmt.Errorf("pet.Delete vaccine_applications: %w", err)
+			}
+		}
+		if err := tx.Where("pet_id = ?", id).
+			Delete(&models.HealthRecord{}).Error; err != nil {
+			return fmt.Errorf("pet.Delete health_records: %w", err)
+		}
+
+		result := tx.Where("id = ? AND user_id = ?", id, userID).
+			Delete(&models.Pet{})
+		if result.Error != nil {
+			return fmt.Errorf("pet.Delete: %w", result.Error)
+		}
+		if result.RowsAffected == 0 {
+			return ErrNotFound
+		}
+		return nil
+	})
 }
 
 func (r *gormRepo) CountByOwner(ctx context.Context, userID string) (int64, error) {

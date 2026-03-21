@@ -88,11 +88,11 @@ func Run(cfg *config.Config, db *gorm.DB) {
 
 		// Health record domain (registros de salud por mascota)
 		healthRecordRepo := healthRecord.NewGormRepo(db)
-		healthRecordHandler := healthRecord.NewHandler(healthRecordRepo, healthCatalogRepo)
+		vaccineAppRepo := vaccine_application.NewGormRepo(db)
+		healthRecordHandler := healthRecord.NewHandler(healthRecordRepo, healthCatalogRepo, vaccineAppRepo)
 		healthRecord.RegisterRoutes(protected, healthRecordHandler)
 
 		// Vaccine application domain (aplicaciones de vacunas/desparasitaciones)
-		vaccineAppRepo := vaccine_application.NewGormRepo(db)
 		vaccineAppHandler := vaccine_application.NewHandler(vaccineAppRepo)
 		vaccine_application.RegisterRoutes(protected, vaccineAppHandler)
 

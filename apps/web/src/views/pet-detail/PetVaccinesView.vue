@@ -5,17 +5,15 @@ import {
   IconPlus,
   IconRefresh,
   IconVaccine,
-  IconPencil,
   IconTrash,
 } from '@tabler/icons-vue'
-import { useGetHealthRecordsByPetAndCategory } from '@/composables/useHealthRecords'
+import { useGetHealthRecordsByPetAndCategory, useDeleteHealthRecord } from '@/composables/useHealthRecords'
 import { useGetPet } from '@/composables/usePets'
 import { HealthCatalogCategory } from '@/constants/healthRecord'
-import type { HealthRecord } from '@/types'
 import AppPagination from '@/components/ui/AppPagination.vue'
 import PerPageSelector from '@/components/ui/PerPageSelector.vue'
-import HealthRecordFormModal from '@/components/health-tabs/HealthRecordFormModal.vue'
-import VaccineRecordModal from '@/components/vaccines/VaccineRecordModal.vue'
+import VaccineFormModal from '@/components/health-tabs/VaccineFormModal.vue'
+import ConfirmDeleteModal from '@/components/health-tabs/ConfirmDeleteModal.vue'
 
 const route = useRoute()
 const petId = computed(() => String(route.params.id))
@@ -44,15 +42,31 @@ function formatDate(dateStr: string | null): string {
 }
 
 const showVaccineModal = ref(false)
-const editingRecord = ref<HealthRecord | null>(null)
+const showConfirmModal = ref(false)
+const recordToDelete = ref<typeof records.value[number] | null>(null)
+const deletingId = ref<string | null>(null)
+
+const deleteRecord = useDeleteHealthRecord()
 
 function openCreate() {
-  editingRecord.value = null
   showVaccineModal.value = true
 }
 
-function openEdit(record: HealthRecord) {
-  editingRecord.value = record
+function openDeleteConfirm(record: typeof records.value[number]) {
+  recordToDelete.value = record
+  showConfirmModal.value = true
+}
+
+async function handleDeleteConfirm() {
+  if (!recordToDelete.value) return
+  deletingId.value = recordToDelete.value.id
+  try {
+    await deleteRecord.mutateAsync({ id: recordToDelete.value.id, petId: petId.value })
+    showConfirmModal.value = false
+    recordToDelete.value = null
+  } finally {
+    deletingId.value = null
+  }
 }
 </script>
 
@@ -75,7 +89,7 @@ function openEdit(record: HealthRecord) {
           </button>
           <button class="btn-add" @click="openCreate">
             <IconPlus :size="16" :stroke-width="2.5" />
-            Aplicar
+            Registrar
           </button>
         </div>
       </div>
@@ -113,13 +127,13 @@ function openEdit(record: HealthRecord) {
               </td>
               <td class="td-center">
                 <div class="action-buttons">
-                  <button class="btn-action btn-edit" title="Editar vacuna" @click="openEdit(record)">
-                    <IconPencil :size="14" :stroke-width="2" />
-                    Editar
-                  </button>
-                  <button class="btn-action btn-delete" title="Eliminar vacuna">
+                  <button
+                    class="btn-action btn-delete"
+                    title="Eliminar"
+                    :disabled="deletingId === record.id || deleteRecord.isPending.value"
+                    @click="openDeleteConfirm(record)"
+                  >
                     <IconTrash :size="14" :stroke-width="2" />
-                    Eliminar
                   </button>
                 </div>
               </td>
@@ -155,6 +169,14 @@ function openEdit(record: HealthRecord) {
         <div v-for="record in records" :key="`card-${record.id}`" class="record-card">
           <div class="record-card__top">
             <span class="record-card__vaccine">{{ record.name }}</span>
+            <button
+              class="btn-delete-card"
+              title="Eliminar"
+              :disabled="deletingId === record.id || deleteRecord.isPending.value"
+              @click="openDeleteConfirm(record)"
+            >
+              <IconTrash :size="14" :stroke-width="2" />
+            </button>
           </div>
           <div class="record-card__dates">
             <div class="record-card__date-item">
@@ -171,16 +193,6 @@ function openEdit(record: HealthRecord) {
           <p v-if="record.notes" class="record-card__note" :title="record.notes">
             {{ record.notes }}
           </p>
-          <div class="record-card__actions">
-            <button class="btn-action btn-edit" title="Editar vacuna" @click="openEdit(record)">
-              <IconPencil :size="14" :stroke-width="2" />
-              Editar
-            </button>
-            <button class="btn-action btn-delete" title="Eliminar vacuna">
-              <IconTrash :size="14" :stroke-width="2" />
-              Eliminar
-            </button>
-          </div>
         </div>
       </div>
 
@@ -197,22 +209,21 @@ function openEdit(record: HealthRecord) {
       </div>
     </div>
 
-    <!-- Modal crear vacuna -->
-    <VaccineRecordModal
+    <!-- Modal registrar vacuna -->
+    <VaccineFormModal
       v-if="showVaccineModal"
-      :preselected-pet="petId"
+      :pet-id="petId"
+      :pet-species="pet?.species ?? 'dog'"
       @close="showVaccineModal = false"
     />
 
-    <!-- Modal editar vacuna -->
-    <HealthRecordFormModal
-      v-if="editingRecord !== null"
-      v-model="editingRecord"
-      :pet-id="petId"
-      :pet-species="pet?.species ?? 'dog'"
-      :category="HealthCatalogCategory.Vaccine"
-      :editing-record="editingRecord"
-      @close="editingRecord = null"
+    <!-- Modal confirmar eliminación -->
+    <ConfirmDeleteModal
+      v-model="showConfirmModal"
+      :record-name="recordToDelete?.name ?? ''"
+      record-type="vaccine"
+      :deleting="deleteRecord.isPending.value"
+      @confirm="handleDeleteConfirm"
     />
   </div>
 </template>
@@ -477,6 +488,29 @@ function openEdit(record: HealthRecord) {
   background: #fef2f2;
   color: #dc2626;
   border-color: #fecaca;
+}
+
+.btn-delete-card {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  background: transparent;
+  color: var(--color-text-tertiary);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.btn-delete-card:hover:not(:disabled) {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.btn-delete-card:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 /* ── Vista card para móvil (< 560px) ─ */

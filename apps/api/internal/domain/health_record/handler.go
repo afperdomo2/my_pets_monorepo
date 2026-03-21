@@ -5,9 +5,12 @@ import (
 	"math"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	healthCatalog "github.com/my-pets/api/internal/domain/health_catalog"
+	vaccineApp "github.com/my-pets/api/internal/domain/vaccine_application"
+	"github.com/my-pets/api/internal/models"
 	"github.com/my-pets/api/internal/validation"
 )
 
@@ -15,12 +18,14 @@ import (
 type Handler struct {
 	repo              Repository
 	healthCatalogRepo healthCatalog.Repository
+	vaccineAppRepo    vaccineApp.Repository
 }
 
 // NewHandler construye un Handler con el repositorio dado.
 // healthCatalogRepo es opcional: se usa para copiar name y category al crear desde catálogo.
-func NewHandler(repo Repository, healthCatalogRepo healthCatalog.Repository) *Handler {
-	return &Handler{repo: repo, healthCatalogRepo: healthCatalogRepo}
+// vaccineAppRepo se usa para crear aplicaciones cuando hay application_date.
+func NewHandler(repo Repository, healthCatalogRepo healthCatalog.Repository, vaccineAppRepo vaccineApp.Repository) *Handler {
+	return &Handler{repo: repo, healthCatalogRepo: healthCatalogRepo, vaccineAppRepo: vaccineAppRepo}
 }
 
 // ownerID extrae el ID del usuario autenticado del contexto Gin (seteado por el middleware JWT).
@@ -239,6 +244,20 @@ func (h *Handler) CreateHealthRecord(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error al crear registro de salud"})
 		return
+	}
+
+	// Si hay application_date, crear registro en vaccine_applications
+	if payload.ApplicationDate != nil {
+		appDate, err := time.Parse("2006-01-02", *payload.ApplicationDate)
+		if err == nil {
+			app := models.VaccineApplication{
+				HealthRecordID:  created.ID,
+				ApplicationDate: appDate,
+				Notes:           payload.Notes,
+			}
+			h.vaccineAppRepo.Create(c.Request.Context(), app)
+			// Ignoramos errores en la creación de vaccine_application para no fallar el registro principal
+		}
 	}
 
 	c.JSON(http.StatusCreated, gin.H{"data": created})

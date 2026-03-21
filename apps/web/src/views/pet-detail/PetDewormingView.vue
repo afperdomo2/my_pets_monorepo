@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { ref, computed, type Ref } from 'vue'
 import { useRoute } from 'vue-router'
-import { IconPlus, IconPill, IconDroplet } from '@tabler/icons-vue'
-import { useGetHealthRecordsByPetAndCategory } from '@/composables/useHealthRecords'
+import { IconPlus, IconPill, IconDroplet, IconTrash } from '@tabler/icons-vue'
+import { useGetHealthRecordsByPetAndCategory, useDeleteHealthRecord } from '@/composables/useHealthRecords'
 import { useGetPet } from '@/composables/usePets'
 import { HealthCatalogCategory } from '@/constants/healthRecord'
 import type { HealthRecord } from '@/types'
-import HealthRecordFormModal from '@/components/health-tabs/HealthRecordFormModal.vue'
+import DewormingFormModal from '@/components/health-tabs/DewormingFormModal.vue'
+import ConfirmDeleteModal from '@/components/health-tabs/ConfirmDeleteModal.vue'
 
 const route = useRoute()
 const petId = computed(() => String(route.params.id))
@@ -38,16 +39,31 @@ function isInternalDeworming(name: string): boolean {
 }
 
 const showCreateModal = ref(false)
-const editingRecord = ref<HealthRecord | null>(null)
+const showConfirmModal = ref(false)
+const recordToDelete = ref<HealthRecord | null>(null)
+const deletingId = ref<string | null>(null)
+
+const deleteRecord = useDeleteHealthRecord()
 
 function openCreate() {
-  editingRecord.value = null
   showCreateModal.value = true
 }
 
-function openEdit(record: HealthRecord) {
-  editingRecord.value = record
-  showCreateModal.value = true
+function openDeleteConfirm(record: HealthRecord) {
+  recordToDelete.value = record
+  showConfirmModal.value = true
+}
+
+async function handleDeleteConfirm() {
+  if (!recordToDelete.value) return
+  deletingId.value = recordToDelete.value.id
+  try {
+    await deleteRecord.mutateAsync({ id: recordToDelete.value.id, petId: petId.value })
+    showConfirmModal.value = false
+    recordToDelete.value = null
+  } finally {
+    deletingId.value = null
+  }
 }
 </script>
 
@@ -62,7 +78,7 @@ function openEdit(record: HealthRecord) {
         </h2>
         <button class="btn-add" @click="openCreate">
           <IconPlus :size="16" :stroke-width="2.5" />
-          Registrar aplicación
+          Registrar
         </button>
       </div>
 
@@ -120,24 +136,33 @@ function openEdit(record: HealthRecord) {
             </div>
           </div>
 
-          <div class="record-actions">
-            <button class="btn-edit-record" title="Editar" @click="openEdit(record)">
-              ✏️ Editar
-            </button>
-          </div>
+          <button
+            class="btn-delete-record"
+            title="Eliminar"
+            :disabled="deletingId === record.id || deleteRecord.isPending.value"
+            @click="openDeleteConfirm(record)"
+          >
+            <IconTrash :size="16" :stroke-width="2" />
+          </button>
         </div>
       </div>
     </div>
 
     <!-- Modal -->
-    <HealthRecordFormModal
+    <DewormingFormModal
       v-if="showCreateModal"
-      v-model="showCreateModal"
       :pet-id="petId"
       :pet-species="pet?.species ?? 'dog'"
-      :category="HealthCatalogCategory.Deworming"
-      :editing-record="editingRecord"
       @close="showCreateModal = false"
+    />
+
+    <!-- Modal confirmar eliminación -->
+    <ConfirmDeleteModal
+      v-model="showConfirmModal"
+      :record-name="recordToDelete?.name ?? ''"
+      record-type="deworming"
+      :deleting="deleteRecord.isPending.value"
+      @confirm="handleDeleteConfirm"
     />
   </div>
 </template>
@@ -457,6 +482,30 @@ function openEdit(record: HealthRecord) {
 
 .btn-edit-record:hover {
   opacity: 1;
+}
+
+.btn-delete-record {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  background: transparent;
+  color: var(--color-text-tertiary);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.btn-delete-record:hover:not(:disabled) {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.btn-delete-record:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 @media (max-width: 600px) {
