@@ -58,6 +58,7 @@ const router = createRouter({
           children: [
             {
               path: '',
+              name: 'pet-detail-index',
               redirect: (to) => ({ name: 'pet-detail-vaccines', params: { id: to.params.id } }),
             },
             {

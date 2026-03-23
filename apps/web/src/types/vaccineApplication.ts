@@ -19,6 +19,7 @@ export interface CreateVaccineApplicationPayload {
   health_record_id: string
   application_date: string
   notes?: string
+  next_dose_date?: string | null
 }
 
 /**

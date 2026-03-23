@@ -7,13 +7,14 @@ import {
   IconVaccine,
   IconTrash,
   IconEdit,
-  IconCalendar,
   IconNotes,
+  IconCalendar,
 } from '@tabler/icons-vue'
 import { useGetHealthRecordsByPetAndCategory, useDeleteHealthRecord, useUpdateHealthRecord } from '@/composables/useHealthRecords'
 import { useCreateVaccineApplication } from '@/composables/useVaccineApplications'
 import { useGetPet } from '@/composables/usePets'
 import { HealthCatalogCategory } from '@/constants/healthRecord'
+import { formatDateOnly } from '@/utils/date'
 import AppPagination from '@/components/ui/AppPagination.vue'
 import PerPageSelector from '@/components/ui/PerPageSelector.vue'
 import HealthRecordCreateModal from '@/components/health-tabs/HealthRecordCreateModal.vue'
@@ -40,12 +41,6 @@ const { data, isLoading, isError, refresh } = useGetHealthRecordsByPetAndCategor
 const records = computed(() => data.value?.data ?? [])
 const total = computed(() => data.value?.total ?? 0)
 const totalPages = computed(() => data.value?.total_pages ?? 0)
-
-function formatDate(dateStr: string | null): string {
-  if (!dateStr) return '—'
-  const date = new Date(dateStr)
-  return date.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })
-}
 
 function formatDosesText(record: typeof records.value[number]): string {
   const applied = record.applied_doses_count ?? 0
@@ -155,13 +150,13 @@ async function handleDeleteConfirm() {
                 <div class="last-application-cell">
                   <div class="last-application-date">
                     <IconCalendar :size="14" :stroke-width="2" />
-                    <span>{{ formatDate(record.last_dose_date) }}</span>
+                    <span>{{ formatDateOnly(record.last_dose_date) }}</span>
                   </div>
                 </div>
               </td>
               <td class="td-center">
                 <span class="date-cell">
-                  {{ formatDate(record.next_dose_date) }}
+                  {{ formatDateOnly(record.next_dose_date) }}
                 </span>
               </td>
               <td class="td-center">
@@ -262,14 +257,14 @@ async function handleDeleteConfirm() {
           <div class="record-card__last-application">
             <div class="record-card__last-application-date">
               <IconCalendar :size="14" :stroke-width="2" />
-              <span>{{ formatDate(record.last_dose_date) }}</span>
+              <span>{{ formatDateOnly(record.last_dose_date) }}</span>
             </div>
           </div>
 
           <!-- Próxima dosis -->
           <div class="record-card__next-dose">
             <span class="record-card__next-dose-label">Próxima dosis</span>
-            <span class="record-card__next-dose-value">{{ formatDate(record.next_dose_date) }}</span>
+            <span class="record-card__next-dose-value">{{ formatDateOnly(record.next_dose_date) }}</span>
           </div>
         </div>
       </div>
@@ -319,6 +314,7 @@ async function handleDeleteConfirm() {
       v-if="showApplicationModal && healthRecordToApply"
       :health-record-id="healthRecordToApply.id"
       category="vaccine"
+      :total-doses="healthRecordToApply.total_doses"
       @close="showApplicationModal = false; healthRecordToApply = null"
       @applied="refresh"
     />
@@ -537,21 +533,6 @@ async function handleDeleteConfirm() {
   color: var(--color-text-secondary);
 }
 
-.last-application-note {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: var(--text-xs);
-  color: var(--color-text-tertiary);
-  max-width: 200px;
-}
-
-.last-application-note span {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 /* ── Estilos para móvil ────────────── */
 .record-card__doses {
   margin-top: var(--space-3);
@@ -589,14 +570,6 @@ async function handleDeleteConfirm() {
   gap: 4px;
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
-}
-
-.record-card__last-application-note {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: var(--text-xs);
-  color: var(--color-text-tertiary);
 }
 
 .record-card__next-dose {

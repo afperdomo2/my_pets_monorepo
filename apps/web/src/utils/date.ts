@@ -193,3 +193,36 @@ export function getMonthName(month: number, locale = 'es-ES'): string {
   const date = new Date(2000, month, 1)
   return date.toLocaleDateString(locale, { month: 'long' })
 }
+
+/**
+ * Formatea una fecha (solo fecha, sin hora) usando UTC para evitar problemas de timezone.
+ * Ideal para fechas que vienen del backend en formato YYYY-MM-DD o YYYY-MM-DDT00:00:00Z.
+ * 
+ * @param dateStr - String de fecha en formato ISO (YYYY-MM-DD o YYYY-MM-DDTHH:MM:SSZ)
+ * @param emptyValue - Valor a mostrar si la fecha es nula o vacía (default: '—')
+ * @returns String formateado (ej: "23 mar 2026") o el valor vacío si no hay fecha
+ */
+export function formatDateOnly(
+  dateStr: string | null | undefined,
+  emptyValue = '—'
+): string {
+  if (!dateStr) return emptyValue
+  
+  // Extraer solo la parte de fecha (YYYY-MM-DD) del string ISO
+  const datePart = dateStr.split('T')[0]
+  const [year, month, day] = datePart.split('-').map(Number)
+  
+  // Crear fecha usando UTC para evitar problemas de timezone
+  // Los meses en JS son 0-indexados (0 = enero, 11 = diciembre)
+  const date = new Date(Date.UTC(year, month - 1, day))
+  
+  // Formatear usando los componentes UTC directamente
+  const dayNum = date.getUTCDate()
+  const monthIndex = date.getUTCMonth()
+  const yearNum = date.getUTCFullYear()
+  
+  // Nombres de meses abreviados en español
+  const monthNames = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
+  
+  return `${dayNum} ${monthNames[monthIndex]} ${yearNum}`
+}

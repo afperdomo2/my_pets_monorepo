@@ -4,10 +4,12 @@ package vaccine_application
 // health_record_id es obligatorio — vincula la aplicación al registro de salud.
 // application_date es la fecha en que se aplicó la dosis.
 // notes es opcional — permite almacenar observaciones (lote, veterinario, etc.).
+// next_dose_date es opcional — fecha programada para la próxima dosis.
 type CreatePayload struct {
 	HealthRecordID string  `json:"health_record_id" binding:"required,uuid"`
 	ApplicationDate  string  `json:"application_date" binding:"required"`
 	Notes          *string `json:"notes" binding:"omitempty,max=1000"`
+	NextDoseDate   *string `json:"next_dose_date" binding:"omitempty"`
 }
 
 // UpdatePayload es el cuerpo aceptado al actualizar una aplicación de vacuna.

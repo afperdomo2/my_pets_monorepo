@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import DatePicker from '@/components/ui/DatePicker.vue'
 import { useCreateVaccineApplication } from '@/composables/useVaccineApplications'
-import { IconCheck, IconX } from '@tabler/icons-vue'
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { IconBell, IconCheck, IconX } from '@tabler/icons-vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 
 onMounted(() => {
   document.body.style.overflow = 'hidden'
@@ -16,6 +16,7 @@ const props = defineProps<{
   healthRecordId: string
   category: 'vaccine' | 'deworming'
   preselectedDate?: string
+  totalDoses?: number | null
 }>()
 
 const emit = defineEmits<{
@@ -25,6 +26,13 @@ const emit = defineEmits<{
 
 const applicationDate = ref(props.preselectedDate || '')
 const note = ref('')
+const wantsNext = ref(false)
+const nextDate = ref('')
+
+// Si hay total_doses configurado, activar el toggle por defecto
+if (props.totalDoses !== null && props.totalDoses !== undefined) {
+  wantsNext.value = true
+}
 
 const createApplication = useCreateVaccineApplication()
 
@@ -40,6 +48,7 @@ async function save() {
       health_record_id: props.healthRecordId,
       application_date: applicationDate.value,
       notes: note.value.trim() || undefined,
+      next_dose_date: wantsNext.value && nextDate.value ? nextDate.value : null,
     })
     emit('applied')
     emit('close')
@@ -113,6 +122,42 @@ const notePlaceholder = computed(() => {
               :placeholder="notePlaceholder"
             />
           </div>
+
+          <!-- Programar refuerzo -->
+          <div class="suggestion-card">
+            <div class="suggestion-icon">
+              <IconBell :size="18" :stroke-width="1.75" />
+            </div>
+            <div class="suggestion-body">
+              <div class="suggestion-header">
+                <p class="suggestion-text">
+                  <strong>Programar refuerzo</strong>
+                  <br>Programa la próxima dosis para mantener el historial al día.
+                </p>
+                <label class="suggestion-toggle">
+                  <input v-model="wantsNext" type="checkbox" class="toggle-checkbox" />
+                  <span class="toggle-track">
+                    <span class="toggle-thumb" />
+                  </span>
+                  <span class="toggle-label">{{ wantsNext ? 'Sí' : 'No' }}</span>
+                </label>
+              </div>
+
+              <template v-if="wantsNext">
+                <div class="next-date-wrapper">
+                  <label class="field-label field-label--small">
+                    Fecha próximo refuerzo
+                  </label>
+                  <DatePicker
+                    v-model="nextDate"
+                    :min-date="applicationDate ? new Date(applicationDate) : new Date()"
+                    placeholder="Seleccionar fecha"
+                    unique-id="next-date-apply"
+                  />
+                </div>
+              </template>
+            </div>
+          </div>
         </div>
 
         <!-- Footer -->
@@ -159,7 +204,7 @@ const notePlaceholder = computed(() => {
 .modal-container {
   background: var(--color-surface);
   width: min(520px, 100%);
-  max-height: min(90vh, 600px);
+  max-height: min(90vh, 700px);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-xl);
   display: flex;
@@ -292,6 +337,109 @@ const notePlaceholder = computed(() => {
 .note-input:focus {
   border-color: var(--color-accent);
   outline: none;
+}
+
+/* ── Suggestion card ──────────────────────────────────────── */
+.suggestion-card {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: var(--radius-lg);
+  margin-top: auto;
+}
+
+.suggestion-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  background: #dbeafe;
+  color: #2563eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.suggestion-body {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.suggestion-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.suggestion-text {
+  font-size: var(--text-sm);
+  color: #1e40af;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.suggestion-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+  flex-shrink: 0;
+  min-height: 32px;
+}
+
+.toggle-checkbox {
+  display: none;
+}
+
+.toggle-track {
+  width: 36px;
+  height: 20px;
+  border-radius: var(--radius-full);
+  background: var(--color-border);
+  position: relative;
+  transition: background var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.toggle-checkbox:checked + .toggle-track {
+  background: var(--color-accent);
+}
+
+.toggle-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: var(--radius-full);
+  background: #fff;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  transition: transform var(--transition-fast);
+  box-shadow: var(--shadow-xs);
+}
+
+.toggle-checkbox:checked + .toggle-track .toggle-thumb {
+  transform: translateX(16px);
+}
+
+.toggle-label {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: #1e40af;
+}
+
+.next-date-wrapper {
+  margin-top: var(--space-3);
+}
+
+.field-label--small {
+  font-size: var(--text-xs);
+  margin-bottom: var(--space-1);
 }
 
 /* ── Footer ───────────────────────────────────────────────── */

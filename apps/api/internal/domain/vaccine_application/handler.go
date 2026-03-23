@@ -135,8 +135,8 @@ func (h *Handler) CreateApplication(c *gin.Context) {
 		return
 	}
 
-	// Actualizar last_dose_date y applied_doses_count en health_record
-	if err := h.repo.UpdateHealthRecordAfterApplication(c.Request.Context(), payload.HealthRecordID, payload.ApplicationDate); err != nil {
+	// Actualizar last_dose_date, applied_doses_count y next_dose_date en health_record
+	if err := h.repo.UpdateHealthRecordAfterApplication(c.Request.Context(), payload.HealthRecordID, payload.ApplicationDate, payload.NextDoseDate); err != nil {
 		// Log error but don't fail the request
 	}
 

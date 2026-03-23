@@ -332,6 +332,7 @@ async function handleDeleteConfirm() {
       v-if="showApplicationModal && healthRecordToApply"
       :health-record-id="healthRecordToApply.id"
       category="deworming"
+      :total-doses="healthRecordToApply.total_doses"
       @close="showApplicationModal = false; healthRecordToApply = null"
       @applied="refresh"
     />
@@ -600,21 +601,6 @@ async function handleDeleteConfirm() {
   color: var(--color-text-secondary);
 }
 
-.last-application-note {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: var(--text-xs);
-  color: var(--color-text-tertiary);
-  max-width: 200px;
-}
-
-.last-application-note span {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 .date-cell {
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
@@ -836,14 +822,6 @@ async function handleDeleteConfirm() {
     gap: 4px;
     font-size: var(--text-sm);
     color: var(--color-text-secondary);
-  }
-
-  .record-card__last-application-note {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    font-size: var(--text-xs);
-    color: var(--color-text-tertiary);
   }
 
   .record-card__next-dose {
