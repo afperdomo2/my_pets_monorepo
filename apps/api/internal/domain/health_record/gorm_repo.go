@@ -169,10 +169,8 @@ func (r *gormRepo) Update(ctx context.Context, id, ownerID string, payload Updat
 	rec.Name = payload.Name
 	rec.Notes = payload.Notes
 
-	// Actualizar total_doses si se proporciona
-	if payload.TotalDoses != nil {
-		rec.TotalDoses = payload.TotalDoses
-	}
+	// Actualizar total_doses (puede ser null para limpiar el valor)
+	rec.TotalDoses = payload.TotalDoses
 
 	// Actualizar application_date si se proporciona
 	if payload.ApplicationDate != nil {

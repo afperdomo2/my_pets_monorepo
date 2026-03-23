@@ -55,7 +55,7 @@ export interface UpdateHealthRecordPayload {
   application_date?: string
   next_dose_date?: string
   notes?: string
-  total_doses?: number
+  total_doses?: number | null
 }
 
 // Re-exportar tipos compartidos para compatibilidad

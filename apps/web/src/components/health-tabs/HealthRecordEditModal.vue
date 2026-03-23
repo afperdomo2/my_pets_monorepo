@@ -42,7 +42,9 @@ async function save() {
         category: props.record.category,
         name: name.value.trim(),
         notes: note.value.trim() || undefined,
-        total_doses: totalDoses.value,
+        total_doses: totalDoses.value !== undefined && totalDoses.value > 0
+          ? totalDoses.value
+          : null,
       },
     })
     emit('updated', updated)
