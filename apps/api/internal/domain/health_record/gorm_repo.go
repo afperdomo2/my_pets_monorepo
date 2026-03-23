@@ -133,6 +133,8 @@ func (r *gormRepo) Create(ctx context.Context, ownerID string, payload CreateHea
 		nextDoseDate = &t
 	}
 
+	// Al crear el registro, la primera dosis ya está aplicada
+	// Por lo tanto, last_dose_date = application_date y applied_doses_count = 1
 	rec := models.HealthRecord{
 		PetID:             payload.PetID,
 		UserID:            ownerID,
@@ -143,7 +145,8 @@ func (r *gormRepo) Create(ctx context.Context, ownerID string, payload CreateHea
 		NextDoseDate:      nextDoseDate,
 		Notes:             payload.Notes,
 		TotalDoses:        payload.TotalDoses,
-		AppliedDosesCount: 0,
+		LastDoseDate:      &t,
+		AppliedDosesCount: 1,
 	}
 
 	if result := r.db.WithContext(ctx).Create(&rec); result.Error != nil {

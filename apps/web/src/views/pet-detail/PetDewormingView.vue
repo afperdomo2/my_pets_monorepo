@@ -165,10 +165,6 @@ async function handleDeleteConfirm() {
                     <IconCalendar :size="14" :stroke-width="2" />
                     <span>{{ formatDate(record.last_dose_date) }}</span>
                   </div>
-                  <div v-if="record.notes" class="last-application-note">
-                    <IconNotes :size="12" :stroke-width="2" />
-                    <span>{{ record.notes }}</span>
-                  </div>
                 </div>
               </td>
               <td class="td-center">
@@ -280,10 +276,6 @@ async function handleDeleteConfirm() {
             <div class="record-card__last-application-date">
               <IconCalendar :size="14" :stroke-width="2" />
               <span>{{ formatDate(record.last_dose_date) }}</span>
-            </div>
-            <div v-if="record.notes" class="record-card__last-application-note">
-              <IconNotes :size="12" :stroke-width="2" />
-              <span>{{ record.notes }}</span>
             </div>
           </div>
 
