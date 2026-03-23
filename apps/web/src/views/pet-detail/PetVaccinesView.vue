@@ -6,14 +6,18 @@ import {
   IconRefresh,
   IconVaccine,
   IconTrash,
+  IconEdit,
 } from '@tabler/icons-vue'
-import { useGetHealthRecordsByPetAndCategory, useDeleteHealthRecord } from '@/composables/useHealthRecords'
+import { useGetHealthRecordsByPetAndCategory, useDeleteHealthRecord, useUpdateHealthRecord } from '@/composables/useHealthRecords'
+import { useCreateVaccineApplication } from '@/composables/useVaccineApplications'
 import { useGetPet } from '@/composables/usePets'
 import { HealthCatalogCategory } from '@/constants/healthRecord'
 import AppPagination from '@/components/ui/AppPagination.vue'
 import PerPageSelector from '@/components/ui/PerPageSelector.vue'
 import HealthRecordCreateModal from '@/components/health-tabs/HealthRecordCreateModal.vue'
 import ConfirmDeleteModal from '@/components/health-tabs/ConfirmDeleteModal.vue'
+import HealthRecordEditModal from '@/components/health-tabs/HealthRecordEditModal.vue'
+import VaccineApplicationModal from '@/components/health-tabs/VaccineApplicationModal.vue'
 
 const route = useRoute()
 const petId = computed(() => String(route.params.id))
@@ -41,15 +45,68 @@ function formatDate(dateStr: string | null): string {
   return date.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
+function formatDateShort(dateStr: string): string {
+  const date = new Date(dateStr)
+  return date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })
+}
+
+function formatDateCompact(dateStr: string): { day: string; month: string; year: string } {
+  const date = new Date(dateStr)
+  const day = String(date.getDate()).padStart(2, '0')
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const year = String(date.getFullYear()).slice(-2)
+  return { day, month, year }
+}
+
+function getApplicationsCount(record: typeof records.value[number]): number {
+  return record.vaccine_applications?.length ?? 0
+}
+
+const MAX_DISPLAYED_APPLICATIONS = 5
+
+function getDisplayedApplications(record: typeof records.value[number]) {
+  const apps = record.vaccine_applications ?? []
+  // Orden inverso: última aplicación primero
+  const sorted = [...apps].sort((a, b) => 
+    new Date(b.application_date).getTime() - new Date(a.application_date).getTime()
+  )
+  // Retornar solo las primeras 5
+  return sorted.slice(0, MAX_DISPLAYED_APPLICATIONS)
+}
+
+function hasMoreApplications(record: typeof records.value[number]): boolean {
+  return getApplicationsCount(record) > MAX_DISPLAYED_APPLICATIONS
+}
+
+function getMoreApplicationsCount(record: typeof records.value[number]): number {
+  return getApplicationsCount(record) - MAX_DISPLAYED_APPLICATIONS
+}
+
 const showVaccineModal = ref(false)
 const showConfirmModal = ref(false)
+const showEditModal = ref(false)
+const showApplicationModal = ref(false)
 const recordToDelete = ref<typeof records.value[number] | null>(null)
+const recordToEdit = ref<typeof records.value[number] | null>(null)
+const healthRecordToApply = ref<typeof records.value[number] | null>(null)
 const deletingId = ref<string | null>(null)
 
 const deleteRecord = useDeleteHealthRecord()
+const updateRecord = useUpdateHealthRecord()
+const createApplication = useCreateVaccineApplication()
 
 function openCreate() {
   showVaccineModal.value = true
+}
+
+function openEdit(record: typeof records.value[number]) {
+  recordToEdit.value = record
+  showEditModal.value = true
+}
+
+function openApplicationModal(record: typeof records.value[number]) {
+  healthRecordToApply.value = record
+  showApplicationModal.value = true
 }
 
 function openDeleteConfirm(record: typeof records.value[number]) {
@@ -100,7 +157,8 @@ async function handleDeleteConfirm() {
           <thead>
             <tr>
               <th>Vacuna</th>
-              <th class="th-center">Fecha aplicación</th>
+              <th class="th-center">Primera aplicación</th>
+              <th class="th-center">Aplicaciones</th>
               <th class="th-center">Próxima dosis</th>
               <th class="th-center">Acciones</th>
             </tr>
@@ -121,12 +179,67 @@ async function handleDeleteConfirm() {
                 <span class="date-cell">{{ formatDate(record.application_date) }}</span>
               </td>
               <td class="td-center">
+                <div class="applications-cell">
+                  <div class="applications-container">
+                    <!-- Badges de aplicaciones -->
+                    <div
+                      v-for="(app, index) in getDisplayedApplications(record)"
+                      :key="app.id"
+                      class="application-badge"
+                      :title="`Dosis ${index + 1} - ${formatDateShort(app.application_date)}`"
+                    >
+                      <span class="application-badge__circle">{{ index + 1 }}</span>
+                      <div class="application-badge__date">
+                        <span class="application-badge__day">{{ formatDateCompact(app.application_date).day }}</span>
+                        <span class="application-badge__separator">/</span>
+                        <span class="application-badge__month">{{ formatDateCompact(app.application_date).month }}</span>
+                        <span class="application-badge__separator">/</span>
+                        <span class="application-badge__year">{{ formatDateCompact(app.application_date).year }}</span>
+                      </div>
+                    </div>
+
+                    <!-- Badge "Ver más" si hay más de 5 aplicaciones -->
+                    <button
+                      v-if="hasMoreApplications(record)"
+                      class="application-badge application-badge--more"
+                      :title="`Ver ${getMoreApplicationsCount(record)} dosis más`"
+                    >
+                      <span class="application-badge__circle application-badge__circle--more">+{{ getMoreApplicationsCount(record) }}</span>
+                      <div class="application-badge__date">
+                        <span class="application-badge__label">Ver más</span>
+                      </div>
+                    </button>
+
+                    <!-- Mensaje si no hay aplicaciones -->
+                    <span v-if="getApplicationsCount(record) === 0" class="applications-empty">
+                      Sin dosis
+                    </span>
+                  </div>
+                </div>
+              </td>
+              <td class="td-center">
                 <span class="date-cell">
                   {{ formatDate(record.next_dose_date) }}
                 </span>
               </td>
               <td class="td-center">
                 <div class="action-buttons">
+                  <button
+                    class="btn-action btn-apply"
+                    title="Aplicar dosis"
+                    :disabled="createApplication.isPending.value"
+                    @click="openApplicationModal(record)"
+                  >
+                    <IconVaccine :size="14" :stroke-width="2" />
+                  </button>
+                  <button
+                    class="btn-action btn-edit"
+                    title="Editar"
+                    :disabled="updateRecord.isPending.value"
+                    @click="openEdit(record)"
+                  >
+                    <IconEdit :size="14" :stroke-width="2" />
+                  </button>
                   <button
                     class="btn-action btn-delete"
                     title="Eliminar"
@@ -169,27 +282,87 @@ async function handleDeleteConfirm() {
         <div v-for="record in records" :key="`card-${record.id}`" class="record-card">
           <div class="record-card__top">
             <span class="record-card__vaccine">{{ record.name }}</span>
-            <button
-              class="btn-delete-card"
-              title="Eliminar"
-              :disabled="deletingId === record.id || deleteRecord.isPending.value"
-              @click="openDeleteConfirm(record)"
-            >
-              <IconTrash :size="14" :stroke-width="2" />
-            </button>
+            <div class="record-card__actions">
+              <button
+                class="btn-apply-card"
+                title="Aplicar dosis"
+                :disabled="createApplication.isPending.value"
+                @click="openApplicationModal(record)"
+              >
+                <IconVaccine :size="14" :stroke-width="2" />
+              </button>
+              <button
+                class="btn-edit-card"
+                title="Editar"
+                :disabled="updateRecord.isPending.value"
+                @click="openEdit(record)"
+              >
+                <IconEdit :size="14" :stroke-width="2" />
+              </button>
+              <button
+                class="btn-delete-card"
+                title="Eliminar"
+                :disabled="deletingId === record.id || deleteRecord.isPending.value"
+                @click="openDeleteConfirm(record)"
+              >
+                <IconTrash :size="14" :stroke-width="2" />
+              </button>
+            </div>
           </div>
           <div class="record-card__dates">
             <div class="record-card__date-item">
-              <span class="record-card__date-label">Aplicada</span>
+              <span class="record-card__date-label">Primera aplicación</span>
               <span class="record-card__date-value">{{ formatDate(record.application_date) }}</span>
             </div>
+          </div>
+
+          <!-- Sección de aplicaciones en móvil -->
+          <div class="record-card__applications">
+            <span class="record-card__applications-label">Dosis aplicadas:</span>
+            <div class="applications-container applications-container--mobile">
+              <!-- Badges de aplicaciones -->
+              <div
+                v-for="(app, index) in getDisplayedApplications(record)"
+                :key="app.id"
+                class="application-badge application-badge--mobile"
+              >
+                <span class="application-badge__circle">{{ index + 1 }}</span>
+                <div class="application-badge__date">
+                  <span class="application-badge__day">{{ formatDateCompact(app.application_date).day }}</span>
+                  <span class="application-badge__separator">/</span>
+                  <span class="application-badge__month">{{ formatDateCompact(app.application_date).month }}</span>
+                  <span class="application-badge__separator">/</span>
+                  <span class="application-badge__year">{{ formatDateCompact(app.application_date).year }}</span>
+                </div>
+              </div>
+
+              <!-- Badge "Ver más" si hay más de 5 aplicaciones -->
+              <button
+                v-if="hasMoreApplications(record)"
+                class="application-badge application-badge--more application-badge--mobile"
+              >
+                <span class="application-badge__circle application-badge__circle--more">+{{ getMoreApplicationsCount(record) }}</span>
+                <div class="application-badge__date">
+                  <span class="application-badge__label">Ver más</span>
+                </div>
+              </button>
+
+              <!-- Mensaje si no hay aplicaciones -->
+              <span v-if="getApplicationsCount(record) === 0" class="applications-empty">
+                Sin dosis
+              </span>
+            </div>
+          </div>
+
+          <div class="record-card__dates">
             <div class="record-card__date-item">
-              <span class="record-card__date-label">Próxima</span>
+              <span class="record-card__date-label">Próxima dosis</span>
               <span class="record-card__date-value">
                 {{ formatDate(record.next_dose_date) }}
               </span>
             </div>
           </div>
+
           <p v-if="record.notes" class="record-card__note" :title="record.notes">
             {{ record.notes }}
           </p>
@@ -225,6 +398,24 @@ async function handleDeleteConfirm() {
       record-type="vaccine"
       :deleting="deleteRecord.isPending.value"
       @confirm="handleDeleteConfirm"
+    />
+
+    <!-- Modal editar registro -->
+    <HealthRecordEditModal
+      v-if="showEditModal && recordToEdit"
+      :record="recordToEdit"
+      category="vaccine"
+      @close="showEditModal = false; recordToEdit = null"
+      @updated="refresh"
+    />
+
+    <!-- Modal aplicar dosis -->
+    <VaccineApplicationModal
+      v-if="showApplicationModal && healthRecordToApply"
+      :health-record-id="healthRecordToApply.id"
+      category="vaccine"
+      @close="showApplicationModal = false; healthRecordToApply = null"
+      @applied="refresh"
     />
   </div>
 </template>
@@ -345,7 +536,7 @@ async function handleDeleteConfirm() {
 
 .vaccine-table {
   width: 100%;
-  min-width: 560px;
+  min-width: 700px;
   border-collapse: collapse;
 }
 
@@ -416,6 +607,174 @@ async function handleDeleteConfirm() {
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
   white-space: nowrap;
+}
+
+/* ── Celda de Aplicaciones ────────────── */
+.applications-cell {
+  position: relative;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  min-height: 60px;
+  padding-left: var(--space-2);
+}
+
+.applications-container {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+  padding-bottom: var(--space-1);
+}
+
+.applications-container::-webkit-scrollbar {
+  height: 3px;
+}
+
+.applications-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.applications-container::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: var(--radius-full);
+}
+
+/* ── Badge de Aplicación ────────────── */
+.application-badge {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 4px;
+  padding: var(--space-1);
+  background: transparent;
+  cursor: default;
+  flex-shrink: 0;
+}
+
+.application-badge__circle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  background: #e8f5ee;
+  border: 2px solid #2e7d52;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: #2e7d52;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.application-badge__date {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  font-size: 11px;
+  line-height: 1.2;
+  color: var(--color-text-secondary);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.application-badge__day,
+.application-badge__month,
+.application-badge__year,
+.application-badge__separator {
+  font-family: var(--font-mono, monospace);
+}
+
+.application-badge__label {
+  font-size: 8px;
+  font-weight: 600;
+  color: #0284c7;
+  text-align: center;
+}
+
+/* ── Badge "Ver más" ────────────── */
+.application-badge--more {
+  cursor: pointer;
+}
+
+.application-badge--more .application-badge__circle--more {
+  background: #e0f2fe;
+  border-color: #0284c7;
+  color: #0284c7;
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.application-badge--more:hover .application-badge__circle--more {
+  background: #bae6fd;
+  border-color: #0369a1;
+}
+
+.application-badge--more .application-badge__label {
+  color: #0369a1;
+}
+
+/* ── Mensaje "Sin dosis" ────────────── */
+.applications-empty {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+  font-weight: 500;
+  padding: var(--space-1);
+}
+
+/* ── Estilos para móvil ────────────── */
+.record-card__applications {
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border-light);
+}
+
+.record-card__applications-label {
+  display: block;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-text-tertiary);
+  margin-bottom: var(--space-2);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.applications-container--mobile {
+  justify-content: flex-start;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: var(--space-1);
+}
+
+.applications-container--mobile::-webkit-scrollbar {
+  height: 3px;
+}
+
+.applications-container--mobile::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.applications-container--mobile::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: var(--radius-full);
+}
+
+.application-badge--mobile .application-badge__circle {
+  width: 28px;
+  height: 28px;
+  font-size: var(--text-xs);
+  border-width: 1.5px;
+}
+
+.application-badge--mobile .application-badge__date {
+  font-size: 9px;
 }
 
 /* ── Badges de estado ─────────────── */
@@ -514,12 +873,76 @@ async function handleDeleteConfirm() {
   cursor: not-allowed;
 }
 
-/* ── Vista card para móvil (< 560px) ─ */
+.btn-edit-card {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  background: transparent;
+  color: var(--color-text-tertiary);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.btn-edit-card:hover:not(:disabled) {
+  background: var(--color-accent-light);
+  color: var(--color-accent-dark);
+}
+
+.btn-edit-card:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-apply-card {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  background: transparent;
+  color: var(--color-text-tertiary);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.btn-apply-card:hover:not(:disabled) {
+  background: #e0f2fe;
+  color: #0284c7;
+}
+
+.btn-apply-card:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.record-card__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.btn-apply {
+  background: var(--color-bg-alt);
+  color: var(--color-text-secondary);
+  border-color: var(--color-border);
+}
+
+.btn-apply:hover {
+  background: #e0f2fe;
+  color: #0284c7;
+  border-color: #bae6fd;
+}
+
+/* ── Vista card para móvil (< 700px) ─ */
 .record-cards {
   display: none;
 }
 
-@container vaccine-card (max-width: 559px) {
+@container vaccine-card (max-width: 699px) {
   .table-wrapper {
     display: none;
   }

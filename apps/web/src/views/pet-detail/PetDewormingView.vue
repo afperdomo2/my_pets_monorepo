@@ -1,13 +1,26 @@
 <script setup lang="ts">
 import { ref, computed, type Ref } from 'vue'
 import { useRoute } from 'vue-router'
-import { IconPlus, IconPill, IconDroplet, IconTrash } from '@tabler/icons-vue'
-import { useGetHealthRecordsByPetAndCategory, useDeleteHealthRecord } from '@/composables/useHealthRecords'
+import {
+  IconPlus,
+  IconRefresh,
+  IconPill,
+  IconDroplet,
+  IconTrash,
+  IconEdit,
+  IconVaccine,
+} from '@tabler/icons-vue'
+import { useGetHealthRecordsByPetAndCategory, useDeleteHealthRecord, useUpdateHealthRecord } from '@/composables/useHealthRecords'
+import { useCreateVaccineApplication } from '@/composables/useVaccineApplications'
 import { useGetPet } from '@/composables/usePets'
 import { HealthCatalogCategory } from '@/constants/healthRecord'
 import type { HealthRecord } from '@/types'
+import AppPagination from '@/components/ui/AppPagination.vue'
+import PerPageSelector from '@/components/ui/PerPageSelector.vue'
 import HealthRecordCreateModal from '@/components/health-tabs/HealthRecordCreateModal.vue'
 import ConfirmDeleteModal from '@/components/health-tabs/ConfirmDeleteModal.vue'
+import HealthRecordEditModal from '@/components/health-tabs/HealthRecordEditModal.vue'
+import VaccineApplicationModal from '@/components/health-tabs/VaccineApplicationModal.vue'
 
 const route = useRoute()
 const petId = computed(() => String(route.params.id))
@@ -26,6 +39,8 @@ const { data, isLoading, isError, refresh } = useGetHealthRecordsByPetAndCategor
 )
 
 const records = computed(() => data.value?.data ?? [])
+const total = computed(() => data.value?.total ?? 0)
+const totalPages = computed(() => data.value?.total_pages ?? 0)
 
 function formatDate(dateStr: string | null): string {
   if (!dateStr) return '—'
@@ -40,13 +55,29 @@ function isInternalDeworming(name: string): boolean {
 
 const showCreateModal = ref(false)
 const showConfirmModal = ref(false)
+const showEditModal = ref(false)
+const showApplicationModal = ref(false)
 const recordToDelete = ref<HealthRecord | null>(null)
+const recordToEdit = ref<HealthRecord | null>(null)
+const healthRecordToApply = ref<HealthRecord | null>(null)
 const deletingId = ref<string | null>(null)
 
 const deleteRecord = useDeleteHealthRecord()
+const updateRecord = useUpdateHealthRecord()
+const createApplication = useCreateVaccineApplication()
 
 function openCreate() {
   showCreateModal.value = true
+}
+
+function openEdit(record: HealthRecord) {
+  recordToEdit.value = record
+  showEditModal.value = true
+}
+
+function openApplicationModal(record: HealthRecord) {
+  healthRecordToApply.value = record
+  showApplicationModal.value = true
 }
 
 function openDeleteConfirm(record: HealthRecord) {
@@ -72,79 +103,184 @@ async function handleDeleteConfirm() {
     <div class="content-card">
       <!-- Header -->
       <div class="tab-header">
-        <h2 class="tab-title">
-          <IconPill :size="20" :stroke-width="1.75" />
-          Control de Parásitos
-        </h2>
-        <button class="btn-add" @click="openCreate">
-          <IconPlus :size="16" :stroke-width="2.5" />
-          Registrar
-        </button>
+        <div class="tab-header-left">
+          <h2 class="tab-title">
+            <IconPill :size="20" :stroke-width="1.75" />
+            Control de Parásitos
+          </h2>
+          <span class="panel-count">{{ total }} registros</span>
+        </div>
+        <div class="tab-header-right">
+          <button class="btn-refresh" :disabled="isLoading" title="Refrescar" @click="refresh">
+            <IconRefresh :size="16" :stroke-width="2" :class="{ 'spin': isLoading }" />
+            Refrescar
+          </button>
+          <button class="btn-add" @click="openCreate">
+            <IconPlus :size="16" :stroke-width="2.5" />
+            Registrar
+          </button>
+        </div>
       </div>
 
-      <!-- Loading -->
-      <div v-if="isLoading" class="loading-state">
-        <div class="spinner" />
-        <p>Cargando registros...</p>
+      <!-- Tabla desktop -->
+      <div class="table-wrapper">
+        <table v-if="!isLoading && !isError && records.length > 0" class="deworming-table">
+          <thead>
+            <tr>
+              <th>Parásito</th>
+              <th class="th-center">Tipo</th>
+              <th class="th-center">Fecha aplicación</th>
+              <th class="th-center">Próxima dosis</th>
+              <th class="th-center">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="record in records" :key="record.id" class="deworming-row">
+              <td>
+                <div class="deworming-cell">
+                  <span class="deworming-name">{{ record.name }}</span>
+                  <span
+                    v-if="record.notes"
+                    class="deworming-note"
+                    :title="record.notes"
+                  >{{ record.notes }}</span>
+                </div>
+              </td>
+              <td class="td-center">
+                <span class="deworming-type" :class="isInternalDeworming(record.name) ? 'deworming-type--internal' : 'deworming-type--external'">
+                  <IconPill v-if="isInternalDeworming(record.name)" :size="14" :stroke-width="2" />
+                  <IconDroplet v-else :size="14" :stroke-width="2" />
+                  {{ isInternalDeworming(record.name) ? 'Interno' : 'Externo' }}
+                </span>
+              </td>
+              <td class="td-center">
+                <span class="date-cell">{{ formatDate(record.application_date) }}</span>
+              </td>
+              <td class="td-center">
+                <span class="date-cell">
+                  {{ formatDate(record.next_dose_date) }}
+                </span>
+              </td>
+              <td class="td-center">
+                <div class="action-buttons">
+                  <button
+                    class="btn-action btn-apply"
+                    title="Aplicar dosis"
+                    :disabled="createApplication.isPending.value"
+                    @click="openApplicationModal(record)"
+                  >
+                    <IconVaccine :size="14" :stroke-width="2" />
+                  </button>
+                  <button
+                    class="btn-action btn-edit"
+                    title="Editar"
+                    :disabled="updateRecord.isPending.value"
+                    @click="openEdit(record)"
+                  >
+                    <IconEdit :size="14" :stroke-width="2" />
+                  </button>
+                  <button
+                    class="btn-action btn-delete"
+                    title="Eliminar"
+                    :disabled="deletingId === record.id || deleteRecord.isPending.value"
+                    @click="openDeleteConfirm(record)"
+                  >
+                    <IconTrash :size="14" :stroke-width="2" />
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- Loading -->
+        <div v-if="isLoading" class="loading-state">
+          <div class="spinner" />
+          <p>Cargando registros...</p>
+        </div>
+
+        <!-- Error -->
+        <div v-else-if="isError" class="error-state">
+          <p>Error al cargar los registros</p>
+          <button class="btn-retry" @click="refresh">Reintentar</button>
+        </div>
+
+        <!-- Empty -->
+        <div v-else-if="records.length === 0" class="empty-state">
+          <IconPill :size="40" :stroke-width="1.5" />
+          <p>No hay desparasitaciones registradas</p>
+          <button class="btn-add-empty" @click="openCreate">
+            <IconPlus :size="16" :stroke-width="2.5" />
+            Registrar primera desparasitación
+          </button>
+        </div>
       </div>
 
-      <!-- Error -->
-      <div v-else-if="isError" class="error-state">
-        <p>Error al cargar los registros</p>
-        <button class="btn-retry" @click="refresh">Reintentar</button>
-      </div>
-
-      <!-- Empty -->
-      <div v-else-if="records.length === 0" class="empty-state">
-        <IconPill :size="40" :stroke-width="1.5" />
-        <p>No hay desparasitaciones registradas</p>
-        <button class="btn-add-empty" @click="openCreate">
-          <IconPlus :size="16" :stroke-width="2.5" />
-          Registrar primera desparasitación
-        </button>
-      </div>
-
-      <!-- List -->
-      <div v-else class="records-list">
-        <div
-          v-for="record in records"
-          :key="record.id"
-          class="record-card"
-        >
-          <!-- Icon: pill (internal) or droplet (external) -->
-          <div class="record-icon" :class="isInternalDeworming(record.name) ? 'icon--internal' : 'icon--external'">
-            <IconPill v-if="isInternalDeworming(record.name)" :size="18" :stroke-width="1.75" />
-            <IconDroplet v-else :size="18" :stroke-width="1.75" />
-          </div>
-
-          <div class="record-content">
-            <div class="record-name">
-              {{ record.name }}
-              <span class="record-type">
-                {{ isInternalDeworming(record.name) ? '💊 Interno' : '💧 Externo' }}
-              </span>
+      <!-- Vista card para móvil -->
+      <div v-if="!isLoading && !isError && records.length > 0" class="record-cards">
+        <div v-for="record in records" :key="`card-${record.id}`" class="record-card">
+          <div class="record-card__top">
+            <span class="record-card__name">{{ record.name }}</span>
+            <span class="record-card__type" :class="isInternalDeworming(record.name) ? 'record-card__type--internal' : 'record-card__type--external'">
+              <IconPill v-if="isInternalDeworming(record.name)" :size="12" :stroke-width="2" />
+              <IconDroplet v-else :size="12" :stroke-width="2" />
+              {{ isInternalDeworming(record.name) ? 'Interno' : 'Externo' }}
+            </span>
+            <div class="record-card__actions">
+              <button
+                class="btn-apply-card"
+                title="Aplicar dosis"
+                :disabled="createApplication.isPending.value"
+                @click="openApplicationModal(record)"
+              >
+                <IconVaccine :size="14" :stroke-width="2" />
+              </button>
+              <button
+                class="btn-edit-card"
+                title="Editar"
+                :disabled="updateRecord.isPending.value"
+                @click="openEdit(record)"
+              >
+                <IconEdit :size="14" :stroke-width="2" />
+              </button>
+              <button
+                class="btn-delete-card"
+                title="Eliminar"
+                :disabled="deletingId === record.id || deleteRecord.isPending.value"
+                @click="openDeleteConfirm(record)"
+              >
+                <IconTrash :size="14" :stroke-width="2" />
+              </button>
             </div>
-            <div class="record-dates">
-              <span class="record-date">
-                <span class="record-date-label">Aplicado:</span>
-                {{ formatDate(record.application_date) }}
-              </span>
-              <span class="record-date">
-                <span class="record-date-label">Próxima:</span>
+          </div>
+          <div class="record-card__dates">
+            <div class="record-card__date-item">
+              <span class="record-card__date-label">Aplicada</span>
+              <span class="record-card__date-value">{{ formatDate(record.application_date) }}</span>
+            </div>
+            <div class="record-card__date-item">
+              <span class="record-card__date-label">Próxima</span>
+              <span class="record-card__date-value">
                 {{ formatDate(record.next_dose_date) }}
               </span>
             </div>
           </div>
-
-          <button
-            class="btn-delete-record"
-            title="Eliminar"
-            :disabled="deletingId === record.id || deleteRecord.isPending.value"
-            @click="openDeleteConfirm(record)"
-          >
-            <IconTrash :size="16" :stroke-width="2" />
-          </button>
+          <p v-if="record.notes" class="record-card__note" :title="record.notes">
+            {{ record.notes }}
+          </p>
         </div>
+      </div>
+
+      <!-- Footer con paginación -->
+      <div v-if="!isLoading && !isError && records.length > 0" class="table-footer">
+        <PerPageSelector v-model="perPage" :options="[10, 25, 50]" />
+        <AppPagination
+          :current-page="page"
+          :total-pages="totalPages"
+          :total-items="total"
+          :per-page="perPage"
+          @update:page="page = $event"
+        />
       </div>
     </div>
 
@@ -165,6 +301,24 @@ async function handleDeleteConfirm() {
       :deleting="deleteRecord.isPending.value"
       @confirm="handleDeleteConfirm"
     />
+
+    <!-- Modal editar registro -->
+    <HealthRecordEditModal
+      v-if="showEditModal && recordToEdit"
+      :record="recordToEdit"
+      category="deworming"
+      @close="showEditModal = false; recordToEdit = null"
+      @updated="refresh"
+    />
+
+    <!-- Modal aplicar dosis -->
+    <VaccineApplicationModal
+      v-if="showApplicationModal && healthRecordToApply"
+      :health-record-id="healthRecordToApply.id"
+      category="deworming"
+      @close="showApplicationModal = false; healthRecordToApply = null"
+      @applied="refresh"
+    />
   </div>
 </template>
 
@@ -176,6 +330,8 @@ async function handleDeleteConfirm() {
 }
 
 .content-card {
+  container-type: inline-size;
+  container-name: deworming-card;
   background: transparent;
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-xl);
@@ -191,6 +347,56 @@ async function handleDeleteConfirm() {
   flex-wrap: wrap;
   padding: var(--space-4) var(--space-5);
   border-bottom: 1px solid var(--color-border-light);
+}
+
+.tab-header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.tab-header-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.panel-count {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+  font-weight: 500;
+}
+
+.btn-refresh {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-bg-alt);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.btn-refresh:hover:not(:disabled) {
+  background: var(--color-accent-light);
+  color: var(--color-accent-dark);
+  border-color: var(--color-accent);
+}
+
+.btn-refresh:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-refresh .spin {
+  animation: spin 0.8s linear infinite;
 }
 
 .tab-title {
@@ -221,67 +427,6 @@ async function handleDeleteConfirm() {
 
 .btn-add:hover {
   background: var(--color-accent-hover);
-}
-
-/* Quick action */
-.quick-action {
-  padding: 0 var(--space-5) var(--space-4);
-}
-
-.quick-action-card {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
-  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-  border: 1px solid #bae6fd;
-  border-radius: var(--radius-lg);
-}
-
-.quick-action-icon {
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #dbeafe;
-  color: #2563eb;
-  border-radius: var(--radius-md);
-  flex-shrink: 0;
-}
-
-.quick-action-content {
-  flex: 1;
-  min-width: 0;
-}
-
-.quick-action-title {
-  display: block;
-  font-size: var(--text-sm);
-  font-weight: 600;
-  color: #1e40af;
-}
-
-.quick-action-desc {
-  font-size: var(--text-xs);
-  color: #64748b;
-}
-
-.btn-quick-action {
-  padding: var(--space-2) var(--space-3);
-  background: #2563eb;
-  color: #fff;
-  border: none;
-  border-radius: var(--radius-md);
-  font-size: var(--text-xs);
-  font-weight: 600;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background var(--transition-fast);
-}
-
-.btn-quick-action:hover {
-  background: #1d4ed8;
 }
 
 /* States */
@@ -341,151 +486,156 @@ async function handleDeleteConfirm() {
   to { transform: rotate(360deg); }
 }
 
-/* Records list */
-.records-list {
+/* ── Tabla ────────────────────────── */
+.table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.deworming-table {
+  width: 100%;
+  min-width: 700px;
+  border-collapse: collapse;
+}
+
+.deworming-table thead tr {
+  background: var(--color-bg);
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.deworming-table th {
+  padding: var(--space-3) var(--space-4);
+  text-align: left;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.deworming-table th.th-center {
+  text-align: center;
+}
+
+.deworming-row {
+  transition: background var(--transition-fast);
+}
+
+.deworming-row:hover {
+  background: var(--color-bg-alt);
+}
+
+.deworming-row td {
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.deworming-row:last-child td {
+  border-bottom: none;
+}
+
+.td-center {
+  text-align: center;
+}
+
+/* ── Celdas ───────────────────────── */
+.deworming-cell {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: 2px;
+  min-width: 0;
 }
 
-.record-card {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-lg);
-  transition: box-shadow var(--transition-fast);
+.deworming-name {
+  font-size: var(--text-sm);
+  color: var(--color-text-primary);
+  font-weight: 500;
 }
 
-.record-card:hover {
-  box-shadow: var(--shadow-sm);
+.deworming-note {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.4;
 }
 
-.record-icon {
-  width: 36px;
-  height: 36px;
-  display: flex;
+.deworming-type {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--radius-md);
-  flex-shrink: 0;
+  gap: 4px;
+  padding: 4px var(--space-2);
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  white-space: nowrap;
 }
 
-.record-icon.icon--internal {
+.deworming-type--internal {
   background: #fef3e2;
   color: #c4714a;
 }
 
-.record-icon.icon--external {
+.deworming-type--external {
   background: #f0f9ff;
   color: #0284c7;
 }
 
-.record-content {
-  flex: 1;
-  min-width: 0;
+.date-cell {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
 }
 
-.record-name {
-  font-size: var(--text-sm);
-  font-weight: 600;
-  color: var(--color-text-primary);
-  margin-bottom: 2px;
-  display: flex;
+/* ── Botones de acción ────────────── */
+.action-buttons {
+  display: inline-flex;
   align-items: center;
   gap: var(--space-2);
+  justify-content: center;
 }
 
-.record-type {
-  font-size: var(--text-xs);
-  font-weight: 500;
-}
-
-.record-dates {
-  display: flex;
-  gap: var(--space-4);
-  flex-wrap: wrap;
-}
-
-.record-date {
-  font-size: var(--text-xs);
-  color: var(--color-text-secondary);
-}
-
-.record-date-label {
-  color: var(--color-text-tertiary);
-  margin-right: 2px;
-}
-
-.record-status {
-  flex-shrink: 0;
-}
-
-.status-badge {
+.btn-action {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 3px var(--space-2);
-  border-radius: var(--radius-full);
+  padding: 4px var(--space-3);
+  border-radius: var(--radius-md);
   font-size: var(--text-xs);
   font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background var(--transition-fast), color var(--transition-fast);
+  white-space: nowrap;
 }
 
-.status--uptodate {
-  background: #e8f5ee;
-  color: #2e7d52;
+.btn-edit {
+  background: var(--color-bg-alt);
+  color: var(--color-text-secondary);
+  border-color: var(--color-border);
 }
 
-.status--upcoming {
-  background: #fef3e2;
-  color: #c4714a;
+.btn-edit:hover {
+  background: var(--color-accent-light);
+  color: var(--color-accent-dark);
+  border-color: var(--color-accent);
 }
 
-.status--overdue {
+.btn-delete {
+  background: var(--color-bg-alt);
+  color: var(--color-text-secondary);
+  border-color: var(--color-border);
+}
+
+.btn-delete:hover {
   background: #fef2f2;
   color: #dc2626;
+  border-color: #fecaca;
 }
 
-.record-actions {
-  display: flex;
-  gap: var(--space-1);
-}
-
-.btn-mark-applied {
-  width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #22c55e;
-  color: #fff;
-  border: none;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  transition: background var(--transition-fast);
-}
-
-.btn-mark-applied:hover {
-  background: #16a34a;
-}
-
-.btn-edit-record {
-  padding: var(--space-1) var(--space-2);
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  opacity: 0.5;
-  font-size: 14px;
-  transition: opacity var(--transition-fast);
-}
-
-.btn-edit-record:hover {
-  opacity: 1;
-}
-
-.btn-delete-record {
+.btn-delete-card {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -496,36 +646,207 @@ async function handleDeleteConfirm() {
   border-radius: var(--radius-md);
   cursor: pointer;
   transition: background var(--transition-fast), color var(--transition-fast);
-  flex-shrink: 0;
 }
 
-.btn-delete-record:hover:not(:disabled) {
+.btn-delete-card:hover:not(:disabled) {
   background: #fef2f2;
   color: #dc2626;
 }
 
-.btn-delete-record:disabled {
+.btn-delete-card:disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }
 
-@media (max-width: 600px) {
+.btn-edit-card {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  background: transparent;
+  color: var(--color-text-tertiary);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.btn-edit-card:hover:not(:disabled) {
+  background: var(--color-accent-light);
+  color: var(--color-accent-dark);
+}
+
+.btn-edit-card:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-apply-card {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  background: transparent;
+  color: var(--color-text-tertiary);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.btn-apply-card:hover:not(:disabled) {
+  background: #e0f2fe;
+  color: #0284c7;
+}
+
+.btn-apply-card:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.record-card__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.btn-apply {
+  background: var(--color-bg-alt);
+  color: var(--color-text-secondary);
+  border-color: var(--color-border);
+}
+
+.btn-apply:hover {
+  background: #e0f2fe;
+  color: #0284c7;
+  border-color: #bae6fd;
+}
+
+/* ── Vista card para móvil (< 700px) ─ */
+.record-cards {
+  display: none;
+}
+
+@container deworming-card (max-width: 699px) {
+  .table-wrapper {
+    display: none;
+  }
+
+  .record-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
   .record-card {
-    flex-wrap: wrap;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    border-bottom: 1px solid var(--color-border-light);
   }
 
-  .record-content {
-    order: 1;
-    width: 100%;
+  .record-card:last-child {
+    border-bottom: none;
   }
 
-  .record-status {
-    order: 2;
+  .record-card__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
   }
 
-  .record-actions {
-    order: 3;
-    margin-left: auto;
+  .record-card__name {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--color-text-primary);
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .record-card__type {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 3px var(--space-2);
+    border-radius: var(--radius-full);
+    font-size: 0.6rem;
+    font-weight: 600;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .record-card__type--internal {
+    background: #fef3e2;
+    color: #c4714a;
+  }
+
+  .record-card__type--external {
+    background: #f0f9ff;
+    color: #0284c7;
+  }
+
+  .record-card__dates {
+    display: flex;
+    gap: var(--space-4);
+  }
+
+  .record-card__date-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .record-card__date-label {
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-tertiary);
+  }
+
+  .record-card__date-value {
+    font-size: var(--text-xs);
+    color: var(--color-text-secondary);
+  }
+
+  .record-card__note {
+    font-size: var(--text-xs);
+    color: var(--color-text-tertiary);
+    margin: 0;
+    line-height: 1.4;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+/* ── Footer con paginación ─────────── */
+.table-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  padding: var(--space-4) var(--space-5);
+  border-top: 1px solid var(--color-border-light);
+  background: var(--color-bg);
+}
+
+@container deworming-card (max-width: 480px) {
+  .tab-header {
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .table-footer {
+    flex-direction: column;
+    align-items: stretch;
+    padding: var(--space-3) var(--space-4);
+    gap: var(--space-3);
   }
 }
 </style>

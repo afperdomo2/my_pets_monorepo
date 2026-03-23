@@ -726,7 +726,7 @@ const frequencyText = computed(() => {
   border-radius: var(--radius-md);
   font-size: var(--text-sm);
   color: var(--color-text-primary);
-  background: var(--color-bg);
+  background: var(--color-surface);
   resize: vertical;
   min-height: 60px;
   font-family: var(--font-body);
