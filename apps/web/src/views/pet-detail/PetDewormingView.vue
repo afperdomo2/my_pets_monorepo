@@ -9,6 +9,8 @@ import {
   IconTrash,
   IconEdit,
   IconVaccine,
+  IconCalendar,
+  IconNotes,
 } from '@tabler/icons-vue'
 import { useGetHealthRecordsByPetAndCategory, useDeleteHealthRecord, useUpdateHealthRecord } from '@/composables/useHealthRecords'
 import { useCreateVaccineApplication } from '@/composables/useVaccineApplications'
@@ -46,6 +48,14 @@ function formatDate(dateStr: string | null): string {
   if (!dateStr) return '—'
   const date = new Date(dateStr)
   return date.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })
+}
+
+function formatDosesText(record: HealthRecord): string {
+  const applied = record.applied_doses_count ?? 0
+  if (record.total_doses) {
+    return `${applied} de ${record.total_doses}`
+  }
+  return String(applied)
 }
 
 function isInternalDeworming(name: string): boolean {
@@ -128,8 +138,8 @@ async function handleDeleteConfirm() {
           <thead>
             <tr>
               <th>Parásito</th>
-              <th class="th-center">Tipo</th>
-              <th class="th-center">Fecha aplicación</th>
+              <th class="th-center"># Dosis</th>
+              <th class="th-center">Última aplicación</th>
               <th class="th-center">Próxima dosis</th>
               <th class="th-center">Acciones</th>
             </tr>
@@ -147,14 +157,19 @@ async function handleDeleteConfirm() {
                 </div>
               </td>
               <td class="td-center">
-                <span class="deworming-type" :class="isInternalDeworming(record.name) ? 'deworming-type--internal' : 'deworming-type--external'">
-                  <IconPill v-if="isInternalDeworming(record.name)" :size="14" :stroke-width="2" />
-                  <IconDroplet v-else :size="14" :stroke-width="2" />
-                  {{ isInternalDeworming(record.name) ? 'Interno' : 'Externo' }}
-                </span>
+                <span class="doses-count">{{ formatDosesText(record) }}</span>
               </td>
               <td class="td-center">
-                <span class="date-cell">{{ formatDate(record.application_date) }}</span>
+                <div class="last-application-cell">
+                  <div class="last-application-date">
+                    <IconCalendar :size="14" :stroke-width="2" />
+                    <span>{{ formatDate(record.last_dose_date) }}</span>
+                  </div>
+                  <div v-if="record.notes" class="last-application-note">
+                    <IconNotes :size="12" :stroke-width="2" />
+                    <span>{{ record.notes }}</span>
+                  </div>
+                </div>
               </td>
               <td class="td-center">
                 <span class="date-cell">
@@ -253,21 +268,30 @@ async function handleDeleteConfirm() {
               </button>
             </div>
           </div>
-          <div class="record-card__dates">
-            <div class="record-card__date-item">
-              <span class="record-card__date-label">Aplicada</span>
-              <span class="record-card__date-value">{{ formatDate(record.application_date) }}</span>
+
+          <!-- # Dosis -->
+          <div class="record-card__doses">
+            <span class="record-card__doses-label"># Dosis</span>
+            <span class="record-card__doses-value">{{ formatDosesText(record) }}</span>
+          </div>
+
+          <!-- Última aplicación -->
+          <div class="record-card__last-application">
+            <div class="record-card__last-application-date">
+              <IconCalendar :size="14" :stroke-width="2" />
+              <span>{{ formatDate(record.last_dose_date) }}</span>
             </div>
-            <div class="record-card__date-item">
-              <span class="record-card__date-label">Próxima</span>
-              <span class="record-card__date-value">
-                {{ formatDate(record.next_dose_date) }}
-              </span>
+            <div v-if="record.notes" class="record-card__last-application-note">
+              <IconNotes :size="12" :stroke-width="2" />
+              <span>{{ record.notes }}</span>
             </div>
           </div>
-          <p v-if="record.notes" class="record-card__note" :title="record.notes">
-            {{ record.notes }}
-          </p>
+
+          <!-- Próxima dosis -->
+          <div class="record-card__next-dose">
+            <span class="record-card__next-dose-label">Próxima dosis</span>
+            <span class="record-card__next-dose-value">{{ formatDate(record.next_dose_date) }}</span>
+          </div>
         </div>
       </div>
 
@@ -561,26 +585,42 @@ async function handleDeleteConfirm() {
   line-height: 1.4;
 }
 
-.deworming-type {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  padding: 4px var(--space-2);
-  border-radius: var(--radius-full);
-  font-size: var(--text-xs);
+/* ── Celda # Dosis ────────────── */
+.doses-count {
+  font-size: var(--text-sm);
   font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+/* ── Celda Última aplicación ────────────── */
+.last-application-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+}
+
+.last-application-date {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.last-application-note {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+  max-width: 200px;
+}
+
+.last-application-note span {
   white-space: nowrap;
-}
-
-.deworming-type--internal {
-  background: #fef3e2;
-  color: #c4714a;
-}
-
-.deworming-type--external {
-  background: #f0f9ff;
-  color: #0284c7;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .date-cell {
@@ -768,60 +808,72 @@ async function handleDeleteConfirm() {
     white-space: nowrap;
   }
 
-  .record-card__type {
-    display: inline-flex;
-    align-items: center;
-    gap: 3px;
-    padding: 3px var(--space-2);
-    border-radius: var(--radius-full);
-    font-size: 0.6rem;
-    font-weight: 600;
-    white-space: nowrap;
-    flex-shrink: 0;
-  }
-
-  .record-card__type--internal {
-    background: #fef3e2;
-    color: #c4714a;
-  }
-
-  .record-card__type--external {
-    background: #f0f9ff;
-    color: #0284c7;
-  }
-
-  .record-card__dates {
-    display: flex;
-    gap: var(--space-4);
-  }
-
-  .record-card__date-item {
+  .record-card__doses {
+    margin-top: var(--space-3);
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--color-border-light);
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 4px;
   }
 
-  .record-card__date-label {
-    font-size: 0.65rem;
+  .record-card__doses-label {
+    font-size: var(--text-xs);
     font-weight: 600;
+    color: var(--color-text-tertiary);
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: var(--color-text-tertiary);
   }
 
-  .record-card__date-value {
-    font-size: var(--text-xs);
+  .record-card__doses-value {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--color-text-primary);
+  }
+
+  .record-card__last-application {
+    margin-top: var(--space-3);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .record-card__last-application-date {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: var(--text-sm);
     color: var(--color-text-secondary);
   }
 
-  .record-card__note {
+  .record-card__last-application-note {
+    display: flex;
+    align-items: center;
+    gap: 4px;
     font-size: var(--text-xs);
     color: var(--color-text-tertiary);
-    margin: 0;
-    line-height: 1.4;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  }
+
+  .record-card__next-dose {
+    margin-top: var(--space-3);
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--color-border-light);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .record-card__next-dose-label {
+    font-size: var(--text-xs);
+    font-weight: 600;
+    color: var(--color-text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .record-card__next-dose-value {
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
   }
 }
 

@@ -26,4 +26,7 @@ type Repository interface {
 
 	// Delete elimina una aplicación.
 	Delete(ctx context.Context, id string) error
+
+	// UpdateHealthRecordAfterApplication actualiza last_dose_date y applied_doses_count en health_record.
+	UpdateHealthRecordAfterApplication(ctx context.Context, healthRecordID string, applicationDate string) error
 }

@@ -15,14 +15,16 @@ type CreateHealthRecordPayload struct {
 	ApplicationDate string  `json:"application_date"  binding:"required"`
 	NextDoseDate    *string `json:"next_dose_date"    binding:"omitempty"`
 	Notes           *string `json:"notes"             binding:"omitempty,max=1000"`
+	TotalDoses      *int    `json:"total_doses"       binding:"omitempty,min=1"`
 }
 
 // UpdateHealthRecordPayload es el cuerpo aceptado al actualizar un registro de salud completo.
 // pet_id y health_catalog_id no son actualizables para preservar la integridad del historial.
 type UpdateHealthRecordPayload struct {
-	Category     string  `json:"category"          binding:"required,oneof=vaccine deworming"`
-	Name         string  `json:"name"              binding:"required,min=1,max=100"`
-	ApplicationDate *string `json:"application_date" binding:"omitempty"`
-	NextDoseDate *string `json:"next_dose_date"    binding:"omitempty"`
-	Notes        *string `json:"notes"             binding:"omitempty,max=1000"`
+	Category        string  `json:"category"          binding:"required,oneof=vaccine deworming"`
+	Name            string  `json:"name"              binding:"required,min=1,max=100"`
+	ApplicationDate *string `json:"application_date"  binding:"omitempty"`
+	NextDoseDate    *string `json:"next_dose_date"    binding:"omitempty"`
+	Notes           *string `json:"notes"             binding:"omitempty,max=1000"`
+	TotalDoses      *int    `json:"total_doses"       binding:"omitempty,min=1"`
 }

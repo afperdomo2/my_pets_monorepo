@@ -79,6 +79,7 @@ watch(catalogSearch, () => {
 const applicationDate = ref('')
 const nextDate = ref('')
 const note = ref('')
+const totalDoses = ref<number | undefined>(undefined)
 const wantsNext = ref(false)
 
 watch(applicationDate, (newDate) => {
@@ -128,6 +129,7 @@ async function save() {
       application_date: applicationDate.value,
       next_dose_date: wantsNext.value && nextDate.value ? nextDate.value : undefined,
       notes: note.value || undefined,
+      total_doses: totalDoses.value,
     })
 
     emit('close')
@@ -246,6 +248,21 @@ const frequencyText = computed(() => {
               <span>{{ selectedCatalog?.name || customName }}</span>
             </div>
 
+            <!-- Total de dosis (opcional) -->
+            <div class="field-group">
+              <label class="field-label">
+                Total de dosis <span class="optional">(opcional)</span>
+              </label>
+              <input
+                v-model.number="totalDoses"
+                type="number"
+                min="1"
+                class="field-input field-input--white"
+                placeholder="Ej: 3"
+              />
+              <span class="field-help">Cantidad total de dosis que indicará el veterinario</span>
+            </div>
+
             <!-- Fecha de aplicación (obligatoria) -->
             <div class="field-group">
               <label class="field-label">
@@ -362,12 +379,11 @@ const frequencyText = computed(() => {
 .modal-container {
   background: var(--color-surface);
   width: min(900px, 100%);
-  max-height: min(90vh, 750px);
+  max-height: 90vh;
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-xl);
   display: flex;
   flex-direction: column;
-  overflow: hidden;
 }
 
 /* ── Header ────────────────────────────────────────────────── */
@@ -412,14 +428,11 @@ const frequencyText = computed(() => {
   display: grid;
   grid-template-columns: 1.2fr 1fr;
   gap: 0;
-  flex: 1;
-  overflow: hidden;
 }
 
 @media (max-width: 768px) {
   .modal-body {
     grid-template-columns: 1fr;
-    overflow-y: auto;
   }
 }
 
@@ -433,12 +446,12 @@ const frequencyText = computed(() => {
 
 .column--left {
   border-right: 1px solid var(--color-border-light);
+  max-height: 60vh;
   overflow-y: auto;
 }
 
 .column--right {
   background: var(--color-bg);
-  overflow-y: auto;
 }
 
 @media (max-width: 768px) {
@@ -563,6 +576,18 @@ const frequencyText = computed(() => {
 .field-input:focus {
   border-color: var(--color-accent);
   outline: none;
+}
+
+.field-input--white {
+  background: #fff;
+}
+
+.field-help {
+  display: block;
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+  margin-top: 4px;
+  line-height: 1.4;
 }
 
 /* ── Buscador ─────────────────────────────────────────────── */

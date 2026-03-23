@@ -134,14 +134,16 @@ func (r *gormRepo) Create(ctx context.Context, ownerID string, payload CreateHea
 	}
 
 	rec := models.HealthRecord{
-		PetID:           payload.PetID,
-		UserID:          ownerID,
-		HealthCatalogID: payload.HealthCatalogID,
-		Category:        payload.Category,
-		Name:            payload.Name,
-		ApplicationDate: t,
-		NextDoseDate:    nextDoseDate,
-		Notes:           payload.Notes,
+		PetID:             payload.PetID,
+		UserID:            ownerID,
+		HealthCatalogID:   payload.HealthCatalogID,
+		Category:          payload.Category,
+		Name:              payload.Name,
+		ApplicationDate:   t,
+		NextDoseDate:      nextDoseDate,
+		Notes:             payload.Notes,
+		TotalDoses:        payload.TotalDoses,
+		AppliedDosesCount: 0,
 	}
 
 	if result := r.db.WithContext(ctx).Create(&rec); result.Error != nil {
@@ -163,6 +165,11 @@ func (r *gormRepo) Update(ctx context.Context, id, ownerID string, payload Updat
 	rec.Category = payload.Category
 	rec.Name = payload.Name
 	rec.Notes = payload.Notes
+
+	// Actualizar total_doses si se proporciona
+	if payload.TotalDoses != nil {
+		rec.TotalDoses = payload.TotalDoses
+	}
 
 	// Actualizar application_date si se proporciona
 	if payload.ApplicationDate != nil {
@@ -236,4 +243,35 @@ func (r *gormRepo) GetUpcomingRecords(ctx context.Context, ownerID, category str
 	}
 
 	return records, total, nil
+}
+
+func (r *gormRepo) UpdateLastDoseDate(ctx context.Context, healthRecordID string, lastDoseDate string) error {
+	t, err := parseDateString(lastDoseDate)
+	if err != nil {
+		return fmt.Errorf("health_record.UpdateLastDoseDate: formato de fecha inválido: %w", err)
+	}
+
+	result := r.db.WithContext(ctx).
+		Model(&models.HealthRecord{}).
+		Where("id = ?", healthRecordID).
+		Update("last_dose_date", t)
+
+	if result.Error != nil {
+		return fmt.Errorf("health_record.UpdateLastDoseDate: %w", result.Error)
+	}
+
+	return nil
+}
+
+func (r *gormRepo) IncrementAppliedDosesCount(ctx context.Context, healthRecordID string) error {
+	result := r.db.WithContext(ctx).
+		Model(&models.HealthRecord{}).
+		Where("id = ?", healthRecordID).
+		Update("applied_doses_count", gorm.Expr("applied_doses_count + 1"))
+
+	if result.Error != nil {
+		return fmt.Errorf("health_record.IncrementAppliedDosesCount: %w", result.Error)
+	}
+
+	return nil
 }

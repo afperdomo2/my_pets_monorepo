@@ -7,6 +7,8 @@ import {
   IconVaccine,
   IconTrash,
   IconEdit,
+  IconCalendar,
+  IconNotes,
 } from '@tabler/icons-vue'
 import { useGetHealthRecordsByPetAndCategory, useDeleteHealthRecord, useUpdateHealthRecord } from '@/composables/useHealthRecords'
 import { useCreateVaccineApplication } from '@/composables/useVaccineApplications'
@@ -45,41 +47,12 @@ function formatDate(dateStr: string | null): string {
   return date.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
-function formatDateShort(dateStr: string): string {
-  const date = new Date(dateStr)
-  return date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })
-}
-
-function formatDateCompact(dateStr: string): { day: string; month: string; year: string } {
-  const date = new Date(dateStr)
-  const day = String(date.getDate()).padStart(2, '0')
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const year = String(date.getFullYear()).slice(-2)
-  return { day, month, year }
-}
-
-function getApplicationsCount(record: typeof records.value[number]): number {
-  return record.vaccine_applications?.length ?? 0
-}
-
-const MAX_DISPLAYED_APPLICATIONS = 5
-
-function getDisplayedApplications(record: typeof records.value[number]) {
-  const apps = record.vaccine_applications ?? []
-  // Orden inverso: última aplicación primero
-  const sorted = [...apps].sort((a, b) => 
-    new Date(b.application_date).getTime() - new Date(a.application_date).getTime()
-  )
-  // Retornar solo las primeras 5
-  return sorted.slice(0, MAX_DISPLAYED_APPLICATIONS)
-}
-
-function hasMoreApplications(record: typeof records.value[number]): boolean {
-  return getApplicationsCount(record) > MAX_DISPLAYED_APPLICATIONS
-}
-
-function getMoreApplicationsCount(record: typeof records.value[number]): number {
-  return getApplicationsCount(record) - MAX_DISPLAYED_APPLICATIONS
+function formatDosesText(record: typeof records.value[number]): string {
+  const applied = record.applied_doses_count ?? 0
+  if (record.total_doses) {
+    return `${applied} de ${record.total_doses}`
+  }
+  return String(applied)
 }
 
 const showVaccineModal = ref(false)
@@ -157,8 +130,8 @@ async function handleDeleteConfirm() {
           <thead>
             <tr>
               <th>Vacuna</th>
-              <th class="th-center">Primera aplicación</th>
-              <th class="th-center">Aplicaciones</th>
+              <th class="th-center"># Dosis</th>
+              <th class="th-center">Última aplicación</th>
               <th class="th-center">Próxima dosis</th>
               <th class="th-center">Acciones</th>
             </tr>
@@ -176,44 +149,17 @@ async function handleDeleteConfirm() {
                 </div>
               </td>
               <td class="td-center">
-                <span class="date-cell">{{ formatDate(record.application_date) }}</span>
+                <span class="doses-count">{{ formatDosesText(record) }}</span>
               </td>
               <td class="td-center">
-                <div class="applications-cell">
-                  <div class="applications-container">
-                    <!-- Badges de aplicaciones -->
-                    <div
-                      v-for="(app, index) in getDisplayedApplications(record)"
-                      :key="app.id"
-                      class="application-badge"
-                      :title="`Dosis ${index + 1} - ${formatDateShort(app.application_date)}`"
-                    >
-                      <span class="application-badge__circle">{{ index + 1 }}</span>
-                      <div class="application-badge__date">
-                        <span class="application-badge__day">{{ formatDateCompact(app.application_date).day }}</span>
-                        <span class="application-badge__separator">/</span>
-                        <span class="application-badge__month">{{ formatDateCompact(app.application_date).month }}</span>
-                        <span class="application-badge__separator">/</span>
-                        <span class="application-badge__year">{{ formatDateCompact(app.application_date).year }}</span>
-                      </div>
-                    </div>
-
-                    <!-- Badge "Ver más" si hay más de 5 aplicaciones -->
-                    <button
-                      v-if="hasMoreApplications(record)"
-                      class="application-badge application-badge--more"
-                      :title="`Ver ${getMoreApplicationsCount(record)} dosis más`"
-                    >
-                      <span class="application-badge__circle application-badge__circle--more">+{{ getMoreApplicationsCount(record) }}</span>
-                      <div class="application-badge__date">
-                        <span class="application-badge__label">Ver más</span>
-                      </div>
-                    </button>
-
-                    <!-- Mensaje si no hay aplicaciones -->
-                    <span v-if="getApplicationsCount(record) === 0" class="applications-empty">
-                      Sin dosis
-                    </span>
+                <div class="last-application-cell">
+                  <div class="last-application-date">
+                    <IconCalendar :size="14" :stroke-width="2" />
+                    <span>{{ formatDate(record.last_dose_date) }}</span>
+                  </div>
+                  <div v-if="record.notes" class="last-application-note">
+                    <IconNotes :size="12" :stroke-width="2" />
+                    <span>{{ record.notes }}</span>
                   </div>
                 </div>
               </td>
@@ -309,63 +255,30 @@ async function handleDeleteConfirm() {
               </button>
             </div>
           </div>
-          <div class="record-card__dates">
-            <div class="record-card__date-item">
-              <span class="record-card__date-label">Primera aplicación</span>
-              <span class="record-card__date-value">{{ formatDate(record.application_date) }}</span>
+
+          <!-- # Dosis -->
+          <div class="record-card__doses">
+            <span class="record-card__doses-label"># Dosis</span>
+            <span class="record-card__doses-value">{{ formatDosesText(record) }}</span>
+          </div>
+
+          <!-- Última aplicación -->
+          <div class="record-card__last-application">
+            <div class="record-card__last-application-date">
+              <IconCalendar :size="14" :stroke-width="2" />
+              <span>{{ formatDate(record.last_dose_date) }}</span>
+            </div>
+            <div v-if="record.notes" class="record-card__last-application-note">
+              <IconNotes :size="12" :stroke-width="2" />
+              <span>{{ record.notes }}</span>
             </div>
           </div>
 
-          <!-- Sección de aplicaciones en móvil -->
-          <div class="record-card__applications">
-            <span class="record-card__applications-label">Dosis aplicadas:</span>
-            <div class="applications-container applications-container--mobile">
-              <!-- Badges de aplicaciones -->
-              <div
-                v-for="(app, index) in getDisplayedApplications(record)"
-                :key="app.id"
-                class="application-badge application-badge--mobile"
-              >
-                <span class="application-badge__circle">{{ index + 1 }}</span>
-                <div class="application-badge__date">
-                  <span class="application-badge__day">{{ formatDateCompact(app.application_date).day }}</span>
-                  <span class="application-badge__separator">/</span>
-                  <span class="application-badge__month">{{ formatDateCompact(app.application_date).month }}</span>
-                  <span class="application-badge__separator">/</span>
-                  <span class="application-badge__year">{{ formatDateCompact(app.application_date).year }}</span>
-                </div>
-              </div>
-
-              <!-- Badge "Ver más" si hay más de 5 aplicaciones -->
-              <button
-                v-if="hasMoreApplications(record)"
-                class="application-badge application-badge--more application-badge--mobile"
-              >
-                <span class="application-badge__circle application-badge__circle--more">+{{ getMoreApplicationsCount(record) }}</span>
-                <div class="application-badge__date">
-                  <span class="application-badge__label">Ver más</span>
-                </div>
-              </button>
-
-              <!-- Mensaje si no hay aplicaciones -->
-              <span v-if="getApplicationsCount(record) === 0" class="applications-empty">
-                Sin dosis
-              </span>
-            </div>
+          <!-- Próxima dosis -->
+          <div class="record-card__next-dose">
+            <span class="record-card__next-dose-label">Próxima dosis</span>
+            <span class="record-card__next-dose-value">{{ formatDate(record.next_dose_date) }}</span>
           </div>
-
-          <div class="record-card__dates">
-            <div class="record-card__date-item">
-              <span class="record-card__date-label">Próxima dosis</span>
-              <span class="record-card__date-value">
-                {{ formatDate(record.next_dose_date) }}
-              </span>
-            </div>
-          </div>
-
-          <p v-if="record.notes" class="record-card__note" :title="record.notes">
-            {{ record.notes }}
-          </p>
         </div>
       </div>
 
@@ -609,172 +522,111 @@ async function handleDeleteConfirm() {
   white-space: nowrap;
 }
 
-/* ── Celda de Aplicaciones ────────────── */
-.applications-cell {
-  position: relative;
+/* ── Celda # Dosis ────────────── */
+.doses-count {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+/* ── Celda Última aplicación ────────────── */
+.last-application-cell {
   display: flex;
-  justify-content: flex-start;
-  align-items: center;
-  min-height: 60px;
-  padding-left: var(--space-2);
-}
-
-.applications-container {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  flex-wrap: nowrap;
-  justify-content: flex-start;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  max-width: 100%;
-  padding-bottom: var(--space-1);
-}
-
-.applications-container::-webkit-scrollbar {
-  height: 3px;
-}
-
-.applications-container::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.applications-container::-webkit-scrollbar-thumb {
-  background: var(--color-border);
-  border-radius: var(--radius-full);
-}
-
-/* ── Badge de Aplicación ────────────── */
-.application-badge {
-  display: inline-flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
   gap: 4px;
-  padding: var(--space-1);
-  background: transparent;
-  cursor: default;
-  flex-shrink: 0;
-}
-
-.application-badge__circle {
-  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-full);
-  background: #e8f5ee;
-  border: 2px solid #2e7d52;
-  font-size: var(--text-sm);
-  font-weight: 700;
-  color: #2e7d52;
-  line-height: 1;
-  flex-shrink: 0;
 }
 
-.application-badge__date {
+.last-application-date {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 2px;
-  font-size: 11px;
-  line-height: 1.2;
-  color: var(--color-text-secondary);
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.application-badge__day,
-.application-badge__month,
-.application-badge__year,
-.application-badge__separator {
-  font-family: var(--font-mono, monospace);
-}
-
-.application-badge__label {
-  font-size: 8px;
-  font-weight: 600;
-  color: #0284c7;
-  text-align: center;
-}
-
-/* ── Badge "Ver más" ────────────── */
-.application-badge--more {
-  cursor: pointer;
-}
-
-.application-badge--more .application-badge__circle--more {
-  background: #e0f2fe;
-  border-color: #0284c7;
-  color: #0284c7;
+  gap: 4px;
   font-size: var(--text-sm);
-  font-weight: 700;
+  color: var(--color-text-secondary);
 }
 
-.application-badge--more:hover .application-badge__circle--more {
-  background: #bae6fd;
-  border-color: #0369a1;
-}
-
-.application-badge--more .application-badge__label {
-  color: #0369a1;
-}
-
-/* ── Mensaje "Sin dosis" ────────────── */
-.applications-empty {
+.last-application-note {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   font-size: var(--text-xs);
   color: var(--color-text-tertiary);
-  font-weight: 500;
-  padding: var(--space-1);
+  max-width: 200px;
+}
+
+.last-application-note span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* ── Estilos para móvil ────────────── */
-.record-card__applications {
+.record-card__doses {
   margin-top: var(--space-3);
   padding-top: var(--space-3);
   border-top: 1px solid var(--color-border-light);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
-.record-card__applications-label {
-  display: block;
+.record-card__doses-label {
   font-size: var(--text-xs);
   font-weight: 600;
   color: var(--color-text-tertiary);
-  margin-bottom: var(--space-2);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
-.applications-container--mobile {
-  justify-content: flex-start;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  padding-bottom: var(--space-1);
+.record-card__doses-value {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text-primary);
 }
 
-.applications-container--mobile::-webkit-scrollbar {
-  height: 3px;
+.record-card__last-application {
+  margin-top: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
-.applications-container--mobile::-webkit-scrollbar-track {
-  background: transparent;
+.record-card__last-application-date {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
 }
 
-.applications-container--mobile::-webkit-scrollbar-thumb {
-  background: var(--color-border);
-  border-radius: var(--radius-full);
-}
-
-.application-badge--mobile .application-badge__circle {
-  width: 28px;
-  height: 28px;
+.record-card__last-application-note {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   font-size: var(--text-xs);
-  border-width: 1.5px;
+  color: var(--color-text-tertiary);
 }
 
-.application-badge--mobile .application-badge__date {
-  font-size: 9px;
+.record-card__next-dose {
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border-light);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.record-card__next-dose-label {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.record-card__next-dose-value {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
 }
 
 /* ── Badges de estado ─────────────── */

@@ -205,7 +205,11 @@ definitions:
         type: string
       pet_id:
         type: string
+      total_doses:
+        minimum: 1
+        type: integer
     required:
+    - application_date
     - pet_id
     type: object
   health_record.UpdateHealthRecordPayload:
@@ -226,6 +230,9 @@ definitions:
       notes:
         maxLength: 1000
         type: string
+      total_doses:
+        minimum: 1
+        type: integer
     required:
     - category
     - name

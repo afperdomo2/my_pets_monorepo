@@ -15,6 +15,9 @@ export interface HealthRecord {
   application_date: string
   next_dose_date: string | null
   notes: string | null
+  last_dose_date: string | null
+  total_doses: number | null
+  applied_doses_count: number
   created_at: string
   updated_at: string
   pet: {
@@ -39,6 +42,7 @@ export interface CreateHealthRecordPayload {
   application_date: string
   next_dose_date?: string
   notes?: string
+  total_doses?: number
 }
 
 /**
@@ -51,6 +55,7 @@ export interface UpdateHealthRecordPayload {
   application_date?: string
   next_dose_date?: string
   notes?: string
+  total_doses?: number
 }
 
 // Re-exportar tipos compartidos para compatibilidad

@@ -76,3 +76,23 @@ func (r *gormRepo) Delete(ctx context.Context, id string) error {
 	}
 	return nil
 }
+
+func (r *gormRepo) UpdateHealthRecordAfterApplication(ctx context.Context, healthRecordID string, applicationDate string) error {
+	appDate, err := parseDateString(applicationDate)
+	if err != nil {
+		return fmt.Errorf("vaccine_application.UpdateHealthRecord: formato de fecha inválido: %w", err)
+	}
+
+	// Actualizar last_dose_date y applied_doses_count en health_record
+	result := r.db.WithContext(ctx).
+		Model(&models.HealthRecord{}).
+		Where("id = ?", healthRecordID).
+		Update("last_dose_date", appDate).
+		Update("applied_doses_count", gorm.Expr("applied_doses_count + 1"))
+
+	if result.Error != nil {
+		return fmt.Errorf("vaccine_application.UpdateHealthRecord: %w", result.Error)
+	}
+
+	return nil
+}

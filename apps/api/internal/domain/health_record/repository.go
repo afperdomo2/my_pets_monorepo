@@ -42,4 +42,10 @@ type Repository interface {
 	// Los registros se ordenan por next_dose_date ASC (los más próximos primero).
 	// Retorna los registros, el total de registros disponibles y un error si ocurre.
 	GetUpcomingRecords(ctx context.Context, ownerID, category string, page, perPage int) ([]models.HealthRecord, int64, error)
+
+	// UpdateLastDoseDate actualiza la fecha de la última dosis aplicada.
+	UpdateLastDoseDate(ctx context.Context, healthRecordID string, lastDoseDate string) error
+
+	// IncrementAppliedDosesCount incrementa en 1 el contador de dosis aplicadas.
+	IncrementAppliedDosesCount(ctx context.Context, healthRecordID string) error
 }

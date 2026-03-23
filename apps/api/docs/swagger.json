@@ -3386,6 +3386,7 @@
         "health_record.CreateHealthRecordPayload": {
             "type": "object",
             "required": [
+                "application_date",
                 "pet_id"
             ],
             "properties": {
@@ -3415,6 +3416,10 @@
                 },
                 "pet_id": {
                     "type": "string"
+                },
+                "total_doses": {
+                    "type": "integer",
+                    "minimum": 1
                 }
             }
         },
@@ -3446,6 +3451,10 @@
                 "notes": {
                     "type": "string",
                     "maxLength": 1000
+                },
+                "total_doses": {
+                    "type": "integer",
+                    "minimum": 1
                 }
             }
         },

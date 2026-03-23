@@ -24,6 +24,7 @@ const emit = defineEmits<{
 
 const name = ref(props.record.name)
 const note = ref(props.record.notes || '')
+const totalDoses = ref<number | undefined>(props.record.total_doses ?? undefined)
 
 const updateRecord = useUpdateHealthRecord()
 
@@ -41,6 +42,7 @@ async function save() {
         category: props.record.category,
         name: name.value.trim(),
         notes: note.value.trim() || undefined,
+        total_doses: totalDoses.value,
       },
     })
     emit('updated', updated)
@@ -88,6 +90,21 @@ const namePlaceholder = computed(() => {
               :placeholder="namePlaceholder"
               autofocus
             />
+          </div>
+
+          <!-- Total de dosis (opcional) -->
+          <div class="field-group">
+            <label class="field-label">
+              Total de dosis <span class="optional">(opcional)</span>
+            </label>
+            <input
+              v-model.number="totalDoses"
+              type="number"
+              min="1"
+              class="field-input field-input--white"
+              placeholder="Ej: 3"
+            />
+            <span class="field-help">Cantidad total de dosis que indicará el veterinario</span>
           </div>
 
           <!-- Nota -->
@@ -245,6 +262,18 @@ const namePlaceholder = computed(() => {
 .field-input:focus {
   border-color: var(--color-accent);
   outline: none;
+}
+
+.field-input--white {
+  background: #fff;
+}
+
+.field-help {
+  display: block;
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+  margin-top: 4px;
+  line-height: 1.4;
 }
 
 .note-input {

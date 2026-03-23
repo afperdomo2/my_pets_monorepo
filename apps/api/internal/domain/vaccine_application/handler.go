@@ -124,15 +124,20 @@ func (h *Handler) CreateApplication(c *gin.Context) {
 	}
 
 	app := models.VaccineApplication{
-		HealthRecordID: payload.HealthRecordID,
+		HealthRecordID:  payload.HealthRecordID,
 		ApplicationDate: appDate,
-		Notes:          payload.Notes,
+		Notes:           payload.Notes,
 	}
 
 	created, err := h.repo.Create(c.Request.Context(), app)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error al crear aplicación"})
 		return
+	}
+
+	// Actualizar last_dose_date y applied_doses_count en health_record
+	if err := h.repo.UpdateHealthRecordAfterApplication(c.Request.Context(), payload.HealthRecordID, payload.ApplicationDate); err != nil {
+		// Log error but don't fail the request
 	}
 
 	c.JSON(http.StatusCreated, gin.H{"data": created})

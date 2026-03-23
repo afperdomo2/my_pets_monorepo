@@ -3392,6 +3392,7 @@ const docTemplate = `{
         "health_record.CreateHealthRecordPayload": {
             "type": "object",
             "required": [
+                "application_date",
                 "pet_id"
             ],
             "properties": {
@@ -3421,6 +3422,10 @@ const docTemplate = `{
                 },
                 "pet_id": {
                     "type": "string"
+                },
+                "total_doses": {
+                    "type": "integer",
+                    "minimum": 1
                 }
             }
         },
@@ -3452,6 +3457,10 @@ const docTemplate = `{
                 "notes": {
                     "type": "string",
                     "maxLength": 1000
+                },
+                "total_doses": {
+                    "type": "integer",
+                    "minimum": 1
                 }
             }
         },
