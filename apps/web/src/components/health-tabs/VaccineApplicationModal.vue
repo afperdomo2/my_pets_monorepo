@@ -2,7 +2,7 @@
 import DatePicker from '@/components/ui/DatePicker.vue'
 import { useCreateVaccineApplication } from '@/composables/useVaccineApplications'
 import { IconBell, IconCheck, IconX } from '@tabler/icons-vue'
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 
 onMounted(() => {
   document.body.style.overflow = 'hidden'

@@ -1,28 +1,31 @@
 <script setup lang="ts">
-import { ref, computed, type Ref } from 'vue'
-import { useRoute } from 'vue-router'
-import {
-  IconPlus,
-  IconRefresh,
-  IconPill,
-  IconDroplet,
-  IconTrash,
-  IconEdit,
-  IconVaccine,
-  IconCalendar,
-  IconNotes,
-} from '@tabler/icons-vue'
-import { useGetHealthRecordsByPetAndCategory, useDeleteHealthRecord, useUpdateHealthRecord } from '@/composables/useHealthRecords'
-import { useCreateVaccineApplication } from '@/composables/useVaccineApplications'
-import { useGetPet } from '@/composables/usePets'
-import { HealthCatalogCategory } from '@/constants/healthRecord'
-import type { HealthRecord } from '@/types'
-import AppPagination from '@/components/ui/AppPagination.vue'
-import PerPageSelector from '@/components/ui/PerPageSelector.vue'
-import HealthRecordCreateModal from '@/components/health-tabs/HealthRecordCreateModal.vue'
 import ConfirmDeleteModal from '@/components/health-tabs/ConfirmDeleteModal.vue'
+import HealthRecordCreateModal from '@/components/health-tabs/HealthRecordCreateModal.vue'
 import HealthRecordEditModal from '@/components/health-tabs/HealthRecordEditModal.vue'
 import VaccineApplicationModal from '@/components/health-tabs/VaccineApplicationModal.vue'
+import AppPagination from '@/components/ui/AppPagination.vue'
+import PerPageSelector from '@/components/ui/PerPageSelector.vue'
+import {
+  useDeleteHealthRecord,
+  useGetHealthRecordsByPetAndCategory,
+  useUpdateHealthRecord,
+} from '@/composables/useHealthRecords'
+import { useGetPet } from '@/composables/usePets'
+import { useCreateVaccineApplication } from '@/composables/useVaccineApplications'
+import { HealthCatalogCategory } from '@/constants/healthRecord'
+import type { HealthRecord } from '@/types'
+import {
+  IconCalendar,
+  IconDroplet,
+  IconEdit,
+  IconPill,
+  IconPlus,
+  IconRefresh,
+  IconTrash,
+  IconVaccine,
+} from '@tabler/icons-vue'
+import { computed, ref, type Ref } from 'vue'
+import { useRoute } from 'vue-router'
 
 const route = useRoute()
 const petId = computed(() => String(route.params.id))
@@ -60,7 +63,13 @@ function formatDosesText(record: HealthRecord): string {
 
 function isInternalDeworming(name: string): boolean {
   const lower = name.toLowerCase()
-  return lower.includes('pastilla') || lower.includes('oral') || lower.includes('giardia') || lower.includes('nematodos') || lower.includes('céstodos')
+  return (
+    lower.includes('pastilla') ||
+    lower.includes('oral') ||
+    lower.includes('giardia') ||
+    lower.includes('nematodos') ||
+    lower.includes('céstodos')
+  )
 }
 
 const showCreateModal = ref(false)
@@ -122,7 +131,7 @@ async function handleDeleteConfirm() {
         </div>
         <div class="tab-header-right">
           <button class="btn-refresh" :disabled="isLoading" title="Refrescar" @click="refresh">
-            <IconRefresh :size="16" :stroke-width="2" :class="{ 'spin': isLoading }" />
+            <IconRefresh :size="16" :stroke-width="2" :class="{ spin: isLoading }" />
             Refrescar
           </button>
           <button class="btn-add" @click="openCreate">
@@ -149,11 +158,9 @@ async function handleDeleteConfirm() {
               <td>
                 <div class="deworming-cell">
                   <span class="deworming-name">{{ record.name }}</span>
-                  <span
-                    v-if="record.notes"
-                    class="deworming-note"
-                    :title="record.notes"
-                  >{{ record.notes }}</span>
+                  <span v-if="record.notes" class="deworming-note" :title="record.notes">{{
+                    record.notes
+                  }}</span>
                 </div>
               </td>
               <td class="td-center">
@@ -232,7 +239,14 @@ async function handleDeleteConfirm() {
         <div v-for="record in records" :key="`card-${record.id}`" class="record-card">
           <div class="record-card__top">
             <span class="record-card__name">{{ record.name }}</span>
-            <span class="record-card__type" :class="isInternalDeworming(record.name) ? 'record-card__type--internal' : 'record-card__type--external'">
+            <span
+              class="record-card__type"
+              :class="
+                isInternalDeworming(record.name)
+                  ? 'record-card__type--internal'
+                  : 'record-card__type--external'
+              "
+            >
               <IconPill v-if="isInternalDeworming(record.name)" :size="12" :stroke-width="2" />
               <IconDroplet v-else :size="12" :stroke-width="2" />
               {{ isInternalDeworming(record.name) ? 'Interno' : 'Externo' }}
@@ -282,7 +296,9 @@ async function handleDeleteConfirm() {
           <!-- Próxima dosis -->
           <div class="record-card__next-dose">
             <span class="record-card__next-dose-label">Próxima dosis</span>
-            <span class="record-card__next-dose-value">{{ formatDate(record.next_dose_date) }}</span>
+            <span class="record-card__next-dose-value">{{
+              formatDate(record.next_dose_date)
+            }}</span>
           </div>
         </div>
       </div>
@@ -397,7 +413,9 @@ async function handleDeleteConfirm() {
   font-size: var(--text-sm);
   font-weight: 600;
   cursor: pointer;
-  transition: background var(--transition-fast), color var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
   flex-shrink: 0;
 }
 
@@ -500,7 +518,9 @@ async function handleDeleteConfirm() {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* ── Tabla ────────────────────────── */
@@ -625,7 +645,9 @@ async function handleDeleteConfirm() {
   font-weight: 600;
   cursor: pointer;
   border: 1px solid transparent;
-  transition: background var(--transition-fast), color var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
   white-space: nowrap;
 }
 
@@ -663,7 +685,9 @@ async function handleDeleteConfirm() {
   border: 1px solid transparent;
   border-radius: var(--radius-md);
   cursor: pointer;
-  transition: background var(--transition-fast), color var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
 }
 
 .btn-delete-card:hover:not(:disabled) {
@@ -686,7 +710,9 @@ async function handleDeleteConfirm() {
   border: 1px solid transparent;
   border-radius: var(--radius-md);
   cursor: pointer;
-  transition: background var(--transition-fast), color var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
 }
 
 .btn-edit-card:hover:not(:disabled) {
@@ -709,7 +735,9 @@ async function handleDeleteConfirm() {
   border: 1px solid transparent;
   border-radius: var(--radius-md);
   cursor: pointer;
-  transition: background var(--transition-fast), color var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
 }
 
 .btn-apply-card:hover:not(:disabled) {

@@ -90,18 +90,16 @@ func (r *gormRepo) UpdateHealthRecordAfterApplication(ctx context.Context, healt
 		Update("last_dose_date", appDate).
 		Update("applied_doses_count", gorm.Expr("applied_doses_count + 1"))
 
-	// Actualizar next_dose_date si se proporciona (puede ser null para limpiar el valor)
-	if nextDoseDate != nil {
-		var nextDate *time.Time
-		if *nextDoseDate != "" {
-			t, err := parseDateString(*nextDoseDate)
-			if err != nil {
-				return fmt.Errorf("vaccine_application.UpdateHealthRecord: formato de next_dose_date inválido: %w", err)
-			}
-			nextDate = &t
+	// Siempre actualizar next_dose_date: si hay fecha usarla, si no (null/empty) poner null
+	var nextDate *time.Time
+	if nextDoseDate != nil && *nextDoseDate != "" {
+		t, err := parseDateString(*nextDoseDate)
+		if err != nil {
+			return fmt.Errorf("vaccine_application.UpdateHealthRecord: formato de next_dose_date inválido: %w", err)
 		}
-		update = update.Update("next_dose_date", nextDate)
+		nextDate = &t
 	}
+	update = update.Update("next_dose_date", nextDate)
 
 	if update.Error != nil {
 		return fmt.Errorf("vaccine_application.UpdateHealthRecord: %w", update.Error)

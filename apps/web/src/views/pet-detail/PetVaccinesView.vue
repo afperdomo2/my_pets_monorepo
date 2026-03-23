@@ -1,26 +1,29 @@
 <script setup lang="ts">
-import { ref, computed, type Ref } from 'vue'
-import { useRoute } from 'vue-router'
-import {
-  IconPlus,
-  IconRefresh,
-  IconVaccine,
-  IconTrash,
-  IconEdit,
-  IconNotes,
-  IconCalendar,
-} from '@tabler/icons-vue'
-import { useGetHealthRecordsByPetAndCategory, useDeleteHealthRecord, useUpdateHealthRecord } from '@/composables/useHealthRecords'
-import { useCreateVaccineApplication } from '@/composables/useVaccineApplications'
-import { useGetPet } from '@/composables/usePets'
-import { HealthCatalogCategory } from '@/constants/healthRecord'
-import { formatDateOnly } from '@/utils/date'
-import AppPagination from '@/components/ui/AppPagination.vue'
-import PerPageSelector from '@/components/ui/PerPageSelector.vue'
-import HealthRecordCreateModal from '@/components/health-tabs/HealthRecordCreateModal.vue'
 import ConfirmDeleteModal from '@/components/health-tabs/ConfirmDeleteModal.vue'
+import HealthRecordCreateModal from '@/components/health-tabs/HealthRecordCreateModal.vue'
 import HealthRecordEditModal from '@/components/health-tabs/HealthRecordEditModal.vue'
 import VaccineApplicationModal from '@/components/health-tabs/VaccineApplicationModal.vue'
+import AppPagination from '@/components/ui/AppPagination.vue'
+import PerPageSelector from '@/components/ui/PerPageSelector.vue'
+import {
+  useDeleteHealthRecord,
+  useGetHealthRecordsByPetAndCategory,
+  useUpdateHealthRecord,
+} from '@/composables/useHealthRecords'
+import { useGetPet } from '@/composables/usePets'
+import { useCreateVaccineApplication } from '@/composables/useVaccineApplications'
+import { HealthCatalogCategory } from '@/constants/healthRecord'
+import { formatDateOnly } from '@/utils/date'
+import {
+  IconCalendar,
+  IconEdit,
+  IconPlus,
+  IconRefresh,
+  IconTrash,
+  IconVaccine,
+} from '@tabler/icons-vue'
+import { computed, ref, type Ref } from 'vue'
+import { useRoute } from 'vue-router'
 
 const route = useRoute()
 const petId = computed(() => String(route.params.id))
@@ -42,7 +45,7 @@ const records = computed(() => data.value?.data ?? [])
 const total = computed(() => data.value?.total ?? 0)
 const totalPages = computed(() => data.value?.total_pages ?? 0)
 
-function formatDosesText(record: typeof records.value[number]): string {
+function formatDosesText(record: (typeof records.value)[number]): string {
   const applied = record.applied_doses_count ?? 0
   if (record.total_doses) {
     return `${applied} de ${record.total_doses}`
@@ -54,9 +57,9 @@ const showVaccineModal = ref(false)
 const showConfirmModal = ref(false)
 const showEditModal = ref(false)
 const showApplicationModal = ref(false)
-const recordToDelete = ref<typeof records.value[number] | null>(null)
-const recordToEdit = ref<typeof records.value[number] | null>(null)
-const healthRecordToApply = ref<typeof records.value[number] | null>(null)
+const recordToDelete = ref<(typeof records.value)[number] | null>(null)
+const recordToEdit = ref<(typeof records.value)[number] | null>(null)
+const healthRecordToApply = ref<(typeof records.value)[number] | null>(null)
 const deletingId = ref<string | null>(null)
 
 const deleteRecord = useDeleteHealthRecord()
@@ -67,17 +70,17 @@ function openCreate() {
   showVaccineModal.value = true
 }
 
-function openEdit(record: typeof records.value[number]) {
+function openEdit(record: (typeof records.value)[number]) {
   recordToEdit.value = record
   showEditModal.value = true
 }
 
-function openApplicationModal(record: typeof records.value[number]) {
+function openApplicationModal(record: (typeof records.value)[number]) {
   healthRecordToApply.value = record
   showApplicationModal.value = true
 }
 
-function openDeleteConfirm(record: typeof records.value[number]) {
+function openDeleteConfirm(record: (typeof records.value)[number]) {
   recordToDelete.value = record
   showConfirmModal.value = true
 }
@@ -109,7 +112,7 @@ async function handleDeleteConfirm() {
         </div>
         <div class="tab-header-right">
           <button class="btn-refresh" :disabled="isLoading" title="Refrescar" @click="refresh">
-            <IconRefresh :size="16" :stroke-width="2" :class="{ 'spin': isLoading }" />
+            <IconRefresh :size="16" :stroke-width="2" :class="{ spin: isLoading }" />
             Refrescar
           </button>
           <button class="btn-add" @click="openCreate">
@@ -136,11 +139,9 @@ async function handleDeleteConfirm() {
               <td>
                 <div class="vaccine-cell">
                   <span class="vaccine-name">{{ record.name }}</span>
-                  <span
-                    v-if="record.notes"
-                    class="vaccine-note"
-                    :title="record.notes"
-                  >{{ record.notes }}</span>
+                  <span v-if="record.notes" class="vaccine-note" :title="record.notes">{{
+                    record.notes
+                  }}</span>
                 </div>
               </td>
               <td class="td-center">
@@ -149,7 +150,6 @@ async function handleDeleteConfirm() {
               <td class="td-center">
                 <div class="last-application-cell">
                   <div class="last-application-date">
-                    <IconCalendar :size="14" :stroke-width="2" />
                     <span>{{ formatDateOnly(record.last_dose_date) }}</span>
                   </div>
                 </div>
@@ -264,7 +264,9 @@ async function handleDeleteConfirm() {
           <!-- Próxima dosis -->
           <div class="record-card__next-dose">
             <span class="record-card__next-dose-label">Próxima dosis</span>
-            <span class="record-card__next-dose-value">{{ formatDateOnly(record.next_dose_date) }}</span>
+            <span class="record-card__next-dose-value">{{
+              formatDateOnly(record.next_dose_date)
+            }}</span>
           </div>
         </div>
       </div>
@@ -391,7 +393,9 @@ async function handleDeleteConfirm() {
   font-size: var(--text-sm);
   font-weight: 600;
   cursor: pointer;
-  transition: background var(--transition-fast), color var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
   flex-shrink: 0;
 }
 
@@ -639,7 +643,9 @@ async function handleDeleteConfirm() {
   font-weight: 600;
   cursor: pointer;
   border: 1px solid transparent;
-  transition: background var(--transition-fast), color var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
   white-space: nowrap;
 }
 
@@ -677,7 +683,9 @@ async function handleDeleteConfirm() {
   border: 1px solid transparent;
   border-radius: var(--radius-md);
   cursor: pointer;
-  transition: background var(--transition-fast), color var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
 }
 
 .btn-delete-card:hover:not(:disabled) {
@@ -700,7 +708,9 @@ async function handleDeleteConfirm() {
   border: 1px solid transparent;
   border-radius: var(--radius-md);
   cursor: pointer;
-  transition: background var(--transition-fast), color var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
 }
 
 .btn-edit-card:hover:not(:disabled) {
@@ -723,7 +733,9 @@ async function handleDeleteConfirm() {
   border: 1px solid transparent;
   border-radius: var(--radius-md);
   cursor: pointer;
-  transition: background var(--transition-fast), color var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
 }
 
 .btn-apply-card:hover:not(:disabled) {
@@ -894,7 +906,9 @@ async function handleDeleteConfirm() {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* ── Footer con paginación ─────────── */
