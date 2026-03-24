@@ -8,7 +8,8 @@ import {
   IconChevronDown,
   IconChevronUp,
   IconFileText,
-  IconTrash
+  IconTrash,
+  IconCalendar
 } from '@tabler/icons-vue'
 import { useGetExamsByPet, useCreateExam, useUpdateExam, useDeleteExam, useCompleteExam } from '@/composables/useExams'
 import { ExamStatus, type ExamStatusType, type Exam } from '@/types/exam'
@@ -300,7 +301,7 @@ async function handleDelete(exam: Exam) {
 
           <div class="modal-body">
             <div class="field">
-              <label class="field-label">Nombre del examen *</label>
+              <label class="field-label">Nombre del examen <span class="required">*</span></label>
               <input
                 v-model="examName"
                 class="field-input"
@@ -338,7 +339,7 @@ async function handleDelete(exam: Exam) {
 
             <div v-if="isCompleted" class="completed-section">
               <div class="field">
-                <label class="field-label">Fecha de realización *</label>
+                <label class="field-label">Fecha de realización <span class="required">*</span></label>
                 <div class="date-picker-row">
                   <DatePicker
                     v-model="examCompletedDate"
@@ -351,6 +352,7 @@ async function handleDelete(exam: Exam) {
                     class="btn-today"
                     @click="examCompletedDate = new Date().toISOString().split('T')[0] ?? ''"
                   >
+                    <IconCalendar :size="16" :stroke-width="2" />
                     Hoy
                   </button>
                 </div>
@@ -789,6 +791,10 @@ async function handleDelete(exam: Exam) {
   color: var(--color-text-secondary);
 }
 
+.required {
+  color: var(--color-error);
+}
+
 .field-input,
 .field-textarea {
   padding: var(--space-2) var(--space-3);
@@ -812,6 +818,10 @@ async function handleDelete(exam: Exam) {
 }
 
 .btn-today {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
   padding: var(--space-2) var(--space-3);
   background: var(--color-accent-light);
   color: var(--color-accent-dark);
@@ -880,6 +890,10 @@ async function handleDelete(exam: Exam) {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+}
+
+.dynamic-fields .field-input {
+  background: #fff;
 }
 
 .dynamic-field-row {

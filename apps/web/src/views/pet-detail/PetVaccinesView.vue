@@ -168,6 +168,7 @@ async function handleDeleteConfirm() {
                     @click="openApplicationModal(record)"
                   >
                     <IconVaccine :size="14" :stroke-width="2" />
+                    Aplicar
                   </button>
                   <button
                     class="btn-action btn-edit"
@@ -176,6 +177,7 @@ async function handleDeleteConfirm() {
                     @click="openEdit(record)"
                   >
                     <IconEdit :size="14" :stroke-width="2" />
+                    Editar
                   </button>
                   <button
                     class="btn-action btn-delete"
@@ -184,6 +186,7 @@ async function handleDeleteConfirm() {
                     @click="openDeleteConfirm(record)"
                   >
                     <IconTrash :size="14" :stroke-width="2" />
+                    Eliminar
                   </button>
                 </div>
               </td>
@@ -227,6 +230,7 @@ async function handleDeleteConfirm() {
                 @click="openApplicationModal(record)"
               >
                 <IconVaccine :size="14" :stroke-width="2" />
+                Aplicar
               </button>
               <button
                 class="btn-edit-card"
@@ -235,6 +239,7 @@ async function handleDeleteConfirm() {
                 @click="openEdit(record)"
               >
                 <IconEdit :size="14" :stroke-width="2" />
+                Editar
               </button>
               <button
                 class="btn-delete-card"
@@ -243,6 +248,7 @@ async function handleDeleteConfirm() {
                 @click="openDeleteConfirm(record)"
               >
                 <IconTrash :size="14" :stroke-width="2" />
+                Eliminar
               </button>
             </div>
           </div>
@@ -636,8 +642,9 @@ async function handleDeleteConfirm() {
 .btn-action {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px var(--space-3);
+  justify-content: center;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-md);
   font-size: var(--text-xs);
   font-weight: 600;
@@ -645,52 +652,72 @@ async function handleDeleteConfirm() {
   border: 1px solid transparent;
   transition:
     background var(--transition-fast),
-    color var(--transition-fast);
+    color var(--transition-fast),
+    border-color var(--transition-fast);
   white-space: nowrap;
 }
 
+/* Aplicar - Bordered con fondo claro */
+.btn-apply {
+  background: #e0f2fe;
+  color: #0284c7;
+  border-color: #bae6fd;
+}
+
+.btn-apply:hover:not(:disabled) {
+  background: #bae6fd;
+  border-color: #0284c7;
+}
+
+/* Editar - Bordered con fondo claro */
 .btn-edit {
-  background: var(--color-bg-alt);
-  color: var(--color-text-secondary);
-  border-color: var(--color-border);
+  background: #fef3c7;
+  color: #d97706;
+  border-color: #fde68a;
 }
 
-.btn-edit:hover {
-  background: var(--color-accent-light);
-  color: var(--color-accent-dark);
-  border-color: var(--color-accent);
+.btn-edit:hover:not(:disabled) {
+  background: #fde68a;
+  border-color: #f59e0b;
 }
 
+/* Eliminar - Bordered con fondo claro */
 .btn-delete {
-  background: var(--color-bg-alt);
-  color: var(--color-text-secondary);
-  border-color: var(--color-border);
-}
-
-.btn-delete:hover {
   background: #fef2f2;
   color: #dc2626;
   border-color: #fecaca;
 }
 
+.btn-delete:hover:not(:disabled) {
+  background: #fee2e2;
+  border-color: #fca5a5;
+}
+
+/* Eliminar - Bordered con fondo claro */
 .btn-delete-card {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 6px;
-  background: transparent;
-  color: var(--color-text-tertiary);
-  border: 1px solid transparent;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
   border-radius: var(--radius-md);
+  font-size: var(--text-xs);
+  font-weight: 600;
   cursor: pointer;
   transition:
     background var(--transition-fast),
-    color var(--transition-fast);
+    color var(--transition-fast),
+    border-color var(--transition-fast);
+  white-space: nowrap;
 }
 
 .btn-delete-card:hover:not(:disabled) {
-  background: #fef2f2;
+  background: #fee2e2;
   color: #dc2626;
+  border-color: #fca5a5;
 }
 
 .btn-delete-card:disabled {
@@ -698,24 +725,31 @@ async function handleDeleteConfirm() {
   cursor: not-allowed;
 }
 
+/* Editar - Bordered con fondo claro */
 .btn-edit-card {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 6px;
-  background: transparent;
-  color: var(--color-text-tertiary);
-  border: 1px solid transparent;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  background: #fef3c7;
+  color: #d97706;
+  border: 1px solid #fde68a;
   border-radius: var(--radius-md);
+  font-size: var(--text-xs);
+  font-weight: 600;
   cursor: pointer;
   transition:
     background var(--transition-fast),
-    color var(--transition-fast);
+    color var(--transition-fast),
+    border-color var(--transition-fast);
+  white-space: nowrap;
 }
 
 .btn-edit-card:hover:not(:disabled) {
-  background: var(--color-accent-light);
-  color: var(--color-accent-dark);
+  background: #fde68a;
+  color: #d97706;
+  border-color: #f59e0b;
 }
 
 .btn-edit-card:disabled {
@@ -723,24 +757,31 @@ async function handleDeleteConfirm() {
   cursor: not-allowed;
 }
 
+/* Aplicar - Bordered con fondo claro */
 .btn-apply-card {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 6px;
-  background: transparent;
-  color: var(--color-text-tertiary);
-  border: 1px solid transparent;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  background: #e0f2fe;
+  color: #0284c7;
+  border: 1px solid #bae6fd;
   border-radius: var(--radius-md);
+  font-size: var(--text-xs);
+  font-weight: 600;
   cursor: pointer;
   transition:
     background var(--transition-fast),
-    color var(--transition-fast);
+    color var(--transition-fast),
+    border-color var(--transition-fast);
+  white-space: nowrap;
 }
 
 .btn-apply-card:hover:not(:disabled) {
-  background: #e0f2fe;
+  background: #bae6fd;
   color: #0284c7;
+  border-color: #0284c7;
 }
 
 .btn-apply-card:disabled {
@@ -752,18 +793,6 @@ async function handleDeleteConfirm() {
   display: flex;
   align-items: center;
   gap: var(--space-1);
-}
-
-.btn-apply {
-  background: var(--color-bg-alt);
-  color: var(--color-text-secondary);
-  border-color: var(--color-border);
-}
-
-.btn-apply:hover {
-  background: #e0f2fe;
-  color: #0284c7;
-  border-color: #bae6fd;
 }
 
 /* ── Vista card para móvil (< 700px) ─ */
