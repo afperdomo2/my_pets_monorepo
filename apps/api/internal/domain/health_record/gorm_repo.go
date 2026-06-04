@@ -219,10 +219,10 @@ func (r *gormRepo) GetUpcomingRecords(ctx context.Context, ownerID, category str
 	var records []models.HealthRecord
 	var total int64
 
-	// Construir query base: registros con próxima dosis programada y sin aplicación
+	// Construir query base: registros con próxima dosis programada que aún no se han completado
 	query := r.db.WithContext(ctx).
 		Model(&models.HealthRecord{}).
-		Where("user_id = ? AND next_dose_date IS NOT NULL AND application_date IS NULL", ownerID)
+		Where("user_id = ? AND next_dose_date IS NOT NULL AND (total_doses IS NULL OR applied_doses_count < total_doses)", ownerID)
 
 	// Filtrar por categoría si se proporciona
 	if category != "" {

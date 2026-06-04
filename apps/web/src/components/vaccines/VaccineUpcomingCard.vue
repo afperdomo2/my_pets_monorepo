@@ -2,7 +2,7 @@
 import PetAvatar from '@/components/pets/PetAvatar.vue'
 import { getSpeciesLabel } from '@/constants/species'
 import { formatDate } from '@/utils/date'
-import { IconAlertTriangle, IconCheck } from '@tabler/icons-vue'
+import { IconAlertTriangle } from '@tabler/icons-vue'
 import { computed } from 'vue'
 
 interface Props {
@@ -18,10 +18,6 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   urgency: 'soon',
 })
-
-const emit = defineEmits<{
-  register: [recordId: string, petId: string, vaccineName: string]
-}>()
 
 // Calcular días restantes
 const daysUntilDue = computed(() => {
@@ -59,9 +55,6 @@ const urgencyClass = computed(() => {
   return 'upcoming-card--future'
 })
 
-function handleRegister() {
-  emit('register', props.recordId, props.petId, props.vaccineName)
-}
 </script>
 
 <template>
@@ -93,13 +86,6 @@ function handleRegister() {
       </div>
     </div>
 
-    <!-- Botón de acción -->
-    <div class="upcoming-card__action">
-      <button class="btn-register" @click="handleRegister" title="Registrar aplicación">
-        <IconCheck :size="18" :stroke-width="2" />
-        <span>Registrar</span>
-      </button>
-    </div>
   </div>
   </div>
 </template>
@@ -270,49 +256,4 @@ function handleRegister() {
   color: var(--color-text-primary);
 }
 
-/* ── Action button ──────────────────────────────────────── */
-.upcoming-card__action {
-  flex-shrink: 0;
-}
-
-.btn-register {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-2);
-  width: 100%;
-  min-height: 44px;
-  padding: var(--space-2) var(--space-4);
-  background: var(--color-accent);
-  color: #fff;
-  border: none;
-  border-radius: var(--radius-md);
-  font-size: var(--text-sm);
-  font-weight: 600;
-  cursor: pointer;
-  transition:
-    background var(--transition-fast),
-    transform var(--transition-fast);
-  white-space: nowrap;
-}
-
-/* En desktop: el botón se ajusta a su contenido */
-@container upcoming-card (min-width: 520px) {
-  .upcoming-card__action {
-    width: auto;
-  }
-
-  .btn-register {
-    width: fit-content;
-  }
-}
-
-.btn-register:hover {
-  background: var(--color-accent-hover);
-  transform: translateY(-1px);
-}
-
-.btn-register:active {
-  transform: translateY(0);
-}
 </style>

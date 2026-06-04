@@ -1,28 +1,9 @@
 <script setup lang="ts">
 import { IconPlus } from '@tabler/icons-vue'
-import { ref } from 'vue'
 
 import VaccineHistoryTable from '@/components/vaccines/VaccineHistoryTable.vue'
-import VaccineRecordModal from '@/components/vaccines/VaccineRecordModal.vue'
 import VaccineUpcomingCard from '@/components/vaccines/VaccineUpcomingCard.vue'
 import { useGetUpcomingVaccinesPaged } from '@/composables/useHealthRecords'
-
-// ── Estado del modal ────────────────────────────
-const showModal = ref(false)
-const preselectedPet = ref<string | undefined>(undefined)
-const preselectedVaccine = ref<string | undefined>(undefined)
-
-function openModal(petId?: string, vaccineName?: string) {
-  preselectedPet.value = petId
-  preselectedVaccine.value = vaccineName
-  showModal.value = true
-}
-
-function closeModal() {
-  showModal.value = false
-  preselectedPet.value = undefined
-  preselectedVaccine.value = undefined
-}
 
 // ── Próximas vacunas con paginación acumulativa ─────────────────────
 const {
@@ -80,7 +61,6 @@ const {
           :pet-species="record.pet.species"
           :vaccine-name="record.name"
           :next-dose-date="record.next_dose_date || null"
-          @register="openModal(record.pet_id, record.name)"
         />
 
         <!-- Botón Ver más -->
@@ -104,13 +84,6 @@ const {
       <VaccineHistoryTable />
     </section>
 
-    <!-- Modal registrar vacuna -->
-    <VaccineRecordModal
-      v-if="showModal"
-      :preselected-pet="preselectedPet"
-      :preselected-vaccine="preselectedVaccine"
-      @close="closeModal"
-    />
   </div>
 </template>
 
