@@ -69,7 +69,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_domain_auth.LoginPayload"
+                            "$ref": "#/definitions/auth.LoginPayload"
                         }
                     }
                 ],
@@ -196,7 +196,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_domain_auth.ChangePasswordPayload"
+                            "$ref": "#/definitions/auth.ChangePasswordPayload"
                         }
                     }
                 ],
@@ -255,7 +255,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_domain_auth.UpdateProfilePayload"
+                            "$ref": "#/definitions/auth.UpdateProfilePayload"
                         }
                     }
                 ],
@@ -448,7 +448,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_domain_exam.CreatePayload"
+                            "$ref": "#/definitions/exam.CreatePayload"
                         }
                     }
                 ],
@@ -671,7 +671,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_domain_exam.UpdatePayload"
+                            "$ref": "#/definitions/exam.UpdatePayload"
                         }
                     }
                 ],
@@ -823,7 +823,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_domain_exam.CompletePayload"
+                            "$ref": "#/definitions/exam.CompletePayload"
                         }
                     }
                 ],
@@ -905,7 +905,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_domain_exam.SchedulePayload"
+                            "$ref": "#/definitions/exam.SchedulePayload"
                         }
                     }
                 ],
@@ -980,7 +980,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_domain_health_catalog.CreateHealthCatalogPayload"
+                            "$ref": "#/definitions/health_catalog.CreateHealthCatalogPayload"
                         }
                     }
                 ],
@@ -1277,7 +1277,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_domain_health_catalog.UpdateHealthCatalogPayload"
+                            "$ref": "#/definitions/health_catalog.UpdateHealthCatalogPayload"
                         }
                     }
                 ],
@@ -1495,7 +1495,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_domain_health_record.CreateHealthRecordPayload"
+                            "$ref": "#/definitions/health_record.CreateHealthRecordPayload"
                         }
                     }
                 ],
@@ -1870,7 +1870,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_domain_health_record.UpdateHealthRecordPayload"
+                            "$ref": "#/definitions/health_record.UpdateHealthRecordPayload"
                         }
                     }
                 ],
@@ -2070,7 +2070,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_domain_pet.CreatePetPayload"
+                            "$ref": "#/definitions/pet.CreatePetPayload"
                         }
                     }
                 ],
@@ -2220,7 +2220,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_domain_pet.UpdatePetPayload"
+                            "$ref": "#/definitions/pet.UpdatePetPayload"
                         }
                     }
                 ],
@@ -2360,7 +2360,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_domain_setup.SetupPayload"
+                            "$ref": "#/definitions/setup.SetupPayload"
                         }
                     }
                 ],
@@ -2513,7 +2513,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_domain_user.CreateUserPayload"
+                            "$ref": "#/definitions/user.CreateUserPayload"
                         }
                     }
                 ],
@@ -2681,7 +2681,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_domain_user.UpdateUserPayload"
+                            "$ref": "#/definitions/user.UpdateUserPayload"
                         }
                     }
                 ],
@@ -2853,7 +2853,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_domain_vaccine_application.CreatePayload"
+                            "$ref": "#/definitions/vaccine_application.CreatePayload"
                         }
                     }
                 ],
@@ -3055,7 +3055,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_domain_vaccine_application.UpdatePayload"
+                            "$ref": "#/definitions/vaccine_application.UpdatePayload"
                         }
                     }
                 ],
@@ -3200,7 +3200,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "internal_domain_auth.ChangePasswordPayload": {
+        "auth.ChangePasswordPayload": {
             "type": "object",
             "required": [
                 "confirm_password",
@@ -3224,7 +3224,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_domain_auth.LoginPayload": {
+        "auth.LoginPayload": {
             "type": "object",
             "required": [
                 "email",
@@ -3240,7 +3240,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_domain_auth.UpdateProfilePayload": {
+        "auth.UpdateProfilePayload": {
             "type": "object",
             "required": [
                 "email",
@@ -3257,7 +3257,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_domain_exam.CompletePayload": {
+        "exam.CompletePayload": {
             "type": "object",
             "required": [
                 "completed_date"
@@ -3269,12 +3269,12 @@ const docTemplate = `{
                 "results": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/internal_domain_exam.ResultPayload"
+                        "$ref": "#/definitions/exam.ResultPayload"
                     }
                 }
             }
         },
-        "internal_domain_exam.CreatePayload": {
+        "exam.CreatePayload": {
             "type": "object",
             "required": [
                 "name",
@@ -3303,7 +3303,7 @@ const docTemplate = `{
                 "results": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/internal_domain_exam.ResultPayload"
+                        "$ref": "#/definitions/exam.ResultPayload"
                     }
                 },
                 "scheduled_date": {
@@ -3318,7 +3318,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_domain_exam.ResultPayload": {
+        "exam.ResultPayload": {
             "type": "object",
             "required": [
                 "parameter_name",
@@ -3341,7 +3341,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_domain_exam.SchedulePayload": {
+        "exam.SchedulePayload": {
             "type": "object",
             "required": [
                 "scheduled_date"
@@ -3352,7 +3352,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_domain_exam.UpdatePayload": {
+        "exam.UpdatePayload": {
             "type": "object",
             "properties": {
                 "name": {
@@ -3373,7 +3373,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_domain_health_catalog.CreateHealthCatalogPayload": {
+        "health_catalog.CreateHealthCatalogPayload": {
             "type": "object",
             "required": [
                 "category",
@@ -3415,7 +3415,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_domain_health_catalog.UpdateHealthCatalogPayload": {
+        "health_catalog.UpdateHealthCatalogPayload": {
             "type": "object",
             "required": [
                 "category",
@@ -3457,7 +3457,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_domain_health_record.CreateHealthRecordPayload": {
+        "health_record.CreateHealthRecordPayload": {
             "type": "object",
             "required": [
                 "application_date",
@@ -3497,7 +3497,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_domain_health_record.UpdateHealthRecordPayload": {
+        "health_record.UpdateHealthRecordPayload": {
             "type": "object",
             "required": [
                 "category",
@@ -3532,7 +3532,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_domain_pet.CreatePetPayload": {
+        "pet.CreatePetPayload": {
             "type": "object",
             "required": [
                 "birth_date",
@@ -3578,7 +3578,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_domain_pet.UpdatePetPayload": {
+        "pet.UpdatePetPayload": {
             "type": "object",
             "required": [
                 "birth_date",
@@ -3605,7 +3605,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_domain_setup.SetupPayload": {
+        "setup.SetupPayload": {
             "type": "object",
             "required": [
                 "email",
@@ -3625,7 +3625,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_domain_user.CreateUserPayload": {
+        "user.CreateUserPayload": {
             "type": "object",
             "required": [
                 "email",
@@ -3652,7 +3652,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_domain_user.UpdateUserPayload": {
+        "user.UpdateUserPayload": {
             "type": "object",
             "required": [
                 "email",
@@ -3673,7 +3673,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_domain_vaccine_application.CreatePayload": {
+        "vaccine_application.CreatePayload": {
             "type": "object",
             "required": [
                 "application_date",
@@ -3695,7 +3695,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_domain_vaccine_application.UpdatePayload": {
+        "vaccine_application.UpdatePayload": {
             "type": "object",
             "properties": {
                 "application_date": {

@@ -2,6 +2,7 @@ package health_record
 
 import (
 	"errors"
+	"fmt"
 	"math"
 	"net/http"
 	"strconv"
@@ -265,6 +266,7 @@ func (h *Handler) CreateHealthRecord(c *gin.Context) {
 
 // UpdateHealthRecord maneja PUT /api/v1/health-records/:record_id
 // No permite cambiar el pet_id ni el health_catalog_id del registro.
+// Valida que total_doses no sea menor a applied_doses_count.
 //
 //	@Summary	Actualizar un registro de salud
 //	@Tags		health-records
@@ -288,6 +290,24 @@ func (h *Handler) UpdateHealthRecord(c *gin.Context) {
 	var payload UpdateHealthRecordPayload
 	if err := c.ShouldBindJSON(&payload); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": validation.Translate(err)})
+		return
+	}
+
+	// Obtener el registro actual para validar total_doses vs applied_doses_count
+	record, err := h.repo.GetByID(c.Request.Context(), id, ownerID(c))
+	if errors.Is(err, ErrNotFound) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "registro de salud no encontrado"})
+		return
+	}
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error al obtener registro de salud"})
+		return
+	}
+
+	if payload.TotalDoses != nil && *payload.TotalDoses < record.AppliedDosesCount {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": fmt.Sprintf("total_doses no puede ser menor a las dosis ya aplicadas (%d)", record.AppliedDosesCount),
+		})
 		return
 	}
 

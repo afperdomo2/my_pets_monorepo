@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { useUpdateHealthRecord } from '@/composables/useHealthRecords'
+import { useGetHealthRecord, useUpdateHealthRecord } from '@/composables/useHealthRecords'
 import type { HealthRecord } from '@/types/healthRecord'
-import { IconCheck, IconX } from '@tabler/icons-vue'
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { IconCheck, IconInfoCircle, IconX } from '@tabler/icons-vue'
+import { computed, onMounted, onUnmounted, ref, toRef, watch } from 'vue'
 
 onMounted(() => {
   document.body.style.overflow = 'hidden'
@@ -13,7 +13,7 @@ onUnmounted(() => {
 })
 
 const props = defineProps<{
-  record: HealthRecord
+  recordId: string
   category: 'vaccine' | 'deworming'
 }>()
 
@@ -22,27 +22,53 @@ const emit = defineEmits<{
   updated: [record: HealthRecord]
 }>()
 
-const name = ref(props.record.name)
-const note = ref(props.record.notes || '')
-const totalDoses = ref<number | undefined>(props.record.total_doses ?? undefined)
+const recordIdRef = toRef(props, 'recordId')
+const { data: record, isLoading } = useGetHealthRecord(recordIdRef)
+
+const name = ref('')
+const note = ref('')
+const totalDoses = ref<number | null>(null)
+const appliedDosesCount = ref(0)
+
+watch(record, (r) => {
+  if (!r) return
+  name.value = r.name
+  note.value = r.notes || ''
+  totalDoses.value = r.total_doses ?? null
+  appliedDosesCount.value = r.applied_doses_count ?? 0
+})
+
+const totalDosesMin = computed(() => {
+  return Math.max(1, appliedDosesCount.value)
+})
+
+const totalDosesError = computed(() => {
+  if (totalDoses.value === null) return ''
+  if (totalDoses.value < appliedDosesCount.value) {
+    return `No puede ser menor a las dosis aplicadas (${appliedDosesCount.value})`
+  }
+  return ''
+})
 
 const updateRecord = useUpdateHealthRecord()
 
 const canSave = computed(() => {
-  return name.value.trim().length > 0
+  if (!name.value.trim()) return false
+  if (totalDosesError.value) return false
+  return true
 })
 
 async function save() {
-  if (!canSave.value) return
+  if (!canSave.value || !record.value) return
 
   try {
     const updated = await updateRecord.mutateAsync({
-      id: props.record.id,
+      id: record.value.id,
       payload: {
-        category: props.record.category,
+        category: record.value.category,
         name: name.value.trim(),
         notes: note.value.trim() || undefined,
-        total_doses: totalDoses.value !== undefined && totalDoses.value > 0
+        total_doses: totalDoses.value !== null && totalDoses.value > 0
           ? totalDoses.value
           : null,
       },
@@ -81,46 +107,64 @@ const namePlaceholder = computed(() => {
 
         <!-- Body -->
         <div class="modal-body">
-          <!-- Nombre -->
-          <div class="field-group">
-            <label class="field-label">
-              {{ nameLabel }} <span class="required">*</span>
-            </label>
-            <input
-              v-model="name"
-              class="field-input"
-              :placeholder="namePlaceholder"
-              autofocus
-            />
+          <div v-if="isLoading" class="loading-state">
+            <div class="spinner" />
+            <p>Cargando registro...</p>
           </div>
 
-          <!-- Total de dosis (opcional) -->
-          <div class="field-group">
-            <label class="field-label">
-              Total de dosis <span class="optional">(opcional)</span>
-            </label>
-            <input
-              v-model.number="totalDoses"
-              type="number"
-              min="1"
-              class="field-input field-input--white"
-              placeholder="Ej: 3"
-            />
-            <span class="field-help">Cantidad total de dosis que indicará el veterinario</span>
-          </div>
+          <template v-else-if="record">
+            <!-- Nombre -->
+            <div class="field-group">
+              <label class="field-label">
+                {{ nameLabel }} <span class="required">*</span>
+              </label>
+              <input
+                v-model="name"
+                class="field-input"
+                :placeholder="namePlaceholder"
+                autofocus
+              />
+            </div>
 
-          <!-- Nota -->
-          <div class="field-group">
-            <label class="field-label">
-              Nota <span class="optional">(opcional)</span>
-            </label>
-            <textarea
-              v-model="note"
-              class="note-input"
-              rows="4"
-              placeholder="Ej: Lote #12345, veterinatoria donde se aplicó..."
-            />
-          </div>
+            <!-- Dosis aplicadas + Total de dosis en una fila -->
+            <div class="doses-row">
+              <div class="doses-row__field">
+                <label class="field-label">Dosis aplicadas</label>
+                <div class="readonly-field">
+                  <IconInfoCircle :size="16" :stroke-width="2" />
+                  <span>{{ appliedDosesCount }}</span>
+                </div>
+              </div>
+              <div class="doses-row__field">
+                <label class="field-label">
+                  Total de dosis <span class="optional">(opcional)</span>
+                </label>
+                <input
+                  v-model.number="totalDoses"
+                  type="number"
+                  :min="totalDosesMin"
+                  class="field-input field-input--white"
+                  :class="{ 'field-input--error': totalDosesError }"
+                  placeholder="Ej: 3"
+                />
+                <span v-if="totalDosesError" class="field-error">{{ totalDosesError }}</span>
+                <span v-else class="field-help">Mínimo {{ totalDosesMin }}</span>
+              </div>
+            </div>
+
+            <!-- Nota -->
+            <div class="field-group">
+              <label class="field-label">
+                Nota <span class="optional">(opcional)</span>
+              </label>
+              <textarea
+                v-model="note"
+                class="note-input"
+                rows="4"
+                placeholder="Ej: Lote #12345, veterinatoria donde se aplicó..."
+              />
+            </div>
+          </template>
         </div>
 
         <!-- Footer -->
@@ -278,6 +322,57 @@ const namePlaceholder = computed(() => {
   line-height: 1.4;
 }
 
+.field-input--error {
+  border-color: #dc2626 !important;
+}
+
+.field-error {
+  display: block;
+  font-size: var(--text-xs);
+  color: #dc2626;
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+.doses-row {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.doses-row__field {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+@media (max-width: 480px) {
+  .doses-row {
+    flex-direction: column;
+  }
+}
+
+.readonly-field {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  min-height: 44px;
+  background: var(--color-bg);
+  border: 1.5px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  box-sizing: border-box;
+}
+
+.readonly-field svg {
+  color: var(--color-accent);
+  flex-shrink: 0;
+}
+
 .note-input {
   width: 100%;
   padding: var(--space-3);
@@ -367,6 +462,31 @@ const namePlaceholder = computed(() => {
   border-top-color: #fff;
   border-radius: 50%;
   animation: spin 0.6s linear infinite;
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--color-border);
+  border-top-color: var(--color-accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-10) var(--space-4);
+  gap: var(--space-3);
+  color: var(--color-text-tertiary);
+  text-align: center;
+}
+
+.loading-state p {
+  margin: 0;
+  font-size: var(--text-sm);
 }
 
 @keyframes spin {

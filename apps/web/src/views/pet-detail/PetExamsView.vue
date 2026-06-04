@@ -1,20 +1,31 @@
 <script setup lang="ts">
-import { ref, computed, type Ref } from 'vue'
-import { useRoute } from 'vue-router'
-import {
-  IconPlus,
-  IconStethoscope,
-  IconCheck,
-  IconChevronDown,
-  IconChevronUp,
-  IconFileText,
-  IconTrash,
-  IconCalendar
-} from '@tabler/icons-vue'
-import { useGetExamsByPet, useCreateExam, useUpdateExam, useDeleteExam, useCompleteExam } from '@/composables/useExams'
-import { ExamStatus, type ExamStatusType, type Exam } from '@/types/exam'
-import DatePicker from '@/components/ui/DatePicker.vue'
+import ConfirmDeleteModal from '@/components/health-tabs/ConfirmDeleteModal.vue'
+import ExamEditModal from '@/components/health-tabs/ExamEditModal.vue'
+import ExamResultsModal from '@/components/health-tabs/ExamResultsModal.vue'
 import AppPagination from '@/components/ui/AppPagination.vue'
+import PerPageSelector from '@/components/ui/PerPageSelector.vue'
+import {
+  useGetExamsByPet,
+  useCreateExam,
+  useDeleteExam,
+  useUpdateExam,
+} from '@/composables/useExams'
+import { ExamStatus, type Exam } from '@/types/exam'
+import { formatDateOnly } from '@/utils/date'
+import {
+  IconCalendar,
+  IconCheck,
+  IconEdit,
+  IconEye,
+  IconFileText,
+  IconPlus,
+  IconRefresh,
+  IconStethoscope,
+  IconTrash,
+} from '@tabler/icons-vue'
+import DatePicker from '@/components/ui/DatePicker.vue'
+import { computed, ref, type Ref } from 'vue'
+import { useRoute } from 'vue-router'
 
 const route = useRoute()
 const petId = computed(() => String(route.params.id))
@@ -28,30 +39,23 @@ const records = computed(() => data.value?.data ?? [])
 const total = computed(() => data.value?.total ?? 0)
 const totalPages = computed(() => data.value?.total_pages ?? 0)
 
-const STATUS_CONFIG: Record<ExamStatusType, { label: string; className: string; icon: typeof IconFileText }> = {
-  [ExamStatus.Scheduled]: { label: 'Programado', className: 'status--scheduled', icon: IconFileText },
-  [ExamStatus.Completed]: { label: 'Completado', className: 'status--completed', icon: IconCheck },
+const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
+  [ExamStatus.Scheduled]: { label: 'Programado', className: 'status--scheduled' },
+  [ExamStatus.Completed]: { label: 'Completado', className: 'status--completed' },
 }
 
-function formatDate(dateStr: string | null): string {
-  if (!dateStr) return '—'
-  const date = new Date(dateStr)
-  return date.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })
-}
+// ── Modals state ──
+const showCreateModal = ref(false)
+const showEditModal = ref(false)
+const showResultsModal = ref(false)
+const showConfirmModal = ref(false)
 
-const expandedExamId = ref<string | null>(null)
+const examIdToEdit = ref<string | null>(null)
+const examIdToView = ref<string | null>(null)
+const recordToDelete = ref<Exam | null>(null)
+const deletingId = ref<string | null>(null)
 
-function toggleExpand(id: string) {
-  expandedExamId.value = expandedExamId.value === id ? null : id
-}
-
-function isExpanded(id: string): boolean {
-  return expandedExamId.value === id
-}
-
-// Modal para crear/editar examen
-const showExamModal = ref(false)
-const editingExam = ref<Exam | null>(null)
+// ── Create form state ──
 const examName = ref('')
 const examReason = ref('')
 const examScheduledDate = ref('')
@@ -59,9 +63,8 @@ const examNotes = ref('')
 const isCompleted = ref(false)
 const examCompletedDate = ref('')
 
-// Campos dinámicos del examen
 const examFields = ref<{ name: string; value: string; unit: string }[]>([
-  { name: '', value: '', unit: '' }
+  { name: '', value: '', unit: '' },
 ])
 
 function addField() {
@@ -72,8 +75,7 @@ function removeField(index: number) {
   examFields.value.splice(index, 1)
 }
 
-function openCreate() {
-  editingExam.value = null
+function resetCreateForm() {
   examName.value = ''
   examReason.value = ''
   examScheduledDate.value = ''
@@ -81,19 +83,32 @@ function openCreate() {
   isCompleted.value = false
   examCompletedDate.value = ''
   examFields.value = [{ name: '', value: '', unit: '' }]
-  showExamModal.value = true
+}
+
+function openCreate() {
+  resetCreateForm()
+  showCreateModal.value = true
 }
 
 function openEdit(exam: Exam) {
-  editingExam.value = exam
-  examName.value = exam.name
-  examReason.value = exam.reason ?? ''
-  examScheduledDate.value = exam.scheduled_date ?? ''
-  examNotes.value = exam.notes ?? ''
-  isCompleted.value = exam.status === ExamStatus.Completed
-  examCompletedDate.value = exam.completed_date ?? ''
-  showExamModal.value = true
+  examIdToEdit.value = exam.id
+  showEditModal.value = true
 }
+
+function openResults(exam: Exam) {
+  examIdToView.value = exam.id
+  showResultsModal.value = true
+}
+
+function openDeleteConfirm(exam: Exam) {
+  recordToDelete.value = exam
+  showConfirmModal.value = true
+}
+
+// ── Mutations ──
+const createExam = useCreateExam()
+const updateExam = useUpdateExam()
+const deleteExam = useDeleteExam()
 
 function getResultsFromFields(): Array<{ parameter_name: string; value: string; unit?: string }> {
   return examFields.value
@@ -105,71 +120,46 @@ function getResultsFromFields(): Array<{ parameter_name: string; value: string; 
     }))
 }
 
-const createExam = useCreateExam()
-const updateExam = useUpdateExam()
-const completeExam = useCompleteExam()
-
 async function saveExam() {
   const results = getResultsFromFields()
 
-  if (editingExam.value) {
-    // Actualizar examen existente
-    await updateExam.mutateAsync({
-      id: editingExam.value.id,
-      payload: {
-        name: examName.value,
-        reason: examReason.value || undefined,
-        scheduled_date: examScheduledDate.value || undefined,
-        notes: examNotes.value || undefined,
-      },
-    })
-
-    // Si está completado y tiene resultados, usar el endpoint complete
-    if (isCompleted.value && results.length > 0) {
-      await completeExam.mutateAsync({
-        id: editingExam.value.id,
-        payload: {
-          completed_date: examCompletedDate.value || new Date().toISOString().split('T')[0],
-          results,
-        },
-      })
-    }
-  } else {
-    // Crear nuevo examen
-    const payload: {
-      pet_id: string
-      name: string
-      reason?: string
-      scheduled_date?: string
-      notes?: string
-      status?: 'scheduled' | 'completed'
-      completed_date?: string
-      results?: Array<{ parameter_name: string; value: string; unit?: string }>
-    } = {
-      pet_id: petId.value,
-      name: examName.value,
-      reason: examReason.value || undefined,
-      scheduled_date: examScheduledDate.value || undefined,
-      notes: examNotes.value || undefined,
-    }
-
-    if (isCompleted.value) {
-      payload.status = 'completed'
-      payload.completed_date = examCompletedDate.value || undefined
-      payload.results = results
-    }
-
-    await createExam.mutateAsync(payload)
+  const payload: {
+    pet_id: string
+    name: string
+    reason?: string
+    scheduled_date?: string
+    notes?: string
+    status?: 'scheduled' | 'completed'
+    completed_date?: string
+    results?: Array<{ parameter_name: string; value: string; unit?: string }>
+  } = {
+    pet_id: petId.value,
+    name: examName.value,
+    reason: examReason.value || undefined,
+    scheduled_date: examScheduledDate.value || undefined,
+    notes: examNotes.value || undefined,
   }
 
-  showExamModal.value = false
+  if (isCompleted.value) {
+    payload.status = 'completed'
+    payload.completed_date = examCompletedDate.value || undefined
+    payload.results = results
+  }
+
+  await createExam.mutateAsync(payload)
+  showCreateModal.value = false
 }
 
-const deleteExam = useDeleteExam()
-
-async function handleDelete(exam: Exam) {
-  if (!confirm(`¿Eliminar el examen "${exam.name}"?`)) return
-  await deleteExam.mutateAsync({ id: exam.id, petId: petId.value })
+async function handleDeleteConfirm() {
+  if (!recordToDelete.value) return
+  deletingId.value = recordToDelete.value.id
+  try {
+    await deleteExam.mutateAsync({ id: recordToDelete.value.id, petId: petId.value })
+    showConfirmModal.value = false
+    recordToDelete.value = null
+  } finally {
+    deletingId.value = null
+  }
 }
 </script>
 
@@ -178,108 +168,199 @@ async function handleDelete(exam: Exam) {
     <div class="content-card">
       <!-- Header -->
       <div class="tab-header">
-        <h2 class="tab-title">
-          <IconStethoscope :size="20" :stroke-width="1.75" />
-          Historial de Exámenes
-        </h2>
-        <button class="btn-add" @click="openCreate">
-          <IconPlus :size="16" :stroke-width="2.5" />
-          Registrar examen
-        </button>
+        <div class="tab-header-left">
+          <h2 class="tab-title">
+            <IconStethoscope :size="20" :stroke-width="1.75" />
+            Historial de Exámenes
+          </h2>
+          <span class="panel-count">{{ total }} registros</span>
+        </div>
+        <div class="tab-header-right">
+          <button class="btn-refresh" :disabled="isLoading" title="Refrescar" @click="refresh">
+            <IconRefresh :size="16" :stroke-width="2" :class="{ spin: isLoading }" />
+            Refrescar
+          </button>
+          <button class="btn-add" @click="openCreate">
+            <IconPlus :size="16" :stroke-width="2.5" />
+            Registrar
+          </button>
+        </div>
       </div>
 
-      <!-- Loading -->
-      <div v-if="isLoading" class="loading-state">
-        <div class="spinner" />
-        <p>Cargando registros...</p>
+      <!-- Tabla desktop -->
+      <div class="table-wrapper">
+        <table v-if="!isLoading && !isError && records.length > 0" class="exam-table">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th class="th-center">Estado</th>
+              <th class="th-center">Fecha programada</th>
+              <th class="th-center">Fecha realización</th>
+              <th class="th-center">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="exam in records" :key="exam.id" class="exam-row">
+              <td>
+                <div class="exam-cell">
+                  <span class="exam-name">{{ exam.name }}</span>
+                  <span v-if="exam.reason" class="exam-reason" :title="exam.reason">{{
+                    exam.reason
+                  }}</span>
+                </div>
+              </td>
+              <td class="td-center">
+                <span
+                  class="status-badge"
+                  :class="STATUS_CONFIG[exam.status]?.className ?? ''"
+                >
+                  <IconCheck
+                    v-if="exam.status === ExamStatus.Completed"
+                    :size="12"
+                    :stroke-width="2.5"
+                  />
+                  <IconFileText
+                    v-else
+                    :size="12"
+                    :stroke-width="2.5"
+                  />
+                  {{ STATUS_CONFIG[exam.status]?.label ?? exam.status }}
+                </span>
+              </td>
+              <td class="td-center">
+                <span class="date-cell">{{ formatDateOnly(exam.scheduled_date) }}</span>
+              </td>
+              <td class="td-center">
+                <span class="date-cell">{{ formatDateOnly(exam.completed_date) }}</span>
+              </td>
+              <td class="td-center">
+                <div class="action-buttons">
+                  <button
+                    class="btn-action btn-view"
+                    title="Ver resultados"
+                    @click="openResults(exam)"
+                  >
+                    <IconEye :size="14" :stroke-width="2" />
+                    Ver resultados
+                  </button>
+                  <button
+                    class="btn-action btn-edit"
+                    title="Editar"
+                    :disabled="updateExam.isPending.value"
+                    @click="openEdit(exam)"
+                  >
+                    <IconEdit :size="14" :stroke-width="2" />
+                    Editar
+                  </button>
+                  <button
+                    class="btn-action btn-delete"
+                    title="Eliminar"
+                    :disabled="deletingId === exam.id || deleteExam.isPending.value"
+                    @click="openDeleteConfirm(exam)"
+                  >
+                    <IconTrash :size="14" :stroke-width="2" />
+                    Eliminar
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- Loading -->
+        <div v-if="isLoading" class="loading-state">
+          <div class="spinner" />
+          <p>Cargando registros...</p>
+        </div>
+
+        <!-- Error -->
+        <div v-else-if="isError" class="error-state">
+          <p>Error al cargar los registros</p>
+          <button class="btn-retry" @click="refresh">Reintentar</button>
+        </div>
+
+        <!-- Empty -->
+        <div v-else-if="records.length === 0" class="empty-state">
+          <IconStethoscope :size="40" :stroke-width="1.5" />
+          <p>No hay exámenes registrados</p>
+          <button class="btn-add-empty" @click="openCreate">
+            <IconPlus :size="16" :stroke-width="2.5" />
+            Registrar primer examen
+          </button>
+        </div>
       </div>
 
-      <!-- Error -->
-      <div v-else-if="isError" class="error-state">
-        <p>Error al cargar los registros</p>
-        <button class="btn-retry" @click="refresh">Reintentar</button>
-      </div>
-
-      <!-- Empty -->
-      <div v-else-if="records.length === 0" class="empty-state">
-        <IconStethoscope :size="40" :stroke-width="1.5" />
-        <p>No hay exámenes registrados</p>
-        <button class="btn-add-empty" @click="openCreate">
-          <IconPlus :size="16" :stroke-width="2.5" />
-          Registrar primer examen
-        </button>
-      </div>
-
-      <!-- Accordion list -->
-      <div v-else class="accordion-list">
-        <div
-          v-for="exam in records"
-          :key="exam.id"
-          class="accordion-item"
-          :class="{ 'accordion-item--expanded': isExpanded(exam.id) }"
-        >
-          <!-- Header -->
-          <button class="accordion-header" @click="toggleExpand(exam.id)">
-            <div class="accordion-header-left">
-              <div class="accordion-icon">
-                <IconFileText :size="18" :stroke-width="1.75" />
-              </div>
-              <div class="accordion-info">
-                <span class="accordion-title">{{ exam.name }}</span>
-                <span class="accordion-date">{{ formatDate(exam.scheduled_date || exam.completed_date) }}</span>
-              </div>
-            </div>
-            <div class="accordion-header-right">
+      <!-- Vista card para móvil -->
+      <div v-if="!isLoading && !isError && records.length > 0" class="record-cards">
+        <div v-for="exam in records" :key="`card-${exam.id}`" class="record-card">
+          <div class="record-card__top">
+            <div class="record-card__info">
+              <span class="record-card__name">{{ exam.name }}</span>
               <span
                 class="status-badge"
-                :class="STATUS_CONFIG[exam.status as ExamStatusType]?.className"
+                :class="STATUS_CONFIG[exam.status]?.className ?? ''"
               >
-                <component
-                  :is="STATUS_CONFIG[exam.status as ExamStatusType]?.icon"
-                  :size="12"
+                <IconCheck
+                  v-if="exam.status === ExamStatus.Completed"
+                  :size="10"
                   :stroke-width="2.5"
                 />
-                {{ STATUS_CONFIG[exam.status as ExamStatusType]?.label }}
+                <IconFileText
+                  v-else
+                  :size="10"
+                  :stroke-width="2.5"
+                />
+                {{ STATUS_CONFIG[exam.status]?.label ?? exam.status }}
               </span>
-              <component
-                :is="isExpanded(exam.id) ? IconChevronUp : IconChevronDown"
-                :size="18"
-                :stroke-width="2"
-                class="accordion-chevron"
-              />
             </div>
-          </button>
-
-          <!-- Content -->
-          <div v-if="isExpanded(exam.id)" class="accordion-content">
-            <!-- Reason -->
-            <div v-if="exam.reason" class="reason-section">
-              <h4 class="reason-title">Motivo</h4>
-              <p class="reason-text">{{ exam.reason }}</p>
-            </div>
-
-            <!-- Notes -->
-            <div v-if="exam.notes" class="notes-section">
-              <h4 class="notes-title">Notas</h4>
-              <p class="notes-text">{{ exam.notes }}</p>
-            </div>
-
-            <!-- Actions -->
-            <div class="accordion-actions">
-              <button class="btn-edit-exam" @click="openEdit(exam)">
-                ✏️ Editar
+            <div class="record-card__actions">
+              <button
+                class="btn-action btn-view"
+                title="Ver resultados"
+                @click="openResults(exam)"
+              >
+                <IconEye :size="14" :stroke-width="2" />
               </button>
-              <button class="btn-delete-exam" @click="handleDelete(exam)">
+              <button
+                class="btn-action btn-edit"
+                title="Editar"
+                :disabled="updateExam.isPending.value"
+                @click="openEdit(exam)"
+              >
+                <IconEdit :size="14" :stroke-width="2" />
+              </button>
+              <button
+                class="btn-action btn-delete"
+                title="Eliminar"
+                :disabled="deletingId === exam.id || deleteExam.isPending.value"
+                @click="openDeleteConfirm(exam)"
+              >
                 <IconTrash :size="14" :stroke-width="2" />
-                Eliminar
               </button>
+            </div>
+          </div>
+
+          <div v-if="exam.reason" class="record-card__detail">
+            <span class="record-card__label">Motivo</span>
+            <span class="record-card__value">{{ exam.reason }}</span>
+          </div>
+
+          <div class="record-card__dates">
+            <div class="record-card__date-item">
+              <span class="record-card__label">Programado</span>
+              <span class="record-card__value">{{ formatDateOnly(exam.scheduled_date) }}</span>
+            </div>
+            <div class="record-card__date-item">
+              <span class="record-card__label">Realizado</span>
+              <span class="record-card__value">{{ formatDateOnly(exam.completed_date) }}</span>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Pagination -->
-      <div v-if="totalPages > 1" class="pagination-bar">
+      <!-- Footer con paginación -->
+      <div v-if="!isLoading && !isError && records.length > 0" class="table-footer">
+        <PerPageSelector v-model="perPage" :options="[10, 25, 50]" />
         <AppPagination
           :current-page="page"
           :total-pages="totalPages"
@@ -290,13 +371,13 @@ async function handleDelete(exam: Exam) {
       </div>
     </div>
 
-    <!-- Modal: Create/Edit Exam -->
+    <!-- Modal crear examen -->
     <Teleport to="body">
-      <div v-if="showExamModal" class="modal-backdrop" @click.self="showExamModal = false">
+      <div v-if="showCreateModal" class="modal-backdrop" @click.self="showCreateModal = false">
         <div class="modal-container">
           <div class="modal-header">
-            <h2>{{ editingExam ? 'Editar examen' : 'Registrar examen' }}</h2>
-            <button class="btn-close" @click="showExamModal = false">✕</button>
+            <h2>Registrar examen</h2>
+            <button class="btn-close" @click="showCreateModal = false">✕</button>
           </div>
 
           <div class="modal-body">
@@ -413,24 +494,47 @@ async function handleDelete(exam: Exam) {
           </div>
 
           <div class="modal-footer">
-            <button class="btn-cancel" @click="showExamModal = false">Cancelar</button>
+            <button class="btn-cancel" @click="showCreateModal = false">Cancelar</button>
             <button
               class="btn-save"
               :disabled="!examName || (isCompleted && !examCompletedDate) || createExam.isPending.value"
               @click="saveExam"
             >
               <span v-if="createExam.isPending.value" class="spinner-sm" />
-              {{ editingExam ? 'Guardar cambios' : 'Registrar examen' }}
+              Registrar examen
             </button>
           </div>
         </div>
       </div>
     </Teleport>
+
+    <!-- Modal editar examen -->
+    <ExamEditModal
+      v-if="showEditModal && examIdToEdit"
+      :exam-id="examIdToEdit"
+      @close="showEditModal = false; examIdToEdit = null"
+      @updated="refresh"
+    />
+
+    <!-- Modal ver resultados -->
+    <ExamResultsModal
+      v-if="showResultsModal && examIdToView"
+      :exam-id="examIdToView"
+      @close="showResultsModal = false; examIdToView = null"
+    />
+
+    <!-- Modal confirmar eliminación -->
+    <ConfirmDeleteModal
+      v-model="showConfirmModal"
+      :record-name="recordToDelete?.name ?? ''"
+      record-type="exam"
+      :deleting="deleteExam.isPending.value"
+      @confirm="handleDeleteConfirm"
+    />
   </div>
 </template>
 
 <style scoped>
-/* Estilos similares a los existentes, adaptados para la nueva estructura */
 .tab-view {
   display: flex;
   flex-direction: column;
@@ -438,6 +542,8 @@ async function handleDelete(exam: Exam) {
 }
 
 .content-card {
+  container-type: inline-size;
+  container-name: exam-card;
   background: transparent;
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-xl);
@@ -445,6 +551,7 @@ async function handleDelete(exam: Exam) {
   box-shadow: none;
 }
 
+/* ── Header ───────────────────────── */
 .tab-header {
   display: flex;
   align-items: center;
@@ -453,6 +560,12 @@ async function handleDelete(exam: Exam) {
   flex-wrap: wrap;
   padding: var(--space-4) var(--space-5);
   border-bottom: 1px solid var(--color-border-light);
+}
+
+.tab-header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
 }
 
 .tab-title {
@@ -464,6 +577,52 @@ async function handleDelete(exam: Exam) {
   font-weight: 600;
   color: var(--color-text-primary);
   margin: 0;
+}
+
+.panel-count {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+  font-weight: 500;
+}
+
+.tab-header-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.btn-refresh {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-bg-alt);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.btn-refresh:hover:not(:disabled) {
+  background: var(--color-accent-light);
+  color: var(--color-accent-dark);
+  border-color: var(--color-accent);
+}
+
+.btn-refresh:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-refresh .spin {
+  animation: spin 0.8s linear infinite;
 }
 
 .btn-add {
@@ -485,7 +644,183 @@ async function handleDelete(exam: Exam) {
   background: var(--color-accent-hover);
 }
 
-/* States */
+/* ── Tabla ────────────────────────── */
+.table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.exam-table {
+  width: 100%;
+  min-width: 700px;
+  border-collapse: collapse;
+}
+
+.exam-table thead tr {
+  background: var(--color-bg);
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.exam-table th {
+  padding: var(--space-3) var(--space-4);
+  text-align: left;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.exam-table th.th-center {
+  text-align: center;
+}
+
+.exam-row {
+  transition: background var(--transition-fast);
+}
+
+.exam-row:hover {
+  background: var(--color-bg-alt);
+}
+
+.exam-row td {
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.exam-row:last-child td {
+  border-bottom: none;
+}
+
+.td-center {
+  text-align: center;
+}
+
+/* ── Celdas ───────────────────────── */
+.exam-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.exam-name {
+  font-size: var(--text-sm);
+  color: var(--color-text-primary);
+  font-weight: 500;
+}
+
+.exam-reason {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.4;
+}
+
+.date-cell {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+/* ── Badges de estado ─────────────── */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px var(--space-3);
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.status--scheduled {
+  background: #fef3e2;
+  color: #c4714a;
+}
+
+.status--completed {
+  background: #e8f5ee;
+  color: #2e7d52;
+}
+
+/* ── Botones de acción ────────────── */
+.action-buttons {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  justify-content: center;
+}
+
+.btn-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast),
+    border-color var(--transition-fast);
+  white-space: nowrap;
+}
+
+/* Ver resultados - Bordered con fondo claro */
+.btn-view {
+  background: #e0f2fe;
+  color: #0284c7;
+  border-color: #bae6fd;
+}
+
+.btn-view:hover:not(:disabled) {
+  background: #bae6fd;
+  border-color: #0284c7;
+}
+
+/* Editar - Bordered con fondo claro */
+.btn-edit {
+  background: #fef3c7;
+  color: #d97706;
+  border-color: #fde68a;
+}
+
+.btn-edit:hover:not(:disabled) {
+  background: #fde68a;
+  border-color: #f59e0b;
+}
+
+/* Eliminar - Bordered con fondo claro */
+.btn-delete {
+  background: #fef2f2;
+  color: #dc2626;
+  border-color: #fecaca;
+}
+
+.btn-delete:hover:not(:disabled) {
+  background: #fee2e2;
+  border-color: #fca5a5;
+}
+
+.btn-delete:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-view:disabled,
+.btn-edit:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ── Estados de carga/error/vacío ─── */
 .loading-state,
 .error-state,
 .empty-state {
@@ -539,187 +874,128 @@ async function handleDelete(exam: Exam) {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
-/* Accordion */
-.accordion-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
+/* ── Vista card para móvil (< 700px) ─ */
+.record-cards {
+  display: none;
 }
 
-.accordion-item {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
+@container exam-card (max-width: 699px) {
+  .table-wrapper {
+    display: none;
+  }
+
+  .record-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .record-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    border-bottom: 1px solid var(--color-border-light);
+  }
+
+  .record-card:last-child {
+    border-bottom: none;
+  }
+
+  .record-card__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+  }
+
+  .record-card__info {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex: 1;
+    min-width: 0;
+  }
+
+  .record-card__name {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--color-text-primary);
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .record-card__actions {
+    display: flex;
+    gap: var(--space-1);
+    flex-shrink: 0;
+  }
+
+  .record-card__detail {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .record-card__dates {
+    display: flex;
+    gap: var(--space-4);
+  }
+
+  .record-card__date-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .record-card__label {
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-tertiary);
+  }
+
+  .record-card__value {
+    font-size: var(--text-xs);
+    color: var(--color-text-secondary);
+  }
 }
 
-.accordion-header {
-  width: 100%;
+/* ── Footer con paginación ─────────── */
+.table-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-3);
-  padding: var(--space-4);
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  text-align: left;
-  transition: background var(--transition-fast);
-}
-
-.accordion-header:hover {
-  background: var(--color-bg-alt);
-}
-
-.accordion-header-left {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  flex: 1;
-  min-width: 0;
-}
-
-.accordion-icon {
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #f0f9ff;
-  color: #0284c7;
-  border-radius: var(--radius-md);
-  flex-shrink: 0;
-}
-
-.accordion-info {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
-.accordion-title {
-  font-size: var(--text-sm);
-  font-weight: 600;
-  color: var(--color-text-primary);
-}
-
-.accordion-date {
-  font-size: var(--text-xs);
-  color: var(--color-text-tertiary);
-}
-
-.accordion-header-right {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-}
-
-.status-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 3px var(--space-2);
-  border-radius: var(--radius-full);
-  font-size: var(--text-xs);
-  font-weight: 600;
-  flex-shrink: 0;
-}
-
-.status--scheduled {
-  background: #fef3e2;
-  color: #c4714a;
-}
-
-.status--completed {
-  background: #e8f5ee;
-  color: #2e7d52;
-}
-
-.accordion-chevron {
-  color: var(--color-text-tertiary);
-  transition: transform var(--transition-fast);
-}
-
-.accordion-item--expanded .accordion-chevron {
-  transform: rotate(180deg);
-}
-
-.accordion-content {
-  padding: 0 var(--space-4) var(--space-4);
-  border-top: 1px solid var(--color-border-light);
-}
-
-.reason-section,
-.notes-section {
-  padding-top: var(--space-4);
-}
-
-.reason-title,
-.notes-title {
-  font-size: var(--text-xs);
-  font-weight: 600;
-  color: var(--color-text-tertiary);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin: 0 0 var(--space-2) 0;
-}
-
-.reason-text,
-.notes-text {
-  font-size: var(--text-sm);
-  color: var(--color-text-secondary);
-  margin: 0;
-  white-space: pre-wrap;
-}
-
-.accordion-actions {
-  display: flex;
-  gap: var(--space-2);
-  margin-top: var(--space-4);
-  padding-top: var(--space-3);
-  border-top: 1px solid var(--color-border-light);
-}
-
-.btn-edit-exam,
-.btn-delete-exam {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  padding: var(--space-2) var(--space-3);
-  background: transparent;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  font-size: var(--text-xs);
-  font-weight: 500;
-  cursor: pointer;
-  transition: background var(--transition-fast);
-}
-
-.btn-edit-exam:hover {
-  background: var(--color-bg-alt);
-}
-
-.btn-delete-exam {
-  color: #dc2626;
-  border-color: #fecaca;
-}
-
-.btn-delete-exam:hover {
-  background: #fef2f2;
-}
-
-.pagination-bar {
-  display: flex;
-  justify-content: center;
+  gap: var(--space-4);
+  flex-wrap: wrap;
   padding: var(--space-4) var(--space-5);
   border-top: 1px solid var(--color-border-light);
+  background: var(--color-bg);
 }
 
-/* Modal */
+@container exam-card (max-width: 480px) {
+  .tab-header {
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .table-footer {
+    flex-direction: column;
+    align-items: stretch;
+    padding: var(--space-3) var(--space-4);
+    gap: var(--space-3);
+  }
+}
+
+/* ── Modal (create) ───────────────── */
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -810,6 +1086,10 @@ async function handleDelete(exam: Exam) {
 .field-textarea:focus {
   outline: none;
   border-color: var(--color-accent);
+}
+
+.field-textarea {
+  resize: vertical;
 }
 
 .date-picker-row {

@@ -1,6 +1,6 @@
 basePath: /
 definitions:
-  internal_domain_auth.ChangePasswordPayload:
+  auth.ChangePasswordPayload:
     properties:
       confirm_password:
         maxLength: 72
@@ -18,7 +18,7 @@ definitions:
     - current_password
     - new_password
     type: object
-  internal_domain_auth.LoginPayload:
+  auth.LoginPayload:
     properties:
       email:
         type: string
@@ -29,7 +29,7 @@ definitions:
     - email
     - password
     type: object
-  internal_domain_auth.UpdateProfilePayload:
+  auth.UpdateProfilePayload:
     properties:
       email:
         type: string
@@ -41,18 +41,18 @@ definitions:
     - email
     - name
     type: object
-  internal_domain_exam.CompletePayload:
+  exam.CompletePayload:
     properties:
       completed_date:
         type: string
       results:
         items:
-          $ref: '#/definitions/internal_domain_exam.ResultPayload'
+          $ref: '#/definitions/exam.ResultPayload'
         type: array
     required:
     - completed_date
     type: object
-  internal_domain_exam.CreatePayload:
+  exam.CreatePayload:
     properties:
       completed_date:
         type: string
@@ -70,7 +70,7 @@ definitions:
         type: string
       results:
         items:
-          $ref: '#/definitions/internal_domain_exam.ResultPayload'
+          $ref: '#/definitions/exam.ResultPayload'
         type: array
       scheduled_date:
         type: string
@@ -83,7 +83,7 @@ definitions:
     - name
     - pet_id
     type: object
-  internal_domain_exam.ResultPayload:
+  exam.ResultPayload:
     properties:
       parameter_name:
         maxLength: 100
@@ -100,14 +100,14 @@ definitions:
     - parameter_name
     - value
     type: object
-  internal_domain_exam.SchedulePayload:
+  exam.SchedulePayload:
     properties:
       scheduled_date:
         type: string
     required:
     - scheduled_date
     type: object
-  internal_domain_exam.UpdatePayload:
+  exam.UpdatePayload:
     properties:
       name:
         maxLength: 100
@@ -122,7 +122,7 @@ definitions:
       scheduled_date:
         type: string
     type: object
-  internal_domain_health_catalog.CreateHealthCatalogPayload:
+  health_catalog.CreateHealthCatalogPayload:
     properties:
       category:
         enum:
@@ -153,7 +153,7 @@ definitions:
     - name
     - species
     type: object
-  internal_domain_health_catalog.UpdateHealthCatalogPayload:
+  health_catalog.UpdateHealthCatalogPayload:
     properties:
       category:
         enum:
@@ -184,7 +184,7 @@ definitions:
     - name
     - species
     type: object
-  internal_domain_health_record.CreateHealthRecordPayload:
+  health_record.CreateHealthRecordPayload:
     properties:
       application_date:
         type: string
@@ -212,7 +212,7 @@ definitions:
     - application_date
     - pet_id
     type: object
-  internal_domain_health_record.UpdateHealthRecordPayload:
+  health_record.UpdateHealthRecordPayload:
     properties:
       application_date:
         type: string
@@ -237,7 +237,7 @@ definitions:
     - category
     - name
     type: object
-  internal_domain_pet.CreatePetPayload:
+  pet.CreatePetPayload:
     properties:
       birth_date:
         type: string
@@ -271,7 +271,7 @@ definitions:
     - name
     - species
     type: object
-  internal_domain_pet.UpdatePetPayload:
+  pet.UpdatePetPayload:
     properties:
       birth_date:
         type: string
@@ -290,7 +290,7 @@ definitions:
     - birth_date
     - name
     type: object
-  internal_domain_setup.SetupPayload:
+  setup.SetupPayload:
     properties:
       email:
         type: string
@@ -304,7 +304,7 @@ definitions:
     - name
     - password
     type: object
-  internal_domain_user.CreateUserPayload:
+  user.CreateUserPayload:
     properties:
       email:
         type: string
@@ -324,7 +324,7 @@ definitions:
     - name
     - password
     type: object
-  internal_domain_user.UpdateUserPayload:
+  user.UpdateUserPayload:
     properties:
       email:
         type: string
@@ -339,7 +339,7 @@ definitions:
     - email
     - name
     type: object
-  internal_domain_vaccine_application.CreatePayload:
+  vaccine_application.CreatePayload:
     properties:
       application_date:
         type: string
@@ -354,7 +354,7 @@ definitions:
     - application_date
     - health_record_id
     type: object
-  internal_domain_vaccine_application.UpdatePayload:
+  vaccine_application.UpdatePayload:
     properties:
       application_date:
         type: string
@@ -401,7 +401,7 @@ paths:
         name: credentials
         required: true
         schema:
-          $ref: '#/definitions/internal_domain_auth.LoginPayload'
+          $ref: '#/definitions/auth.LoginPayload'
       produces:
       - application/json
       responses:
@@ -478,7 +478,7 @@ paths:
         name: payload
         required: true
         schema:
-          $ref: '#/definitions/internal_domain_auth.ChangePasswordPayload'
+          $ref: '#/definitions/auth.ChangePasswordPayload'
       produces:
       - application/json
       responses:
@@ -515,7 +515,7 @@ paths:
         name: payload
         required: true
         schema:
-          $ref: '#/definitions/internal_domain_auth.UpdateProfilePayload'
+          $ref: '#/definitions/auth.UpdateProfilePayload'
       produces:
       - application/json
       responses:
@@ -639,7 +639,7 @@ paths:
         name: exam
         required: true
         schema:
-          $ref: '#/definitions/internal_domain_exam.CreatePayload'
+          $ref: '#/definitions/exam.CreatePayload'
       produces:
       - application/json
       responses:
@@ -781,7 +781,7 @@ paths:
         name: exam
         required: true
         schema:
-          $ref: '#/definitions/internal_domain_exam.UpdatePayload'
+          $ref: '#/definitions/exam.UpdatePayload'
       produces:
       - application/json
       responses:
@@ -834,7 +834,7 @@ paths:
         name: data
         required: true
         schema:
-          $ref: '#/definitions/internal_domain_exam.CompletePayload'
+          $ref: '#/definitions/exam.CompletePayload'
       produces:
       - application/json
       responses:
@@ -887,7 +887,7 @@ paths:
         name: data
         required: true
         schema:
-          $ref: '#/definitions/internal_domain_exam.SchedulePayload'
+          $ref: '#/definitions/exam.SchedulePayload'
       produces:
       - application/json
       responses:
@@ -983,7 +983,7 @@ paths:
         name: item
         required: true
         schema:
-          $ref: '#/definitions/internal_domain_health_catalog.CreateHealthCatalogPayload'
+          $ref: '#/definitions/health_catalog.CreateHealthCatalogPayload'
       produces:
       - application/json
       responses:
@@ -1131,7 +1131,7 @@ paths:
         name: item
         required: true
         schema:
-          $ref: '#/definitions/internal_domain_health_catalog.UpdateHealthCatalogPayload'
+          $ref: '#/definitions/health_catalog.UpdateHealthCatalogPayload'
       produces:
       - application/json
       responses:
@@ -1317,7 +1317,7 @@ paths:
         name: record
         required: true
         schema:
-          $ref: '#/definitions/internal_domain_health_record.CreateHealthRecordPayload'
+          $ref: '#/definitions/health_record.CreateHealthRecordPayload'
       produces:
       - application/json
       responses:
@@ -1459,7 +1459,7 @@ paths:
         name: record
         required: true
         schema:
-          $ref: '#/definitions/internal_domain_health_record.UpdateHealthRecordPayload'
+          $ref: '#/definitions/health_record.UpdateHealthRecordPayload'
       produces:
       - application/json
       responses:
@@ -1690,7 +1690,7 @@ paths:
         name: pet
         required: true
         schema:
-          $ref: '#/definitions/internal_domain_pet.CreatePetPayload'
+          $ref: '#/definitions/pet.CreatePetPayload'
       produces:
       - application/json
       responses:
@@ -1832,7 +1832,7 @@ paths:
         name: pet
         required: true
         schema:
-          $ref: '#/definitions/internal_domain_pet.UpdatePetPayload'
+          $ref: '#/definitions/pet.UpdatePetPayload'
       produces:
       - application/json
       responses:
@@ -1880,7 +1880,7 @@ paths:
         name: user
         required: true
         schema:
-          $ref: '#/definitions/internal_domain_setup.SetupPayload'
+          $ref: '#/definitions/setup.SetupPayload'
       produces:
       - application/json
       responses:
@@ -1977,7 +1977,7 @@ paths:
         name: user
         required: true
         schema:
-          $ref: '#/definitions/internal_domain_user.CreateUserPayload'
+          $ref: '#/definitions/user.CreateUserPayload'
       produces:
       - application/json
       responses:
@@ -2137,7 +2137,7 @@ paths:
         name: user
         required: true
         schema:
-          $ref: '#/definitions/internal_domain_user.UpdateUserPayload'
+          $ref: '#/definitions/user.UpdateUserPayload'
       produces:
       - application/json
       responses:
@@ -2197,7 +2197,7 @@ paths:
         name: app
         required: true
         schema:
-          $ref: '#/definitions/internal_domain_vaccine_application.CreatePayload'
+          $ref: '#/definitions/vaccine_application.CreatePayload'
       produces:
       - application/json
       responses:
@@ -2333,7 +2333,7 @@ paths:
         name: app
         required: true
         schema:
-          $ref: '#/definitions/internal_domain_vaccine_application.UpdatePayload'
+          $ref: '#/definitions/vaccine_application.UpdatePayload'
       produces:
       - application/json
       responses:

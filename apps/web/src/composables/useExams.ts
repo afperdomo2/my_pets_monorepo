@@ -2,6 +2,9 @@ import { examService } from '@/services/examService'
 import type {
   CompleteExamPayload,
   CreateExamPayload,
+  Exam,
+  ExamResult,
+  ExamWithResults,
   ScheduleExamPayload,
   UpdateExamPayload,
 } from '@/types/exam'
@@ -79,8 +82,13 @@ export function useGetExamById(id: Ref<string>) {
 
   return useQuery({
     queryKey,
-    queryFn: () => examService.getById(id.value).then((r) => r.data),
+    queryFn: () =>
+      examService.getById(id.value).then((r) => {
+        const raw = r as unknown as { data: Exam; results?: ExamResult[] }
+        return { ...raw.data, results: raw.results ?? [] } as ExamWithResults
+      }),
     enabled: computed(() => !!id.value),
+    staleTime: 0,
   })
 }
 

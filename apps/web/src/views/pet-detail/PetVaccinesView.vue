@@ -320,7 +320,7 @@ async function handleDeleteConfirm() {
     <!-- Modal editar registro -->
     <HealthRecordEditModal
       v-if="showEditModal && recordToEdit"
-      :record="recordToEdit"
+      :record-id="recordToEdit.id"
       category="vaccine"
       @close="showEditModal = false; recordToEdit = null"
       @updated="refresh"
