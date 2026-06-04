@@ -23,7 +23,7 @@ const emit = defineEmits<{
 }>()
 
 const recordIdRef = toRef(props, 'recordId')
-const { data: record, isLoading } = useGetHealthRecord(recordIdRef)
+const { data: record, isSuccess, isLoading } = useGetHealthRecord(recordIdRef)
 
 const name = ref('')
 const note = ref('')
@@ -32,11 +32,12 @@ const appliedDosesCount = ref(0)
 
 watch(record, (r) => {
   if (!r) return
+  console.log('[EditModal] Datos recibidos del endpoint', { name: r.name, notes: r.notes, totalDoses: r.total_doses, appliedCount: r.applied_doses_count })
   name.value = r.name
   note.value = r.notes || ''
   totalDoses.value = r.total_doses ?? null
   appliedDosesCount.value = r.applied_doses_count ?? 0
-})
+}, { immediate: true })
 
 const totalDosesMin = computed(() => {
   return Math.max(1, appliedDosesCount.value)
@@ -59,13 +60,13 @@ const canSave = computed(() => {
 })
 
 async function save() {
-  if (!canSave.value || !record.value) return
+  if (!canSave.value) return
 
   try {
     const updated = await updateRecord.mutateAsync({
-      id: record.value.id,
+      id: props.recordId,
       payload: {
-        category: record.value.category,
+        category: props.category,
         name: name.value.trim(),
         notes: note.value.trim() || undefined,
         total_doses: totalDoses.value !== null && totalDoses.value > 0
@@ -112,7 +113,7 @@ const namePlaceholder = computed(() => {
             <p>Cargando registro...</p>
           </div>
 
-          <template v-else-if="record">
+          <template v-else-if="isSuccess">
             <!-- Nombre -->
             <div class="field-group">
               <label class="field-label">

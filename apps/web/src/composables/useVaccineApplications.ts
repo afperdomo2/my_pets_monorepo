@@ -43,12 +43,9 @@ export function useCreateVaccineApplication() {
     mutationFn: (payload: CreateVaccineApplicationPayload) =>
       vaccineApplicationService.create(payload).then((r) => r.data),
     onSuccess: (newItem) => {
-      // Invalidar aplicaciones del health_record afectado
       queryClient.invalidateQueries({
         queryKey: ['vaccine-applications', 'health-record', newItem.health_record_id],
       })
-      // Invalidar health_records para actualizar la vista
-      queryClient.invalidateQueries({ queryKey: ['health-records'] })
     },
   })
 }

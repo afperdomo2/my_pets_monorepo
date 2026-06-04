@@ -8,6 +8,7 @@ export function useGetHealthRecord(id: Ref<string>) {
     queryKey: computed(() => ["health-records", id.value]),
     queryFn: () => healthRecordService.getById(id.value).then((r) => r.data),
     enabled: computed(() => !!id.value),
+    staleTime: 0,
   });
 }
 
@@ -115,13 +116,10 @@ export function useCreateHealthRecord() {
 }
 
 export function useUpdateHealthRecord() {
-  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: UpdateHealthRecordPayload }) =>
       healthRecordService.update(id, payload).then((r) => r.data),
-    onSuccess: (updatedItem) => {
-      queryClient.invalidateQueries({ queryKey: ["health-records", "pet", updatedItem.pet_id] });
-    },
+    onSuccess: () => {},
   });
 }
 
