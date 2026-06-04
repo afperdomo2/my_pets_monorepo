@@ -51,6 +51,7 @@ func parsePetIDParam(c *gin.Context) (string, bool) {
 // Lista todos los exámenes del usuario autenticado con paginación.
 //
 //	@Summary	Listar todos los exámenes del usuario (paginado)
+//	@Description	Obtiene todos los exámenes del usuario autenticado con paginación.
 //	@Tags		exams
 //	@Produce	json
 //	@Security	CookieAuth
@@ -90,6 +91,7 @@ func (h *Handler) GetAllExams(c *gin.Context) {
 // Lista los exámenes de una mascota específica del usuario autenticado.
 //
 //	@Summary	Listar exámenes de una mascota (paginado)
+//	@Description	Obtiene los exámenes de una mascota específica con paginación.
 //	@Tags		exams
 //	@Produce	json
 //	@Security	CookieAuth
@@ -136,6 +138,7 @@ func (h *Handler) GetExamsByPet(c *gin.Context) {
 // Retorna un examen específico con sus resultados.
 //
 //	@Summary	Obtener examen por ID con resultados
+//	@Description	Obtiene un examen específico con sus resultados.
 //	@Tags		exams
 //	@Produce	json
 //	@Security	CookieAuth
@@ -172,6 +175,7 @@ func (h *Handler) GetExamByID(c *gin.Context) {
 // Crea un nuevo examen veterinario.
 //
 //	@Summary	Crear un examen
+//	@Description	Crea un nuevo examen veterinario.
 //	@Tags		exams
 //	@Accept		json
 //	@Produce	json
@@ -263,6 +267,7 @@ func (h *Handler) CreateExam(c *gin.Context) {
 // Actualiza un examen existente.
 //
 //	@Summary	Actualizar un examen
+//	@Description	Actualiza los datos de un examen existente.
 //	@Tags		exams
 //	@Accept		json
 //	@Produce	json
@@ -329,6 +334,7 @@ func (h *Handler) UpdateExam(c *gin.Context) {
 // Programa o reprograma un examen.
 //
 //	@Summary	Programar un examen
+//	@Description	Programa o reprograma la fecha de un examen.
 //	@Tags		exams
 //	@Accept		json
 //	@Produce	json
@@ -388,6 +394,7 @@ func (h *Handler) ScheduleExam(c *gin.Context) {
 // Marca un examen como completado y opcionalmente agrega resultados.
 //
 //	@Summary	Completar un examen
+//	@Description	Marca un examen como completado y opcionalmente agrega resultados.
 //	@Tags		exams
 //	@Accept		json
 //	@Produce	json
@@ -471,6 +478,7 @@ func (h *Handler) CompleteExam(c *gin.Context) {
 // Elimina un examen.
 //
 //	@Summary	Eliminar un examen
+//	@Description	Elimina un examen del sistema.
 //	@Tags		exams
 //	@Produce	json
 //	@Security	CookieAuth

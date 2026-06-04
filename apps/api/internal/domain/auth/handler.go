@@ -76,6 +76,7 @@ func clearAuthCookies(c *gin.Context) {
 // Login handles POST /api/v1/auth/login
 //
 //	@Summary	Iniciar sesión con email y contraseña
+//	@Description	Autentica al usuario con email y contraseña, y establece cookies de acceso y refresh.
 //	@Tags		auth
 //	@Accept		json
 //	@Produce	json
@@ -121,6 +122,7 @@ func (h *Handler) Login(c *gin.Context) {
 // Logout handles POST /api/v1/auth/logout
 //
 //	@Summary	Cerrar sesión — limpia las cookies de autenticación
+//	@Description	Cierra la sesión eliminando las cookies de autenticación.
 //	@Tags		auth
 //	@Produce	json
 //	@Security	CookieAuth
@@ -135,6 +137,7 @@ func (h *Handler) Logout(c *gin.Context) {
 // Refresh handles POST /api/v1/auth/refresh
 //
 //	@Summary	Renovar token de acceso usando la cookie de refresh
+//	@Description	Renueva el token de acceso usando la cookie de refresh token.
 //	@Tags		auth
 //	@Produce	json
 //	@Success	200	{object}	map[string]interface{}	"data: User"
@@ -166,6 +169,7 @@ func (h *Handler) Refresh(c *gin.Context) {
 // Me handles GET /api/v1/auth/me
 //
 //	@Summary	Obtener el usuario actualmente autenticado
+//	@Description	Obtiene los datos del usuario autenticado mediante las cookies de sesión.
 //	@Tags		auth
 //	@Produce	json
 //	@Security	CookieAuth
@@ -185,6 +189,7 @@ func (h *Handler) Me(c *gin.Context) {
 // UpdateProfile handles PUT /api/v1/auth/profile
 //
 //	@Summary	Actualizar nombre y email del usuario autenticado
+//	@Description	Actualiza el nombre y email del usuario autenticado. Valida que el email no esté en uso.
 //	@Tags		auth
 //	@Accept		json
 //	@Produce	json
@@ -229,6 +234,7 @@ func (h *Handler) UpdateProfile(c *gin.Context) {
 // ChangePassword handles PUT /api/v1/auth/password
 //
 //	@Summary	Cambiar la contraseña del usuario autenticado
+//	@Description	Cambia la contraseña del usuario autenticado. Requiere la contraseña actual.
 //	@Tags		auth
 //	@Accept		json
 //	@Produce	json

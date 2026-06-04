@@ -38,6 +38,7 @@ func parseAppID(c *gin.Context) (string, bool) {
 // Retorna todas las aplicaciones de un health_record específico.
 //
 //	@Summary	Listar aplicaciones de un registro de salud
+//	@Description	Obtiene todas las aplicaciones de un registro de salud específico.
 //	@Tags		vaccine-applications
 //	@Produce	json
 //	@Security	CookieAuth
@@ -67,6 +68,7 @@ func (h *Handler) GetApplicationsByHealthRecord(c *gin.Context) {
 // Retorna una aplicación específica por su ID.
 //
 //	@Summary	Obtener aplicación por ID
+//	@Description	Obtiene una aplicación específica por su ID.
 //	@Tags		vaccine-applications
 //	@Produce	json
 //	@Security	CookieAuth
@@ -100,6 +102,7 @@ func (h *Handler) GetApplicationByID(c *gin.Context) {
 // Crea una nueva aplicación de vacuna/desparasitación.
 //
 //	@Summary	Crear una aplicación de vacuna
+//	@Description	Crea una nueva aplicación y actualiza last_dose_date, applied_doses_count y next_dose_date del health_record.
 //	@Tags		vaccine-applications
 //	@Accept		json
 //	@Produce	json
@@ -147,6 +150,7 @@ func (h *Handler) CreateApplication(c *gin.Context) {
 // Actualiza una aplicación existente.
 //
 //	@Summary	Actualizar una aplicación de vacuna
+//	@Description	Actualiza la fecha y/o nota de una aplicación existente.
 //	@Tags		vaccine-applications
 //	@Accept		json
 //	@Produce	json
@@ -207,6 +211,7 @@ func (h *Handler) UpdateApplication(c *gin.Context) {
 // Elimina una aplicación de vacuna.
 //
 //	@Summary	Eliminar una aplicación de vacuna
+//	@Description	Elimina una aplicación de vacuna o desparasitación.
 //	@Tags		vaccine-applications
 //	@Produce	json
 //	@Security	CookieAuth

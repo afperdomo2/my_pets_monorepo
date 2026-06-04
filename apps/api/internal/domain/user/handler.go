@@ -56,6 +56,7 @@ func canModifyUser(c *gin.Context, targetID string) bool {
 // Solo usuarios sistema pueden listar todos los usuarios.
 //
 //	@Summary	Listar usuarios (paginado, solo usuario sistema)
+//	@Description	Lista todos los usuarios del sistema con paginación. Solo accesible por usuarios sistema.
 //	@Tags		users
 //	@Produce	json
 //	@Security	CookieAuth
@@ -111,6 +112,7 @@ func (h *Handler) GetUsers(c *gin.Context) {
 // Solo usuarios sistema pueden obtener un usuario por ID.
 //
 //	@Summary	Obtener un usuario por ID (solo usuario sistema)
+//	@Description	Obtiene un usuario por su ID. Solo accesible por usuarios sistema.
 //	@Tags		users
 //	@Produce	json
 //	@Security	CookieAuth
@@ -204,6 +206,7 @@ func (h *Handler) CreateUser(c *gin.Context) {
 // Solo el propio usuario o un usuario sistema pueden actualizar un usuario.
 //
 //	@Summary	Actualizar un usuario existente
+//	@Description	Actualiza los datos de un usuario existente. El propio usuario o un usuario sistema pueden hacerlo.
 //	@Tags		users
 //	@Accept		json
 //	@Produce	json
@@ -259,6 +262,7 @@ func (h *Handler) UpdateUser(c *gin.Context) {
 // Usuarios sistema no pueden ser eliminados.
 //
 //	@Summary	Eliminar un usuario
+//	@Description	Elimina un usuario del sistema. Los usuarios sistema no pueden ser eliminados.
 //	@Tags		users
 //	@Produce	json
 //	@Security	CookieAuth

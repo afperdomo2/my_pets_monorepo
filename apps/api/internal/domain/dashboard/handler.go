@@ -25,6 +25,7 @@ func ownerID(c *gin.Context) string {
 // Obtiene un resumen de los datos principales del dashboard del usuario autenticado.
 //
 //	@Summary	Obtener resumen del dashboard
+//	@Description	Obtiene un resumen de los principales indicadores del dashboard del usuario autenticado.
 //	@Tags		dashboard
 //	@Produce	json
 //	@Security	CookieAuth

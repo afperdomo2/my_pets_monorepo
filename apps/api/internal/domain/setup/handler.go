@@ -30,6 +30,7 @@ type SetupPayload struct {
 // Retorna si el sistema ha sido inicializado (existe al menos un usuario).
 //
 //	@Summary	Verificar estado del setup
+//	@Description	Verifica si el sistema ha sido inicializado (si existen usuarios).
 //	@Tags		setup
 //	@Produce	json
 //	@Success	200	{object}	map[string]bool	"needs_setup: true si no existen usuarios"
@@ -47,6 +48,7 @@ func (h *Handler) Status(c *gin.Context) {
 // Crea el primer usuario sistema. Retorna 409 si ya existen usuarios.
 //
 //	@Summary	Crear el primer usuario sistema
+//	@Description	Crea el primer usuario sistema. Solo funciona si no existen usuarios en el sistema.
 //	@Tags		setup
 //	@Accept		json
 //	@Produce	json

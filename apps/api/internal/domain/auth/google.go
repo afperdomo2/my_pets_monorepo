@@ -44,7 +44,8 @@ func NewGoogleHandler(cfg *config.Config, userRepo user.Repository) *GoogleHandl
 // Initiate handles GET /api/v1/auth/google
 // Redirects the user to Google's consent page.
 //
-//	@Summary	Initiate Google OAuth login
+//	@Summary	Iniciar autenticación con Google
+//	@Description	Inicia el flujo de autenticación OAuth con Google. Redirige a la pantalla de consentimiento de Google.
 //	@Tags		auth
 //	@Success	302	"Redirect to Google"
 //	@Router		/api/v1/auth/google [get]
@@ -66,7 +67,8 @@ func (h *GoogleHandler) Initiate(c *gin.Context) {
 // Callback handles GET /api/v1/auth/google/callback
 // Exchanges the code for tokens, upserts the user, sets auth cookies, redirects to frontend.
 //
-//	@Summary	Google OAuth callback
+//	@Summary	Callback de autenticación con Google
+//	@Description	Procesa el callback de Google OAuth, intercambia el código por tokens y redirige al frontend.
 //	@Tags		auth
 //	@Success	302	"Redirect to frontend"
 //	@Failure	400	{object}	map[string]string	"invalid state or code"

@@ -41,6 +41,7 @@ func ownerID(c *gin.Context) string {
 // GetPets handles GET /api/v1/pets
 //
 //	@Summary	Listar mascotas del usuario autenticado (paginado)
+//	@Description	Obtiene todas las mascotas del usuario autenticado con paginación.
 //	@Tags		pets
 //	@Produce	json
 //	@Security	CookieAuth
@@ -79,6 +80,7 @@ func (h *Handler) GetPets(c *gin.Context) {
 // GetPet handles GET /api/v1/pets/:id
 //
 //	@Summary	Obtener una mascota por ID (debe pertenecer al usuario autenticado)
+//	@Description	Obtiene una mascota específica por su ID. Debe pertenecer al usuario autenticado.
 //	@Tags		pets
 //	@Produce	json
 //	@Security	CookieAuth
@@ -109,6 +111,7 @@ func (h *Handler) GetPet(c *gin.Context) {
 // CreatePet handles POST /api/v1/pets
 //
 //	@Summary	Crear una nueva mascota para el usuario autenticado
+//	@Description	Registra una nueva mascota para el usuario autenticado. Calcula la etapa de vida automáticamente según especie y edad.
 //	@Tags		pets
 //	@Accept		json
 //	@Produce	json
@@ -206,6 +209,7 @@ func (h *Handler) CreatePet(c *gin.Context) {
 // UpdatePet handles PUT /api/v1/pets/:id
 //
 //	@Summary	Actualizar una mascota (debe pertenecer al usuario autenticado)
+//	@Description	Actualiza los datos de una mascota existente. Recalcula la etapa de vida si cambia la fecha de nacimiento.
 //	@Tags		pets
 //	@Accept		json
 //	@Produce	json
@@ -290,6 +294,7 @@ func (h *Handler) UpdatePet(c *gin.Context) {
 // DeletePet handles DELETE /api/v1/pets/:id
 //
 //	@Summary	Eliminar una mascota (debe pertenecer al usuario autenticado)
+//	@Description	Elimina una mascota y todos sus datos asociados (registros de salud, exámenes, etc.).
 //	@Tags		pets
 //	@Produce	json
 //	@Security	CookieAuth

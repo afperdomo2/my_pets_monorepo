@@ -371,14 +371,18 @@ info:
 paths:
   /api/v1/auth/google:
     get:
+      description: Inicia el flujo de autenticación OAuth con Google. Redirige a la
+        pantalla de consentimiento de Google.
       responses:
         "302":
           description: Redirect to Google
-      summary: Initiate Google OAuth login
+      summary: Iniciar autenticación con Google
       tags:
       - auth
   /api/v1/auth/google/callback:
     get:
+      description: Procesa el callback de Google OAuth, intercambia el código por
+        tokens y redirige al frontend.
       responses:
         "302":
           description: Redirect to frontend
@@ -388,13 +392,15 @@ paths:
             additionalProperties:
               type: string
             type: object
-      summary: Google OAuth callback
+      summary: Callback de autenticación con Google
       tags:
       - auth
   /api/v1/auth/login:
     post:
       consumes:
       - application/json
+      description: Autentica al usuario con email y contraseña, y establece cookies
+        de acceso y refresh.
       parameters:
       - description: Credenciales de acceso
         in: body
@@ -427,6 +433,7 @@ paths:
       - auth
   /api/v1/auth/logout:
     post:
+      description: Cierra la sesión eliminando las cookies de autenticación.
       produces:
       - application/json
       responses:
@@ -449,6 +456,8 @@ paths:
       - auth
   /api/v1/auth/me:
     get:
+      description: Obtiene los datos del usuario autenticado mediante las cookies
+        de sesión.
       produces:
       - application/json
       responses:
@@ -472,6 +481,8 @@ paths:
     put:
       consumes:
       - application/json
+      description: Cambia la contraseña del usuario autenticado. Requiere la contraseña
+        actual.
       parameters:
       - description: Datos de cambio de contraseña
         in: body
@@ -509,6 +520,8 @@ paths:
     put:
       consumes:
       - application/json
+      description: Actualiza el nombre y email del usuario autenticado. Valida que
+        el email no esté en uso.
       parameters:
       - description: Datos a actualizar
         in: body
@@ -549,6 +562,7 @@ paths:
       - auth
   /api/v1/auth/refresh:
     post:
+      description: Renueva el token de acceso usando la cookie de refresh token.
       produces:
       - application/json
       responses:
@@ -568,6 +582,8 @@ paths:
       - auth
   /api/v1/dashboard/summary:
     get:
+      description: Obtiene un resumen de los principales indicadores del dashboard
+        del usuario autenticado.
       produces:
       - application/json
       responses:
@@ -595,6 +611,7 @@ paths:
       - dashboard
   /api/v1/exams:
     get:
+      description: Obtiene todos los exámenes del usuario autenticado con paginación.
       parameters:
       - description: Número de página (por defecto 1)
         in: query
@@ -633,6 +650,7 @@ paths:
     post:
       consumes:
       - application/json
+      description: Crea un nuevo examen veterinario.
       parameters:
       - description: Datos del examen
         in: body
@@ -679,6 +697,7 @@ paths:
       - exams
   /api/v1/exams/{id}:
     delete:
+      description: Elimina un examen del sistema.
       parameters:
       - description: ID del examen
         in: path
@@ -724,6 +743,7 @@ paths:
       tags:
       - exams
     get:
+      description: Obtiene un examen específico con sus resultados.
       parameters:
       - description: ID del examen
         in: path
@@ -770,6 +790,7 @@ paths:
     put:
       consumes:
       - application/json
+      description: Actualiza los datos de un examen existente.
       parameters:
       - description: ID del examen
         in: path
@@ -823,6 +844,7 @@ paths:
     patch:
       consumes:
       - application/json
+      description: Marca un examen como completado y opcionalmente agrega resultados.
       parameters:
       - description: ID del examen
         in: path
@@ -876,6 +898,7 @@ paths:
     patch:
       consumes:
       - application/json
+      description: Programa o reprograma la fecha de un examen.
       parameters:
       - description: ID del examen
         in: path
@@ -927,6 +950,7 @@ paths:
       - exams
   /api/v1/exams/pets/{pet_id}:
     get:
+      description: Obtiene los exámenes de una mascota específica con paginación.
       parameters:
       - description: ID de la mascota
         in: path
@@ -977,6 +1001,8 @@ paths:
     post:
       consumes:
       - application/json
+      description: Crea un nuevo registro en la guía de salud. Solo accesible por
+        usuarios sistema.
       parameters:
       - description: Datos del registro
         in: body
@@ -1023,6 +1049,8 @@ paths:
       - health-catalogs
   /api/v1/health-catalogs/{id}:
     delete:
+      description: Elimina un registro de la guía de salud. Solo accesible por usuarios
+        sistema.
       parameters:
       - description: ID del registro
         in: path
@@ -1074,6 +1102,7 @@ paths:
       tags:
       - health-catalogs
     get:
+      description: Obtiene un registro específico de la guía de salud por su ID.
       parameters:
       - description: ID del registro
         in: path
@@ -1120,6 +1149,8 @@ paths:
     put:
       consumes:
       - application/json
+      description: Actualiza un registro de la guía de salud. Solo accesible por usuarios
+        sistema.
       parameters:
       - description: ID del registro
         in: path
@@ -1177,6 +1208,8 @@ paths:
       - health-catalogs
   /api/v1/health-catalogs/category/{category}:
     get:
+      description: Lista los registros de la guía de salud filtrados por categoría
+        con paginación y filtro opcional por especie.
       parameters:
       - description: Categoría (vaccine, deworming, exam)
         in: path
@@ -1229,6 +1262,8 @@ paths:
       - health-catalogs
   /api/v1/health-catalogs/species/{species}/category/{category}:
     get:
+      description: Obtiene los registros de la guía de salud filtrados por especie
+        y categoría.
       parameters:
       - description: Especie (dog, cat, bird, rabbit, fish, other)
         in: path
@@ -1273,6 +1308,8 @@ paths:
       - health-catalogs
   /api/v1/health-records:
     get:
+      description: Obtiene todos los registros de salud del usuario autenticado con
+        paginación.
       parameters:
       - description: Número de página (por defecto 1)
         in: query
@@ -1311,6 +1348,8 @@ paths:
     post:
       consumes:
       - application/json
+      description: Crea un nuevo registro de salud. Si se provee health_catalog_id,
+        copia name y category del catálogo automáticamente.
       parameters:
       - description: Datos del registro (incluye pet_id)
         in: body
@@ -1357,6 +1396,7 @@ paths:
       - health-records
   /api/v1/health-records/{record_id}:
     delete:
+      description: Elimina un registro de salud y sus aplicaciones asociadas.
       parameters:
       - description: ID del registro de salud
         in: path
@@ -1402,6 +1442,8 @@ paths:
       tags:
       - health-records
     get:
+      description: Obtiene un registro de salud específico por su ID, incluyendo las
+        aplicaciones de dosis.
       parameters:
       - description: ID del registro de salud
         in: path
@@ -1448,6 +1490,8 @@ paths:
     put:
       consumes:
       - application/json
+      description: Actualiza un registro de salud existente. Valida que total_doses
+        no sea menor a applied_doses_count.
       parameters:
       - description: ID del registro de salud
         in: path
@@ -1499,6 +1543,7 @@ paths:
       - health-records
   /api/v1/health-records/pets/{pet_id}:
     get:
+      description: Obtiene los registros de salud de una mascota específica con paginación.
       parameters:
       - description: ID de la mascota
         in: path
@@ -1547,13 +1592,15 @@ paths:
       - health-records
   /api/v1/health-records/pets/{pet_id}/category/{category}:
     get:
+      description: Obtiene los registros de salud de una mascota filtrados por categoría
+        (vaccine, deworming) con paginación.
       parameters:
       - description: ID de la mascota
         in: path
         name: pet_id
         required: true
         type: string
-      - description: Categoría (vaccine, deworming, exam)
+      - description: Categoría (vaccine, deworming)
         in: path
         name: category
         required: true
@@ -1600,6 +1647,8 @@ paths:
       - health-records
   /api/v1/health-records/upcoming:
     get:
+      description: Lista los registros con próxima dosis programada que aún no se
+        han completado, ordenados por fecha ascendente.
       parameters:
       - description: 'Número de página (default: 1)'
         in: query
@@ -1646,6 +1695,7 @@ paths:
       - health-records
   /api/v1/pets:
     get:
+      description: Obtiene todas las mascotas del usuario autenticado con paginación.
       parameters:
       - description: Número de página (por defecto 1)
         in: query
@@ -1684,6 +1734,8 @@ paths:
     post:
       consumes:
       - application/json
+      description: Registra una nueva mascota para el usuario autenticado. Calcula
+        la etapa de vida automáticamente según especie y edad.
       parameters:
       - description: Datos de la mascota
         in: body
@@ -1730,6 +1782,8 @@ paths:
       - pets
   /api/v1/pets/{id}:
     delete:
+      description: Elimina una mascota y todos sus datos asociados (registros de salud,
+        exámenes, etc.).
       parameters:
       - description: ID de la mascota
         in: path
@@ -1775,6 +1829,8 @@ paths:
       tags:
       - pets
     get:
+      description: Obtiene una mascota específica por su ID. Debe pertenecer al usuario
+        autenticado.
       parameters:
       - description: ID de la mascota
         in: path
@@ -1821,6 +1877,8 @@ paths:
     put:
       consumes:
       - application/json
+      description: Actualiza los datos de una mascota existente. Recalcula la etapa
+        de vida si cambia la fecha de nacimiento.
       parameters:
       - description: ID de la mascota
         in: path
@@ -1874,6 +1932,8 @@ paths:
     post:
       consumes:
       - application/json
+      description: Crea el primer usuario sistema. Solo funciona si no existen usuarios
+        en el sistema.
       parameters:
       - description: ' Datos del primer usuario'
         in: body
@@ -1912,6 +1972,7 @@ paths:
       - setup
   /api/v1/setup/status:
     get:
+      description: Verifica si el sistema ha sido inicializado (si existen usuarios).
       produces:
       - application/json
       responses:
@@ -1926,6 +1987,8 @@ paths:
       - setup
   /api/v1/users:
     get:
+      description: Lista todos los usuarios del sistema con paginación. Solo accesible
+        por usuarios sistema.
       parameters:
       - description: Número de página (por defecto 1)
         in: query
@@ -2023,6 +2086,8 @@ paths:
       - users
   /api/v1/users/{id}:
     delete:
+      description: Elimina un usuario del sistema. Los usuarios sistema no pueden
+        ser eliminados.
       parameters:
       - description: ID del usuario
         in: path
@@ -2074,6 +2139,7 @@ paths:
       tags:
       - users
     get:
+      description: Obtiene un usuario por su ID. Solo accesible por usuarios sistema.
       parameters:
       - description: ID del usuario
         in: path
@@ -2126,6 +2192,8 @@ paths:
     put:
       consumes:
       - application/json
+      description: Actualiza los datos de un usuario existente. El propio usuario
+        o un usuario sistema pueden hacerlo.
       parameters:
       - description: ID del usuario
         in: path
@@ -2191,6 +2259,8 @@ paths:
     post:
       consumes:
       - application/json
+      description: Crea una nueva aplicación y actualiza last_dose_date, applied_doses_count
+        y next_dose_date del health_record.
       parameters:
       - description: Datos de la aplicación
         in: body
@@ -2231,6 +2301,7 @@ paths:
       - vaccine-applications
   /api/v1/vaccine-applications/{id}:
     delete:
+      description: Elimina una aplicación de vacuna o desparasitación.
       parameters:
       - description: ID de la aplicación
         in: path
@@ -2276,6 +2347,7 @@ paths:
       tags:
       - vaccine-applications
     get:
+      description: Obtiene una aplicación específica por su ID.
       parameters:
       - description: ID de la aplicación
         in: path
@@ -2322,6 +2394,7 @@ paths:
     put:
       consumes:
       - application/json
+      description: Actualiza la fecha y/o nota de una aplicación existente.
       parameters:
       - description: ID de la aplicación
         in: path
@@ -2373,6 +2446,7 @@ paths:
       - vaccine-applications
   /api/v1/vaccine-applications/health-record/{id}:
     get:
+      description: Obtiene todas las aplicaciones de un registro de salud específico.
       parameters:
       - description: ID del health_record
         in: path
@@ -2412,6 +2486,7 @@ paths:
       - vaccine-applications
   /health:
     get:
+      description: Endpoint de verificación de salud (liveness) del servicio.
       produces:
       - application/json
       responses:
@@ -2421,7 +2496,7 @@ paths:
             additionalProperties:
               type: string
             type: object
-      summary: Verificación de salud
+      summary: Verificación de salud del servicio
       tags:
       - health
 securityDefinitions:

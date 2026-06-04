@@ -45,6 +45,7 @@ func requireSystemUser(c *gin.Context) bool {
 // Accesible por cualquier usuario autenticado.
 //
 //	@Summary	Listar registros de la guía de salud por categoría (paginado)
+//	@Description	Lista los registros de la guía de salud filtrados por categoría con paginación y filtro opcional por especie.
 //	@Tags		health-catalogs
 //	@Produce	json
 //	@Security	CookieAuth
@@ -120,6 +121,7 @@ func (h *Handler) GetHealthCatalogsByCategory(c *gin.Context) {
 // Retorna el catálogo de salud filtrado por especie y categoría.
 //
 //	@Summary	Listar registros de la guía de salud por especie y categoría
+//	@Description	Obtiene los registros de la guía de salud filtrados por especie y categoría.
 //	@Tags		health-catalogs
 //	@Produce	json
 //	@Security	CookieAuth
@@ -170,6 +172,7 @@ func (h *Handler) GetHealthCatalogsBySpeciesAndCategory(c *gin.Context) {
 // Accesible por cualquier usuario autenticado.
 //
 //	@Summary	Obtener un registro de la guía de salud por ID
+//	@Description	Obtiene un registro específico de la guía de salud por su ID.
 //	@Tags		health-catalogs
 //	@Produce	json
 //	@Security	CookieAuth
@@ -201,6 +204,7 @@ func (h *Handler) GetHealthCatalogByID(c *gin.Context) {
 // Solo accesible por usuarios sistema.
 //
 //	@Summary	Crear un nuevo registro en la guía de salud (solo usuario sistema)
+//	@Description	Crea un nuevo registro en la guía de salud. Solo accesible por usuarios sistema.
 //	@Tags		health-catalogs
 //	@Accept		json
 //	@Produce	json
@@ -235,6 +239,7 @@ func (h *Handler) CreateHealthCatalog(c *gin.Context) {
 // Solo accesible por usuarios sistema.
 //
 //	@Summary	Actualizar un registro de la guía de salud (solo usuario sistema)
+//	@Description	Actualiza un registro de la guía de salud. Solo accesible por usuarios sistema.
 //	@Tags		health-catalogs
 //	@Accept		json
 //	@Produce	json
@@ -280,6 +285,7 @@ func (h *Handler) UpdateHealthCatalog(c *gin.Context) {
 // Solo accesible por usuarios sistema.
 //
 //	@Summary	Eliminar un registro de la guía de salud (solo usuario sistema)
+//	@Description	Elimina un registro de la guía de salud. Solo accesible por usuarios sistema.
 //	@Tags		health-catalogs
 //	@Produce	json
 //	@Security	CookieAuth

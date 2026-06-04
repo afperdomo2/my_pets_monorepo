@@ -58,6 +58,7 @@ func parseRecordID(c *gin.Context) (string, bool) {
 // Lista todos los registros de salud de todas las mascotas del usuario autenticado.
 //
 //	@Summary	Listar todos los registros de salud del usuario (paginado)
+//	@Description	Obtiene todos los registros de salud del usuario autenticado con paginación.
 //	@Tags		health-records
 //	@Produce	json
 //	@Security	CookieAuth
@@ -97,6 +98,7 @@ func (h *Handler) GetAllHealthRecords(c *gin.Context) {
 // Lista todos los registros de salud de una mascota específica del usuario autenticado.
 //
 //	@Summary	Listar registros de salud de una mascota (paginado)
+//	@Description	Obtiene los registros de salud de una mascota específica con paginación.
 //	@Tags		health-records
 //	@Produce	json
 //	@Security	CookieAuth
@@ -143,11 +145,12 @@ func (h *Handler) GetHealthRecordsByPet(c *gin.Context) {
 // Lista los registros de salud de una mascota filtrados por categoría (vaccine, deworming, exam).
 //
 //	@Summary	Listar registros de salud de una mascota por categoría (paginado)
+//	@Description	Obtiene los registros de salud de una mascota filtrados por categoría (vaccine, deworming) con paginación.
 //	@Tags		health-records
 //	@Produce	json
 //	@Security	CookieAuth
 //	@Param		pet_id		path		string	true	"ID de la mascota"
-//	@Param		category	path		string	true	"Categoría (vaccine, deworming, exam)"
+//	@Param		category	path		string	true	"Categoría (vaccine, deworming)"
 //	@Param		page		query		int		false	"Número de página (por defecto 1)"
 //	@Param		per_page	query		int		false	"Elementos por página (por defecto 10)"
 //	@Success	200	{object}	map[string]interface{}	"data: []HealthRecord, total: int, page: int, per_page: int, total_pages: int"
@@ -198,6 +201,7 @@ func (h *Handler) GetHealthRecordsByPetAndCategory(c *gin.Context) {
 // copia name y category desde el catálogo automáticamente.
 //
 //	@Summary	Crear un registro de salud
+//	@Description	Crea un nuevo registro de salud. Si se provee health_catalog_id, copia name y category del catálogo automáticamente.
 //	@Tags		health-records
 //	@Accept		json
 //	@Produce	json
@@ -269,6 +273,7 @@ func (h *Handler) CreateHealthRecord(c *gin.Context) {
 // Valida que total_doses no sea menor a applied_doses_count.
 //
 //	@Summary	Actualizar un registro de salud
+//	@Description	Actualiza un registro de salud existente. Valida que total_doses no sea menor a applied_doses_count.
 //	@Tags		health-records
 //	@Accept		json
 //	@Produce	json
@@ -327,6 +332,7 @@ func (h *Handler) UpdateHealthRecord(c *gin.Context) {
 // DeleteHealthRecord maneja DELETE /api/v1/health-records/:record_id
 //
 //	@Summary	Eliminar un registro de salud
+//	@Description	Elimina un registro de salud y sus aplicaciones asociadas.
 //	@Tags		health-records
 //	@Produce	json
 //	@Security	CookieAuth
@@ -360,6 +366,7 @@ func (h *Handler) DeleteHealthRecord(c *gin.Context) {
 // Retorna un registro de salud específico por su ID.
 //
 //	@Summary	Obtener registro de salud por ID
+//	@Description	Obtiene un registro de salud específico por su ID, incluyendo las aplicaciones de dosis.
 //	@Tags		health-records
 //	@Produce	json
 //	@Security	CookieAuth
@@ -394,6 +401,7 @@ func (h *Handler) GetHealthRecordByID(c *gin.Context) {
 // Los registros se ordenan por due_date ASC (los más próximos primero).
 //
 //	@Summary	Listar próximos registros pendientes
+//	@Description	Lista los registros con próxima dosis programada que aún no se han completado, ordenados por fecha ascendente.
 //	@Tags		health-records
 //	@Produce	json
 //	@Security	CookieAuth

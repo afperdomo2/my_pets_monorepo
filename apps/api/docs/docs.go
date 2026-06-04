@@ -17,10 +17,11 @@ const docTemplate = `{
     "paths": {
         "/api/v1/auth/google": {
             "get": {
+                "description": "Inicia el flujo de autenticación OAuth con Google. Redirige a la pantalla de consentimiento de Google.",
                 "tags": [
                     "auth"
                 ],
-                "summary": "Initiate Google OAuth login",
+                "summary": "Iniciar autenticación con Google",
                 "responses": {
                     "302": {
                         "description": "Redirect to Google"
@@ -30,10 +31,11 @@ const docTemplate = `{
         },
         "/api/v1/auth/google/callback": {
             "get": {
+                "description": "Procesa el callback de Google OAuth, intercambia el código por tokens y redirige al frontend.",
                 "tags": [
                     "auth"
                 ],
-                "summary": "Google OAuth callback",
+                "summary": "Callback de autenticación con Google",
                 "responses": {
                     "302": {
                         "description": "Redirect to frontend"
@@ -52,6 +54,7 @@ const docTemplate = `{
         },
         "/api/v1/auth/login": {
             "post": {
+                "description": "Autentica al usuario con email y contraseña, y establece cookies de acceso y refresh.",
                 "consumes": [
                     "application/json"
                 ],
@@ -109,6 +112,7 @@ const docTemplate = `{
                         "CookieAuth": []
                     }
                 ],
+                "description": "Cierra la sesión eliminando las cookies de autenticación.",
                 "produces": [
                     "application/json"
                 ],
@@ -145,6 +149,7 @@ const docTemplate = `{
                         "CookieAuth": []
                     }
                 ],
+                "description": "Obtiene los datos del usuario autenticado mediante las cookies de sesión.",
                 "produces": [
                     "application/json"
                 ],
@@ -179,6 +184,7 @@ const docTemplate = `{
                         "CookieAuth": []
                     }
                 ],
+                "description": "Cambia la contraseña del usuario autenticado. Requiere la contraseña actual.",
                 "consumes": [
                     "application/json"
                 ],
@@ -238,6 +244,7 @@ const docTemplate = `{
                         "CookieAuth": []
                     }
                 ],
+                "description": "Actualiza el nombre y email del usuario autenticado. Valida que el email no esté en uso.",
                 "consumes": [
                     "application/json"
                 ],
@@ -299,6 +306,7 @@ const docTemplate = `{
         },
         "/api/v1/auth/refresh": {
             "post": {
+                "description": "Renueva el token de acceso usando la cookie de refresh token.",
                 "produces": [
                     "application/json"
                 ],
@@ -333,6 +341,7 @@ const docTemplate = `{
                         "CookieAuth": []
                     }
                 ],
+                "description": "Obtiene un resumen de los principales indicadores del dashboard del usuario autenticado.",
                 "produces": [
                     "application/json"
                 ],
@@ -376,6 +385,7 @@ const docTemplate = `{
                         "CookieAuth": []
                     }
                 ],
+                "description": "Obtiene todos los exámenes del usuario autenticado con paginación.",
                 "produces": [
                     "application/json"
                 ],
@@ -431,6 +441,7 @@ const docTemplate = `{
                         "CookieAuth": []
                     }
                 ],
+                "description": "Crea un nuevo examen veterinario.",
                 "consumes": [
                     "application/json"
                 ],
@@ -506,6 +517,7 @@ const docTemplate = `{
                         "CookieAuth": []
                     }
                 ],
+                "description": "Obtiene los exámenes de una mascota específica con paginación.",
                 "produces": [
                     "application/json"
                 ],
@@ -579,6 +591,7 @@ const docTemplate = `{
                         "CookieAuth": []
                     }
                 ],
+                "description": "Obtiene un examen específico con sus resultados.",
                 "produces": [
                     "application/json"
                 ],
@@ -647,6 +660,7 @@ const docTemplate = `{
                         "CookieAuth": []
                     }
                 ],
+                "description": "Actualiza los datos de un examen existente.",
                 "consumes": [
                     "application/json"
                 ],
@@ -727,6 +741,7 @@ const docTemplate = `{
                         "CookieAuth": []
                     }
                 ],
+                "description": "Elimina un examen del sistema.",
                 "produces": [
                     "application/json"
                 ],
@@ -799,6 +814,7 @@ const docTemplate = `{
                         "CookieAuth": []
                     }
                 ],
+                "description": "Marca un examen como completado y opcionalmente agrega resultados.",
                 "consumes": [
                     "application/json"
                 ],
@@ -881,6 +897,7 @@ const docTemplate = `{
                         "CookieAuth": []
                     }
                 ],
+                "description": "Programa o reprograma la fecha de un examen.",
                 "consumes": [
                     "application/json"
                 ],
@@ -963,6 +980,7 @@ const docTemplate = `{
                         "CookieAuth": []
                     }
                 ],
+                "description": "Crea un nuevo registro en la guía de salud. Solo accesible por usuarios sistema.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1038,6 +1056,7 @@ const docTemplate = `{
                         "CookieAuth": []
                     }
                 ],
+                "description": "Lista los registros de la guía de salud filtrados por categoría con paginación y filtro opcional por especie.",
                 "produces": [
                     "application/json"
                 ],
@@ -1117,6 +1136,7 @@ const docTemplate = `{
                         "CookieAuth": []
                     }
                 ],
+                "description": "Obtiene los registros de la guía de salud filtrados por especie y categoría.",
                 "produces": [
                     "application/json"
                 ],
@@ -1185,6 +1205,7 @@ const docTemplate = `{
                         "CookieAuth": []
                     }
                 ],
+                "description": "Obtiene un registro específico de la guía de salud por su ID.",
                 "produces": [
                     "application/json"
                 ],
@@ -1253,6 +1274,7 @@ const docTemplate = `{
                         "CookieAuth": []
                     }
                 ],
+                "description": "Actualiza un registro de la guía de salud. Solo accesible por usuarios sistema.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1342,6 +1364,7 @@ const docTemplate = `{
                         "CookieAuth": []
                     }
                 ],
+                "description": "Elimina un registro de la guía de salud. Solo accesible por usuarios sistema.",
                 "produces": [
                     "application/json"
                 ],
@@ -1423,6 +1446,7 @@ const docTemplate = `{
                         "CookieAuth": []
                     }
                 ],
+                "description": "Obtiene todos los registros de salud del usuario autenticado con paginación.",
                 "produces": [
                     "application/json"
                 ],
@@ -1478,6 +1502,7 @@ const docTemplate = `{
                         "CookieAuth": []
                     }
                 ],
+                "description": "Crea un nuevo registro de salud. Si se provee health_catalog_id, copia name y category del catálogo automáticamente.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1553,6 +1578,7 @@ const docTemplate = `{
                         "CookieAuth": []
                     }
                 ],
+                "description": "Obtiene los registros de salud de una mascota específica con paginación.",
                 "produces": [
                     "application/json"
                 ],
@@ -1626,6 +1652,7 @@ const docTemplate = `{
                         "CookieAuth": []
                     }
                 ],
+                "description": "Obtiene los registros de salud de una mascota filtrados por categoría (vaccine, deworming) con paginación.",
                 "produces": [
                     "application/json"
                 ],
@@ -1643,7 +1670,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Categoría (vaccine, deworming, exam)",
+                        "description": "Categoría (vaccine, deworming)",
                         "name": "category",
                         "in": "path",
                         "required": true
@@ -1706,6 +1733,7 @@ const docTemplate = `{
                         "CookieAuth": []
                     }
                 ],
+                "description": "Lista los registros con próxima dosis programada que aún no se han completado, ordenados por fecha ascendente.",
                 "produces": [
                     "application/json"
                 ],
@@ -1778,6 +1806,7 @@ const docTemplate = `{
                         "CookieAuth": []
                     }
                 ],
+                "description": "Obtiene un registro de salud específico por su ID, incluyendo las aplicaciones de dosis.",
                 "produces": [
                     "application/json"
                 ],
@@ -1846,6 +1875,7 @@ const docTemplate = `{
                         "CookieAuth": []
                     }
                 ],
+                "description": "Actualiza un registro de salud existente. Valida que total_doses no sea menor a applied_doses_count.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1926,6 +1956,7 @@ const docTemplate = `{
                         "CookieAuth": []
                     }
                 ],
+                "description": "Elimina un registro de salud y sus aplicaciones asociadas.",
                 "produces": [
                     "application/json"
                 ],
@@ -1998,6 +2029,7 @@ const docTemplate = `{
                         "CookieAuth": []
                     }
                 ],
+                "description": "Obtiene todas las mascotas del usuario autenticado con paginación.",
                 "produces": [
                     "application/json"
                 ],
@@ -2053,6 +2085,7 @@ const docTemplate = `{
                         "CookieAuth": []
                     }
                 ],
+                "description": "Registra una nueva mascota para el usuario autenticado. Calcula la etapa de vida automáticamente según especie y edad.",
                 "consumes": [
                     "application/json"
                 ],
@@ -2128,6 +2161,7 @@ const docTemplate = `{
                         "CookieAuth": []
                     }
                 ],
+                "description": "Obtiene una mascota específica por su ID. Debe pertenecer al usuario autenticado.",
                 "produces": [
                     "application/json"
                 ],
@@ -2196,6 +2230,7 @@ const docTemplate = `{
                         "CookieAuth": []
                     }
                 ],
+                "description": "Actualiza los datos de una mascota existente. Recalcula la etapa de vida si cambia la fecha de nacimiento.",
                 "consumes": [
                     "application/json"
                 ],
@@ -2276,6 +2311,7 @@ const docTemplate = `{
                         "CookieAuth": []
                     }
                 ],
+                "description": "Elimina una mascota y todos sus datos asociados (registros de salud, exámenes, etc.).",
                 "produces": [
                     "application/json"
                 ],
@@ -2343,6 +2379,7 @@ const docTemplate = `{
         },
         "/api/v1/setup": {
             "post": {
+                "description": "Crea el primer usuario sistema. Solo funciona si no existen usuarios en el sistema.",
                 "consumes": [
                     "application/json"
                 ],
@@ -2404,6 +2441,7 @@ const docTemplate = `{
         },
         "/api/v1/setup/status": {
             "get": {
+                "description": "Verifica si el sistema ha sido inicializado (si existen usuarios).",
                 "produces": [
                     "application/json"
                 ],
@@ -2431,6 +2469,7 @@ const docTemplate = `{
                         "CookieAuth": []
                     }
                 ],
+                "description": "Lista todos los usuarios del sistema con paginación. Solo accesible por usuarios sistema.",
                 "produces": [
                     "application/json"
                 ],
@@ -2580,6 +2619,7 @@ const docTemplate = `{
                         "CookieAuth": []
                     }
                 ],
+                "description": "Obtiene un usuario por su ID. Solo accesible por usuarios sistema.",
                 "produces": [
                     "application/json"
                 ],
@@ -2657,6 +2697,7 @@ const docTemplate = `{
                         "CookieAuth": []
                     }
                 ],
+                "description": "Actualiza los datos de un usuario existente. El propio usuario o un usuario sistema pueden hacerlo.",
                 "consumes": [
                     "application/json"
                 ],
@@ -2755,6 +2796,7 @@ const docTemplate = `{
                         "CookieAuth": []
                     }
                 ],
+                "description": "Elimina un usuario del sistema. Los usuarios sistema no pueden ser eliminados.",
                 "produces": [
                     "application/json"
                 ],
@@ -2836,6 +2878,7 @@ const docTemplate = `{
                         "CookieAuth": []
                     }
                 ],
+                "description": "Crea una nueva aplicación y actualiza last_dose_date, applied_doses_count y next_dose_date del health_record.",
                 "consumes": [
                     "application/json"
                 ],
@@ -2902,6 +2945,7 @@ const docTemplate = `{
                         "CookieAuth": []
                     }
                 ],
+                "description": "Obtiene todas las aplicaciones de un registro de salud específico.",
                 "produces": [
                     "application/json"
                 ],
@@ -2963,6 +3007,7 @@ const docTemplate = `{
                         "CookieAuth": []
                     }
                 ],
+                "description": "Obtiene una aplicación específica por su ID.",
                 "produces": [
                     "application/json"
                 ],
@@ -3031,6 +3076,7 @@ const docTemplate = `{
                         "CookieAuth": []
                     }
                 ],
+                "description": "Actualiza la fecha y/o nota de una aplicación existente.",
                 "consumes": [
                     "application/json"
                 ],
@@ -3111,6 +3157,7 @@ const docTemplate = `{
                         "CookieAuth": []
                     }
                 ],
+                "description": "Elimina una aplicación de vacuna o desparasitación.",
                 "produces": [
                     "application/json"
                 ],
@@ -3178,13 +3225,14 @@ const docTemplate = `{
         },
         "/health": {
             "get": {
+                "description": "Endpoint de verificación de salud (liveness) del servicio.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "health"
                 ],
-                "summary": "Verificación de salud",
+                "summary": "Verificación de salud del servicio",
                 "responses": {
                     "200": {
                         "description": "ok",
