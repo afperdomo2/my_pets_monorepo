@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import VaccineApplicationsList from '@/components/health-tabs/VaccineApplicationsList.vue'
 import { useGetHealthRecord, useUpdateHealthRecord } from '@/composables/useHealthRecords'
 import type { HealthRecord } from '@/types/healthRecord'
 import { IconCheck, IconInfoCircle, IconX } from '@tabler/icons-vue'
@@ -32,7 +33,6 @@ const appliedDosesCount = ref(0)
 
 watch(record, (r) => {
   if (!r) return
-  console.log('[EditModal] Datos recibidos del endpoint', { name: r.name, notes: r.notes, totalDoses: r.total_doses, appliedCount: r.applied_doses_count })
   name.value = r.name
   note.value = r.notes || ''
   totalDoses.value = r.total_doses ?? null
@@ -165,6 +165,13 @@ const namePlaceholder = computed(() => {
                 placeholder="Ej: Lote #12345, veterinatoria donde se aplicó..."
               />
             </div>
+
+            <!-- Dosis aplicadas -->
+            <VaccineApplicationsList
+              v-if="record?.vaccine_applications && record.vaccine_applications.length > 0"
+              :applications="record.vaccine_applications"
+              :category="props.category"
+            />
           </template>
         </div>
 
@@ -212,7 +219,7 @@ const namePlaceholder = computed(() => {
 .modal-container {
   background: var(--color-surface);
   width: min(520px, 100%);
-  max-height: min(90vh, 600px);
+  max-height: min(90vh, 700px);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-xl);
   display: flex;

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import DatePicker from '@/components/ui/DatePicker.vue'
+import VaccineApplicationsList from '@/components/health-tabs/VaccineApplicationsList.vue'
 import { useGetHealthRecord } from '@/composables/useHealthRecords'
 import { useCreateVaccineApplication } from '@/composables/useVaccineApplications'
 import { IconBell, IconCheck, IconInfoCircle, IconX } from '@tabler/icons-vue'
@@ -181,6 +182,13 @@ const notePlaceholder = computed(() => {
               </template>
             </div>
           </div>
+
+          <!-- Dosis aplicadas -->
+          <VaccineApplicationsList
+            v-if="healthRecord?.vaccine_applications && healthRecord.vaccine_applications.length > 0"
+            :applications="healthRecord.vaccine_applications"
+            :category="props.category"
+          />
         </div>
 
         <!-- Footer -->

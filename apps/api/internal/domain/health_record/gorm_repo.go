@@ -101,6 +101,7 @@ func (r *gormRepo) GetByPetIDAndCategory(ctx context.Context, petID, category, o
 func (r *gormRepo) GetByID(ctx context.Context, id, ownerID string) (models.HealthRecord, error) {
 	var rec models.HealthRecord
 	result := r.db.WithContext(ctx).
+		Preload("VaccineApplications").
 		Where("id = ? AND user_id = ?", id, ownerID).
 		First(&rec)
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
