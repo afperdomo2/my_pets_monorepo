@@ -46,6 +46,11 @@ type Pet struct {
 - No encontrado: `errors.Is(err, ErrNotFound)` → HTTP 404
 - `log.Fatalf` solo en `main.go`, nunca `panic()` en handlers
 
+## Swagger
+
+- Todo endpoint debe tener anotaciones Swagger (`@Summary`, `@Tags`, `@Param`, `@Success`, `@Router`) en su handler.
+- Después de crear/modificar/eliminar un endpoint, regenerar docs con `make swag`.
+
 ## Respuestas
 
 ```go

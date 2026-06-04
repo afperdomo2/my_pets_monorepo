@@ -336,6 +336,39 @@ func (h *Handler) DeleteHealthRecord(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "registro de salud eliminado"})
 }
 
+// GetHealthRecordByID maneja GET /api/v1/health-records/:record_id
+// Retorna un registro de salud específico por su ID.
+//
+//	@Summary	Obtener registro de salud por ID
+//	@Tags		health-records
+//	@Produce	json
+//	@Security	CookieAuth
+//	@Param		record_id	path		string	true	"ID del registro de salud"
+//	@Success	200	{object}	map[string]interface{}	"data: HealthRecord"
+//	@Failure	400	{object}	map[string]string		"id inválido"
+//	@Failure	401	{object}	map[string]string		"autenticación requerida"
+//	@Failure	404	{object}	map[string]string		"registro no encontrado"
+//	@Failure	500	{object}	map[string]string		"mensaje de error"
+//	@Router		/api/v1/health-records/{record_id} [get]
+func (h *Handler) GetHealthRecordByID(c *gin.Context) {
+	id, ok := parseRecordID(c)
+	if !ok {
+		return
+	}
+
+	record, err := h.repo.GetByID(c.Request.Context(), id, ownerID(c))
+	if errors.Is(err, ErrNotFound) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "registro de salud no encontrado"})
+		return
+	}
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error al obtener registro de salud"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": record})
+}
+
 // GetUpcomingRecords maneja GET /api/v1/health-records/upcoming
 // Lista los próximos registros pendientes de aplicación con paginación estándar.
 // Los registros se ordenan por due_date ASC (los más próximos primero).

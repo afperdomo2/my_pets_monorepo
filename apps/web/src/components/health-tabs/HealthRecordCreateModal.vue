@@ -82,6 +82,13 @@ const note = ref('')
 const totalDoses = ref<number | undefined>(undefined)
 const wantsNext = ref(false)
 
+watch(totalDoses, (val) => {
+  if (val === 1) {
+    wantsNext.value = false
+    nextDate.value = ''
+  }
+})
+
 watch(applicationDate, (newDate) => {
   if (newDate && selectedCatalog.value?.frequency_months) {
     const d = new Date(newDate + 'T12:00:00')
@@ -288,8 +295,8 @@ const frequencyText = computed(() => {
               </div>
             </div>
 
-            <!-- Programar refuerzo -->
-            <div class="suggestion-card">
+            <!-- Programar refuerzo (oculto si es dosis única) -->
+            <div v-if="totalDoses !== 1" class="suggestion-card">
               <div class="suggestion-icon">
                 <IconBell :size="18" :stroke-width="1.75" />
               </div>

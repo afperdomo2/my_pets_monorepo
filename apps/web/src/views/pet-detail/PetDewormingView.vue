@@ -54,11 +54,18 @@ function formatDate(dateStr: string | null): string {
 }
 
 function formatDosesText(record: HealthRecord): string {
+  if (record.total_doses === 1) return 'Única'
   const applied = record.applied_doses_count ?? 0
   if (record.total_doses) {
     return `${applied} de ${record.total_doses}`
   }
   return String(applied)
+}
+
+function canApply(record: HealthRecord): boolean {
+  if (record.total_doses === 1) return false
+  if (record.total_doses && record.applied_doses_count >= record.total_doses) return false
+  return true
 }
 
 function isInternalDeworming(name: string): boolean {
@@ -182,6 +189,7 @@ async function handleDeleteConfirm() {
               <td class="td-center">
                 <div class="action-buttons">
                   <button
+                    v-if="canApply(record)"
                     class="btn-action btn-apply"
                     title="Aplicar dosis"
                     :disabled="createApplication.isPending.value"
@@ -256,6 +264,7 @@ async function handleDeleteConfirm() {
             </span>
             <div class="record-card__actions">
               <button
+                v-if="canApply(record)"
                 class="btn-apply-card"
                 title="Aplicar dosis"
                 :disabled="createApplication.isPending.value"
@@ -354,7 +363,6 @@ async function handleDeleteConfirm() {
       v-if="showApplicationModal && healthRecordToApply"
       :health-record-id="healthRecordToApply.id"
       category="deworming"
-      :total-doses="healthRecordToApply.total_doses"
       @close="showApplicationModal = false; healthRecordToApply = null"
       @applied="refresh"
     />

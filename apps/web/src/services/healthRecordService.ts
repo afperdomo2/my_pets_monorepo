@@ -14,6 +14,11 @@ export const healthRecordService = {
     return get(`/health-records?page=${page}&per_page=${perPage}`)
   },
 
+  // Obtener un registro por ID
+  getById(id: string): Promise<ApiResponse<HealthRecord>> {
+    return get(`/health-records/${id}`)
+  },
+
   // Obtener registros de una mascota
   getByPetId(petId: string, page = 1, perPage = PER_PAGE_DEFAULT): Promise<PaginatedResponse<HealthRecord>> {
     return get(`/health-records/pets/${petId}?page=${page}&per_page=${perPage}`)

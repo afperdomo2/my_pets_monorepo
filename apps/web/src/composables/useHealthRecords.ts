@@ -3,6 +3,14 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/vue-query";
 import { healthRecordService } from "@/services/healthRecordService";
 import type { HealthRecord, CreateHealthRecordPayload, UpdateHealthRecordPayload } from "@/types/healthRecord";
 
+export function useGetHealthRecord(id: Ref<string>) {
+  return useQuery({
+    queryKey: computed(() => ["health-records", id.value]),
+    queryFn: () => healthRecordService.getById(id.value).then((r) => r.data),
+    enabled: computed(() => !!id.value),
+  });
+}
+
 // ═══════════════════════════════════════════════════════════════════════════════════
 // Cache time constants — ajusta estos valores según los SLAs del módulo
 // ═══════════════════════════════════════════════════════════════════════════════════

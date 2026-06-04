@@ -35,6 +35,7 @@ Thumbs.db
 
 .agents/
 .qwen/
+.kiro/
 pendientes.txt
 
 FAKE_DATA.md

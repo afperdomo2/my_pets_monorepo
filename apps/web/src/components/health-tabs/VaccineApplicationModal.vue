@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import DatePicker from '@/components/ui/DatePicker.vue'
+import { useGetHealthRecord } from '@/composables/useHealthRecords'
 import { useCreateVaccineApplication } from '@/composables/useVaccineApplications'
-import { IconBell, IconCheck, IconX } from '@tabler/icons-vue'
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { IconBell, IconCheck, IconInfoCircle, IconX } from '@tabler/icons-vue'
+import { computed, onMounted, onUnmounted, ref, toRef, watch } from 'vue'
 
 onMounted(() => {
   document.body.style.overflow = 'hidden'
@@ -16,7 +17,6 @@ const props = defineProps<{
   healthRecordId: string
   category: 'vaccine' | 'deworming'
   preselectedDate?: string
-  totalDoses?: number | null
 }>()
 
 const emit = defineEmits<{
@@ -24,15 +24,32 @@ const emit = defineEmits<{
   applied: []
 }>()
 
+const healthRecordIdRef = toRef(props, 'healthRecordId')
+const { data: healthRecord, isLoading: isRecordLoading } = useGetHealthRecord(healthRecordIdRef)
+
+const totalDoses = computed(() => healthRecord.value?.total_doses ?? null)
+const appliedDosesCount = computed(() => healthRecord.value?.applied_doses_count ?? 0)
+
+const currentDoseNumber = computed(() => appliedDosesCount.value + 1)
+
+const doseMessage = computed(() => {
+  if (totalDoses.value === null || totalDoses.value === undefined) return null
+  if (totalDoses.value === 1) return null
+  if (currentDoseNumber.value === totalDoses.value) return 'Esta es la última dosis'
+  return `Esta es la aplicación ${currentDoseNumber.value} de ${totalDoses.value}`
+})
+
 const applicationDate = ref(props.preselectedDate || '')
 const note = ref('')
 const wantsNext = ref(false)
 const nextDate = ref('')
 
-// Si hay total_doses configurado, activar el toggle por defecto
-if (props.totalDoses !== null && props.totalDoses !== undefined) {
-  wantsNext.value = true
-}
+// Cuando se cargan los datos y totalDoses > 1, activar el toggle por defecto
+watch(totalDoses, (val) => {
+  if (val !== null && val !== undefined && val > 1) {
+    wantsNext.value = true
+  }
+})
 
 const createApplication = useCreateVaccineApplication()
 
@@ -86,6 +103,12 @@ const notePlaceholder = computed(() => {
 
         <!-- Body -->
         <div class="modal-body">
+          <!-- Indicador de dosis actual -->
+          <div v-if="doseMessage && !isRecordLoading" class="dose-banner">
+            <IconInfoCircle :size="18" :stroke-width="2" />
+            <span>{{ doseMessage }}</span>
+          </div>
+
           <!-- Fecha de aplicación -->
           <div class="field-group">
             <label class="field-label">
@@ -123,8 +146,8 @@ const notePlaceholder = computed(() => {
             />
           </div>
 
-          <!-- Programar refuerzo -->
-          <div class="suggestion-card">
+          <!-- Programar refuerzo (oculto si es dosis única) -->
+          <div v-if="totalDoses !== 1" class="suggestion-card">
             <div class="suggestion-icon">
               <IconBell :size="18" :stroke-width="1.75" />
             </div>
@@ -515,5 +538,24 @@ const notePlaceholder = computed(() => {
 
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+/* ── Dose banner ──────────────────────────────────────────── */
+.dose-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: #166534;
+}
+
+.dose-banner svg {
+  color: #22c55e;
+  flex-shrink: 0;
 }
 </style>
