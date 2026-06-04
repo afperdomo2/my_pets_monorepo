@@ -37,5 +37,5 @@ type HealthRecord struct {
 	Pet Pet `json:"pet" gorm:"foreignKey:PetID;constraint:OnDelete:CASCADE"`
 
 	// Relación con VaccineApplications — un health_record puede tener múltiples aplicaciones.
-	VaccineApplications []VaccineApplication `json:"vaccine_applications" gorm:"foreignKey:HealthRecordID"`
+	VaccineApplications []VaccineApplication `json:"vaccine_applications,omitempty" gorm:"foreignKey:HealthRecordID"`
 }

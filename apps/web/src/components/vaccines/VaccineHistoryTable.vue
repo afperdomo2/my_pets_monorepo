@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import ViewVaccineApplicationsModal from '@/components/health-tabs/ViewVaccineApplicationsModal.vue'
+import { IconVaccine } from '@tabler/icons-vue'
 import { ref, computed } from 'vue'
 import { useGetAllHealthRecords } from '@/composables/useHealthRecords'
 import { getSpeciesLabel } from '@/constants/species'
@@ -20,6 +22,28 @@ function formatDate(dateStr: string | null): string {
   const date = new Date(dateStr)
   return date.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })
 }
+
+function formatDosesText(record: (typeof records.value)[number]): string {
+  if (record.total_doses === 1) return 'Única'
+  const applied = record.applied_doses_count ?? 0
+  if (record.total_doses) {
+    return `${applied} de ${record.total_doses}`
+  }
+  return String(applied)
+}
+
+const showApplicationsModal = ref(false)
+const applicationsModalRecordId = ref<string | null>(null)
+
+function openApplicationsModal(healthRecordId: string) {
+  applicationsModalRecordId.value = healthRecordId
+  showApplicationsModal.value = true
+}
+
+function closeApplicationsModal() {
+  showApplicationsModal.value = false
+  applicationsModalRecordId.value = null
+}
 </script>
 
 <template>
@@ -31,21 +55,28 @@ function formatDate(dateStr: string | null): string {
 
     <div class="table-wrapper">
       <table v-if="!isLoading && !isError" class="history-table">
-        <thead>
-          <tr>
-            <th>Mascota</th>
-            <th>Vacuna</th>
-            <th class="th-center">Fecha aplicación</th>
-            <th class="th-center">Próxima dosis</th>
-          </tr>
-        </thead>
+          <thead>
+            <tr>
+              <th>Mascota</th>
+              <th>Vacuna</th>
+              <th class="th-center"># Dosis</th>
+              <th class="th-center">Fecha aplicación</th>
+              <th class="th-center">Próxima dosis</th>
+              <th class="th-center">Dosis</th>
+            </tr>
+          </thead>
         <tbody>
           <tr v-for="record in records" :key="record.id" class="history-row">
             <td>
               <div class="pet-cell">
                 <PetAvatar :species="record.pet.species" :name="record.pet.name" size="sm" />
                 <div class="pet-cell-info">
-                  <span class="pet-cell-name">{{ record.pet.name }}</span>
+                  <router-link
+                    :to="{ name: 'pet-detail-vaccines', params: { id: record.pet_id } }"
+                    class="pet-cell-link"
+                  >
+                    {{ record.pet.name }}
+                  </router-link>
                   <span class="pet-cell-species">{{ getSpeciesLabel(record.pet.species) }}</span>
                 </div>
               </div>
@@ -61,10 +92,22 @@ function formatDate(dateStr: string | null): string {
               </div>
             </td>
             <td class="td-center">
+              <span class="doses-count">{{ formatDosesText(record) }}</span>
+            </td>
+            <td class="td-center">
               <span class="date-cell">{{ formatDate(record.application_date) }}</span>
             </td>
             <td class="td-center">
               <span class="date-cell">{{ formatDate(record.next_dose_date) }}</span>
+            </td>
+            <td class="td-center">
+              <button
+                class="btn-doses"
+                title="Ver aplicaciones"
+                @click="openApplicationsModal(record.id)"
+              >
+                <IconVaccine :size="14" :stroke-width="2" />
+              </button>
             </td>
           </tr>
         </tbody>
@@ -87,6 +130,17 @@ function formatDate(dateStr: string | null): string {
         <div class="record-card__top">
           <PetAvatar :species="record.pet.species" :name="record.pet.name" size="sm" />
           <span class="record-card__vaccine">{{ record.pet.name }} — {{ record.name }}</span>
+          <button
+            class="btn-doses-card"
+            title="Ver aplicaciones"
+            @click="openApplicationsModal(record.id)"
+          >
+            <IconVaccine :size="14" :stroke-width="2" />
+          </button>
+        </div>
+        <div class="record-card__doses">
+          <span class="record-card__doses-label"># Dosis</span>
+          <span class="record-card__doses-value">{{ formatDosesText(record) }}</span>
         </div>
         <div class="record-card__dates">
           <div class="record-card__date-item">
@@ -115,6 +169,14 @@ function formatDate(dateStr: string | null): string {
         @update:page="page = $event"
       />
     </div>
+
+    <!-- Modal ver aplicaciones -->
+    <ViewVaccineApplicationsModal
+      v-if="showApplicationsModal && applicationsModalRecordId"
+      :health-record-id="applicationsModalRecordId"
+      category="vaccine"
+      @close="closeApplicationsModal"
+    />
   </div>
 </template>
 
@@ -151,6 +213,32 @@ function formatDate(dateStr: string | null): string {
   font-size: var(--text-xs);
   color: var(--color-text-tertiary);
   font-weight: 500;
+}
+
+.doses-count {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.btn-doses {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: #e0f2fe;
+  color: #0284c7;
+  border: 1.5px solid #bae6fd;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.btn-doses:hover {
+  background: #bae6fd;
+  color: #0369a1;
+  border-color: #0284c7;
 }
 
 /* ── Tabla (desktop: ≥ 560px del contenedor) ────────── */
@@ -219,10 +307,17 @@ function formatDate(dateStr: string | null): string {
   min-width: 0;
 }
 
-.pet-cell-name {
+.pet-cell-link {
   font-size: var(--text-sm);
   font-weight: 600;
-  color: var(--color-text-primary);
+  color: var(--color-accent);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+.pet-cell-link:hover {
+  color: var(--color-accent-dark);
+  text-decoration: underline;
 }
 
 .pet-cell-species {
@@ -330,6 +425,50 @@ function formatDate(dateStr: string | null): string {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  .btn-doses-card {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background: #e0f2fe;
+    color: #0284c7;
+    border: 1.5px solid #bae6fd;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .btn-doses-card:hover {
+    background: #bae6fd;
+    color: #0369a1;
+    border-color: #0284c7;
+  }
+
+  .record-card__doses {
+    margin-top: var(--space-2);
+    padding-top: var(--space-2);
+    border-top: 1px solid var(--color-border-light);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    grid-column: 1 / -1;
+  }
+
+  .record-card__doses-label {
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-tertiary);
+  }
+
+  .record-card__doses-value {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--color-text-primary);
   }
 
   .record-card__dates {
