@@ -5,6 +5,7 @@
     "dev": "turbo dev",
     "build": "turbo build",
     "lint": "turbo lint",
+    "dev:web": "pnpm --filter web dev",
     "dev:api": "make dev-api",
     "build:api": "make build-api",
     "test:api": "make test-api"
