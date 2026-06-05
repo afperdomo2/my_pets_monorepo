@@ -125,9 +125,11 @@ Antes de agregar una dependencia (npm/pnpm/Go):
 |---|---|---|
 | Handler tests | `testify/mock` + `gin.CreateTestContext` | `internal/domain/<name>/handler_test.go` |
 | Pure unit | `testing` + `testify/require` | `internal/domain/<name>/xxx_test.go` |
+| Repository tests | `testcontainers-go` + Postgres 16 | `internal/domain/<name>/gorm_repo_test.go` |
 
-No se usa DB en tests — los repositorios se mockean via interfaces.
-Ver `docs/api/conventions.md` para el patrón detallado.
+No se usa DB en tests de handlers — los repositorios se mockean via interfaces.
+Los tests de repositorio levantan Postgres 16 real en contenedor Docker.
+Ver `docs/api/testing.md` para patrón detallado y cobertura.
 
 ### Frontend
 

@@ -15,6 +15,8 @@ Todos los comandos se ejecutan desde la **raíz del monorepo** (vía `Makefile`)
 
 ## Tests
 
+Ver documentación detallada en [`docs/api/testing.md`](testing.md).
+
 ```bash
 # Test enfocado en un dominio
 go test ./internal/domain/<name>/ -run <TestName> -v
@@ -29,12 +31,14 @@ make test-api
 |---|---|---|
 | Handler tests | Mocks de repositorios con `testify/mock` + `gin.CreateTestContext` | `internal/domain/<name>/handler_test.go` |
 | Pure unit tests | Tests sin mocks ni DB (cálculos, validaciones) | `internal/domain/<name>/xxx_test.go` |
+| Repository tests | Queries reales contra Postgres via testcontainers | `internal/domain/<name>/gorm_repo_test.go` |
 
 ### Stack de testing
 
 - [`testify`](https://github.com/stretchr/testify) — mocks (`testify/mock`) y aserciones (`testify/require`)
 - `httptest` — `ResponseRecorder` + `gin.CreateTestContext`
 - Sin DB en tests de handlers (repositorios mockeados)
+- [`testcontainers-go`](https://golang.testcontainers.org/) — Postgres 16 en contenedor para tests de repositorio
 
 ## Swagger / Documentación de endpoints
 
