@@ -114,6 +114,23 @@ make lint-api       # go vet
 
 **Los tests de repositorio (`make test-api-integration`) solo bajo pedido explícito del usuario o antes de mergear.**
 
+### Pre-commit hooks (Lefthook)
+
+El proyecto usa [Lefthook](https://github.com/evilmartians/lefthook) para ejecutar validaciones automáticas antes de cada `git commit`:
+
+| Trigger | Job | Glob (solo si cambian estos archivos) |
+|---|---|---|
+| `pre-commit` | `lint-api` | `apps/api/**/*.go` |
+| `pre-commit` | `test-api` | `apps/api/**/*.go` |
+| `pre-commit` | `test-api-integration` | `apps/api/**/gorm_repo.go` |
+| `pre-commit` | `lint-web` | `apps/web/**/*.{ts,vue}` |
+| `pre-commit` | `type-check` | `apps/web/**/*.{ts,vue}` |
+
+Los jobs se ejecutan en paralelo y cada uno solo corre si hay cambios en los archivos que le corresponden (según `glob`).  
+Los repo tests pesados solo se ejecutan si cambió algún `gorm_repo.go`.
+
+Configuración completa en [`lefthook.yml`](/lefthook.yml).
+
 ## Arquitectura
 
 | Ruta | Contenido |

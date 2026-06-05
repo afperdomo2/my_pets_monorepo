@@ -8,14 +8,19 @@
     "dev:web": "pnpm --filter web dev",
     "dev:api": "make dev-api",
     "build:api": "make build-api",
-    "test:api": "make test-api"
+    "test:api": "make test-api",
+    "prepare": "lefthook install"
   },
   "devDependencies": {
+    "lefthook": "^2.1.9",
     "turbo": "^2.3.3"
   },
   "packageManager": "pnpm@10.30.3",
   "engines": {
     "node": "^22",
     "pnpm": ">=10"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["lefthook"]
   }
 }

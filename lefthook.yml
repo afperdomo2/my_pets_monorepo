@@ -1,0 +1,24 @@
+# pre-commit hooks — se ejecutan antes de cada commit
+# Los jobs con `glob` solo corren si hay cambios en archivos que coinciden
+pre-commit:
+  parallel: true
+  jobs:
+    - name: lint-api
+      run: make lint-api
+      glob: "apps/api/**/*.go"
+
+    - name: test-api
+      run: make test-api
+      glob: "apps/api/**/*.go"
+
+    - name: test-api-integration
+      run: make test-api-integration
+      glob: "apps/api/**/gorm_repo.go"
+
+    - name: lint-web
+      run: pnpm --filter web lint
+      glob: "apps/web/**/*.{ts,vue}"
+
+    - name: type-check
+      run: pnpm --filter web type-check
+      glob: "apps/web/**/*.{ts,vue}"
