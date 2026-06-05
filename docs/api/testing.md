@@ -93,29 +93,39 @@ Prueban los **queries reales** contra PostgreSQL usando `testcontainers-go`.
 
 | Dominio | 🧪 Handler | 🧬 Pure unit | 🗄️ Repo | 📊 Total |
 |---|---|---|---|---|
+| [`auth`](/apps/api/internal/domain/auth/) | 11 | — | — | **11** |
 | [`dashboard`](/apps/api/internal/domain/dashboard/) | 2 | — | 4 | **6** |
+| [`exam`](/apps/api/internal/domain/exam/) | 17 | — | — | **17** |
+| [`health`](/apps/api/internal/domain/health/) | 1 | — | — | **1** |
+| [`health_catalog`](/apps/api/internal/domain/health_catalog/) | 22 | — | — | **22** |
+| [`health_record`](/apps/api/internal/domain/health_record/) | 19 | — | — | **19** |
 | [`pet`](/apps/api/internal/domain/pet/) | 11 | 24 | 8 | **43** |
-| [`user`](/apps/api/internal/domain/user/) | 20 | — | — | **20** |
 | [`setup`](/apps/api/internal/domain/setup/) | 8 | — | — | **8** |
-| **Total** | **41** | **24** | **12** | **77** |
+| [`user`](/apps/api/internal/domain/user/) | 20 | — | — | **20** |
+| [`vaccine_application`](/apps/api/internal/domain/vaccine_application/) | 19 | — | — | **19** |
+| **Total** | **130** | **24** | **12** | **166** |
 
 ```text
 📈 Cobertura por tipo:
-  ████████████████████░  Handler  (41 tests)
-  ████████████░░░░░░░░░  Pure unit (24 tests)
-  ██████░░░░░░░░░░░░░░░  Repo     (12 tests)
+  ████████████████████████████████████████████████████████░░  Handler  (130 tests)
+  █████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  Pure unit (24 tests)
+  ████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  Repo     (12 tests)
 ```
 
-### 🗺️ Dominios pendientes de testear
+### 🗺️ Dominios con cobertura completa
 
-| Dominio | Handler | Repo | Prioridad |
-|---|---|---|---|
-| `health_record` | ❌ | ❌ | 🔴 Alta |
-| `vaccine_application` | ❌ | ❌ | 🔴 Alta |
-| `exam` | ❌ | ❌ | 🟡 Media |
-| `auth` | ❌ | ❌ | 🟡 Media |
-| `health_catalog` | ❌ | ❌ | 🟢 Baja |
-| `health` | ❌ | ❌ | 🟢 Baja |
+| Dominio | Handler | Repo |
+|---|---|---|
+| `auth` | ✅ | ❌ |
+| `dashboard` | ✅ | ✅ |
+| `exam` | ✅ | ❌ |
+| `health` | ✅ | ❌ |
+| `health_catalog` | ✅ | ❌ |
+| `health_record` | ✅ | ❌ |
+| `pet` | ✅ | ✅ |
+| `setup` | ✅ | ❌ |
+| `user` | ✅ | ❌ |
+| `vaccine_application` | ✅ | ❌ |
 
 ---
 
@@ -130,10 +140,16 @@ make test-api
 ### Por dominio
 
 ```bash
-go test ./internal/domain/dashboard/ -v
-go test ./internal/domain/pet/        -v
-go test ./internal/domain/user/       -v
-go test ./internal/domain/setup/      -v
+go test ./internal/domain/auth/              -v
+go test ./internal/domain/dashboard/         -v
+go test ./internal/domain/exam/              -v
+go test ./internal/domain/health/            -v
+go test ./internal/domain/health_catalog/    -v
+go test ./internal/domain/health_record/     -v
+go test ./internal/domain/pet/               -v
+go test ./internal/domain/setup/             -v
+go test ./internal/domain/user/              -v
+go test ./internal/domain/vaccine_application/ -v
 ```
 
 ### Por tipo de test

@@ -100,6 +100,10 @@ Antes de agregar una dependencia (npm/pnpm/Go):
 
 `make swag` tras crear, modificar o eliminar endpoints. Los archivos generados están en `apps/api/docs/`.
 
+### Testing
+
+Tras crear, modificar o eliminar tests de backend (`apps/api/internal/domain/<name>/*_test.go`), actualizar la tabla de cobertura y dominios pendientes en `docs/api/testing.md`.
+
 ## Arquitectura
 
 | Ruta | Contenido |
