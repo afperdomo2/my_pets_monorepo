@@ -498,6 +498,8 @@ function handleDocumentClick(event: MouseEvent) {
 .date-picker-dropdown__day--today {
   font-weight: 600;
   color: var(--color-accent);
+  background: var(--color-accent-light);
+  border-radius: 6px;
 }
 
 .date-picker-dropdown__day--selected {

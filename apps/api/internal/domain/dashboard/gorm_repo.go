@@ -18,7 +18,7 @@ func NewGormRepo(db *gorm.DB) Repository {
 
 // GetSummary implementa Repository.GetSummary.
 // Ejecuta 4 consultas optimizadas usando el campo user_id para evitar JOINs innecesarios.
-// Nota: Usa next_dose_date y application_date en lugar de status y due_date (eliminados).
+// Nota: Usa next_dose_date, total_doses y applied_doses_count en lugar de status y due_date (eliminados).
 func (r *gormRepo) GetSummary(ctx context.Context, ownerID string) (DashboardSummary, error) {
 	var summary DashboardSummary
 
@@ -41,7 +41,7 @@ func (r *gormRepo) GetSummary(ctx context.Context, ownerID string) (DashboardSum
 			WHERE hr.pet_id = p.id
 			AND hr.user_id = ?
 			AND hr.next_dose_date IS NOT NULL
-			AND hr.application_date IS NULL
+			AND (hr.total_doses IS NULL OR hr.applied_doses_count < hr.total_doses)
 		)
 	`
 	if err := r.db.Raw(query, ownerID, ownerID).Scan(&healthyPets).Error; err != nil {
@@ -49,21 +49,21 @@ func (r *gormRepo) GetSummary(ctx context.Context, ownerID string) (DashboardSum
 	}
 	summary.HealthyPets = healthyPets
 
-	// 3. Total de tareas pendientes (next_dose_date IS NOT NULL AND application_date IS NULL)
+	// 3. Total de tareas pendientes (next_dose_date IS NOT NULL y quedan dosis por aplicar)
 	// Filtramos por user_id directamente sin necesidad de JOIN
 	var pendingTasks int64
 	if err := r.db.Table("health_records").
-		Where("user_id = ? AND next_dose_date IS NOT NULL AND application_date IS NULL", ownerID).
+		Where("user_id = ? AND next_dose_date IS NOT NULL AND (total_doses IS NULL OR applied_doses_count < total_doses)", ownerID).
 		Count(&pendingTasks).Error; err != nil {
 		return summary, err
 	}
 	summary.PendingTasks = pendingTasks
 
-	// 4. Total de tareas vencidas (next_dose_date < hoy y application_date IS NULL)
+	// 4. Total de tareas vencidas (next_dose_date < hoy y quedan dosis por aplicar)
 	// Filtramos por user_id directamente sin necesidad de JOIN
 	var overdueTasks int64
 	if err := r.db.Table("health_records").
-		Where("user_id = ? AND next_dose_date < CURRENT_DATE AND application_date IS NULL", ownerID).
+		Where("user_id = ? AND next_dose_date < CURRENT_DATE AND (total_doses IS NULL OR applied_doses_count < total_doses)", ownerID).
 		Count(&overdueTasks).Error; err != nil {
 		return summary, err
 	}
