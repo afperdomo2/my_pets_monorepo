@@ -46,6 +46,49 @@ type Pet struct {
 - No encontrado: `errors.Is(err, ErrNotFound)` → HTTP 404
 - `log.Fatalf` solo en `main.go`, nunca `panic()` en handlers
 
+## Tests
+
+### Handler tests (`handler_test.go`)
+
+- Usar `testify/mock` para mockear interfaces de repositorio
+- Usar `gin.CreateTestContext(w)` + `httptest.NewRecorder()` para simular requests HTTP
+- Definir `mockRepo` anónimo dentro del mismo package (acceso a tipos no exportados)
+- Patrón: `setup → act → assert` con `mock.AssertExpectations(t)`
+- Test name en snake_case con el patrón `Test<HandlerName>_<Scenario>`
+- NO usar bases de datos reales — los repos se mockean siempre en handler tests
+
+### Pure unit tests (`xxx_test.go`)
+
+- Tests sin mocks ni DB para lógica pura (cálculos, validaciones, helpers)
+- Usar `testify/require` para aserciones
+- Preferir table-driven tests con `t.Run()` por subtest
+
+```go
+func TestCalculateDogLifeStage(t *testing.T) {
+    tests := []struct {
+        name     string
+        birth    time.Time
+        size     SizeCategory
+        expected string
+    }{...}
+    for _, tt := range tests {
+        t.Run(tt.name, func(t *testing.T) {
+            require.Equal(t, tt.expected, CalculateDogLifeStage(tt.birth, tt.size))
+        })
+    }
+}
+```
+
+### Stack
+
+| Herramienta | Propósito |
+|---|---|
+| `testing` | Runner estándar de Go |
+| `testify/mock` | Creación de mocks |
+| `testify/require` | Aserciones con fail inmediato |
+| `net/http/httptest` | `ResponseRecorder` para capturar respuestas HTTP |
+| `gin.CreateTestContext` | Contexto Gin sin servidor HTTP real |
+
 ## Swagger
 
 - Todo endpoint debe tener anotaciones Swagger (`@Summary`, `@Tags`, `@Param`, `@Success`, `@Router`) en su handler.

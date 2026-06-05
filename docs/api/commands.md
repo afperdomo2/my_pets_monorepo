@@ -23,7 +23,18 @@ go test ./internal/domain/<name>/ -run <TestName> -v
 make test-api
 ```
 
-> **No existen tests Go** en el proyecto — no hay archivos `_test.go`.
+### Test patterns usados
+
+| Tipo | Descripción | Ubicación |
+|---|---|---|
+| Handler tests | Mocks de repositorios con `testify/mock` + `gin.CreateTestContext` | `internal/domain/<name>/handler_test.go` |
+| Pure unit tests | Tests sin mocks ni DB (cálculos, validaciones) | `internal/domain/<name>/xxx_test.go` |
+
+### Stack de testing
+
+- [`testify`](https://github.com/stretchr/testify) — mocks (`testify/mock`) y aserciones (`testify/require`)
+- `httptest` — `ResponseRecorder` + `gin.CreateTestContext`
+- Sin DB en tests de handlers (repositorios mockeados)
 
 ## Swagger / Documentación de endpoints
 

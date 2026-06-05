@@ -398,7 +398,7 @@ func (h *Handler) GetHealthRecordByID(c *gin.Context) {
 
 // GetUpcomingRecords maneja GET /api/v1/health-records/upcoming
 // Lista los próximos registros pendientes de aplicación con paginación estándar.
-// Los registros se ordenan por due_date ASC (los más próximos primero).
+// Los registros se ordenan por next_dose_date ASC (los más próximos primero).
 //
 //	@Summary	Listar próximos registros pendientes
 //	@Description	Lista los registros con próxima dosis programada que aún no se han completado, ordenados por fecha ascendente.

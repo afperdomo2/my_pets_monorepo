@@ -119,7 +119,19 @@ Antes de agregar una dependencia (npm/pnpm/Go):
 
 ## Tests
 
-No existen tests Go ni frontend (Vitest no configurado).
+### Backend (Go)
+
+| Tipo | Stack | Ubicación |
+|---|---|---|
+| Handler tests | `testify/mock` + `gin.CreateTestContext` | `internal/domain/<name>/handler_test.go` |
+| Pure unit | `testing` + `testify/require` | `internal/domain/<name>/xxx_test.go` |
+
+No se usa DB en tests — los repositorios se mockean via interfaces.
+Ver `docs/api/conventions.md` para el patrón detallado.
+
+### Frontend
+
+Vitest no configurado.
 
 ## Para empezar a trabajar
 

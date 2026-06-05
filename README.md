@@ -83,7 +83,7 @@ pnpm dev
 |---|---|
 | `make dev-api` | Hot-reload con `air` |
 | `make build-api` | Compilar binario en `bin/server` |
-| `make test-api` | Ejecutar tests Go |
+| `make test-api` | Ejecutar tests Go (handler tests con mocks + unit tests) |
 | `make lint-api` | `go vet` |
 | `make tidy` | `go mod tidy` |
 | `make swag` | Regenerar documentación Swagger |
