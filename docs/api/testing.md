@@ -95,22 +95,22 @@ Prueban los **queries reales** contra PostgreSQL usando `testcontainers-go`.
 |---|---|---|---|---|
 | [`auth`](/apps/api/internal/domain/auth/) | 11 | 7 | — | **18** |
 | [`dashboard`](/apps/api/internal/domain/dashboard/) | 2 | — | 4 | **6** |
-| [`exam`](/apps/api/internal/domain/exam/) | 17 | — | — | **17** |
+| [`exam`](/apps/api/internal/domain/exam/) | 17 | — | 8 | **25** |
 | [`health`](/apps/api/internal/domain/health/) | 1 | — | — | **1** |
-| [`health_catalog`](/apps/api/internal/domain/health_catalog/) | 22 | — | — | **22** |
-| [`health_record`](/apps/api/internal/domain/health_record/) | 19 | — | — | **19** |
+| [`health_catalog`](/apps/api/internal/domain/health_catalog/) | 22 | — | 7 | **29** |
+| [`health_record`](/apps/api/internal/domain/health_record/) | 19 | — | 8 | **27** |
 | [`pet`](/apps/api/internal/domain/pet/) | 11 | 27 | 8 | **46** |
 | [`setup`](/apps/api/internal/domain/setup/) | 8 | — | — | **8** |
-| [`user`](/apps/api/internal/domain/user/) | 20 | — | — | **20** |
+| [`user`](/apps/api/internal/domain/user/) | 20 | — | 11 | **31** |
+| [`vaccine_application`](/apps/api/internal/domain/vaccine_application/) | 19 | — | 8 | **27** |
 | [`validation`](/apps/api/internal/validation/) | — | 9 | — | **9** |
-| [`vaccine_application`](/apps/api/internal/domain/vaccine_application/) | 19 | — | — | **19** |
-| **Total** | **130** | **43** | **12** | **185** |
+| **Total** | **130** | **43** | **54** | **227** |
 
 ```text
 📈 Cobertura por tipo:
-  ████████████████████████████████████████████████████████░░  Handler  (130 tests)
-  ██████████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  Pure unit (43 tests)
-  █████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  Repo     (12 tests)
+  ████████████████████████████████████████████████████████████████████░░░░  Handler  (130 tests)
+  █████████████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  Pure unit (43 tests)
+  ██████████████████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  Repo     (54 tests)
 ```
 
 ### 🗺️ Dominios con cobertura completa
@@ -119,14 +119,14 @@ Prueban los **queries reales** contra PostgreSQL usando `testcontainers-go`.
 |---|---|---|
 | `auth` | ✅ | ❌ |
 | `dashboard` | ✅ | ✅ |
-| `exam` | ✅ | ❌ |
+| `exam` | ✅ | ✅ |
 | `health` | ✅ | ❌ |
-| `health_catalog` | ✅ | ❌ |
-| `health_record` | ✅ | ❌ |
+| `health_catalog` | ✅ | ✅ |
+| `health_record` | ✅ | ✅ |
 | `pet` | ✅ | ✅ |
 | `setup` | ✅ | ❌ |
-| `user` | ✅ | ❌ |
-| `vaccine_application` | ✅ | ❌ |
+| `user` | ✅ | ✅ |
+| `vaccine_application` | ✅ | ✅ |
 
 ---
 
