@@ -1,4 +1,4 @@
-.PHONY: dev-api build-api test-api lint-api swag clean
+.PHONY: dev-api build-api test-api test-api-integration lint-api swag tidy clean docker-dev docker-down
 
 API_DIR=./apps/api
 BINARY=./apps/api/tmp/server
@@ -17,9 +17,13 @@ build-api:
 	@cd $(API_DIR) && go build -o ../../bin/server ./cmd/server
 	@echo "Binary at bin/server"
 
-## test-api: Run Go tests
+## test-api: Run handler & unit tests (rápido, ~0.1s, sin Docker)
 test-api:
 	@cd $(API_DIR) && go test ./... -v
+
+## test-api-integration: Run ALL tests incl. repository (~5 min, requiere Docker)
+test-api-integration:
+	@cd $(API_DIR) && go test -tags=integration ./... -v -count=1
 
 ## lint-api: Run Go vet
 lint-api:

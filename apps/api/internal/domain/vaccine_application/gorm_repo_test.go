@@ -1,3 +1,5 @@
+//go:build integration
+
 package vaccine_application
 
 import (

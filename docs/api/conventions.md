@@ -57,6 +57,15 @@ type Pet struct {
 - Test name en snake_case con el patrón `Test<HandlerName>_<Scenario>`
 - NO usar bases de datos reales — los repos se mockean siempre en handler tests
 
+### Repository tests (`gorm_repo_test.go`)
+
+- Usar `testcontainers-go` para levantar Postgres 16 en contenedor
+- La primera línea debe ser `//go:build integration` para excluirlo del test rápido
+- Usar `database/testutil.NewPostgres(t)` como helper compartido
+- Hacer seed de datos con UUIDs válidos (helper `uid(n)` → `00000000-0000-0000-0000-0000000000XX`)
+- Verificar aislamiento entre usuarios (owner scoping)
+- No se ejecutan con `make test-api`, solo con `make test-api-integration`
+
 ### Pure unit tests (`xxx_test.go`)
 
 - Tests sin mocks ni DB para lógica pura (cálculos, validaciones, helpers)

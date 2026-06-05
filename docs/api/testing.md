@@ -135,7 +135,11 @@ Prueban los **queries reales** contra PostgreSQL usando `testcontainers-go`.
 ### Todos los tests
 
 ```bash
+# Handler + unit (rápido, ~0.1s — sin Docker)
 make test-api
+
+# Handler + unit + repo (~5 min — requiere Docker)
+make test-api-integration
 ```
 
 ### Por dominio
@@ -159,12 +163,16 @@ go test ./internal/domain/vaccine_application/ -v
 # 🧪 Solo handler tests (rápidos, sin DB)
 go test ./internal/domain/pet/ -run 'Test(PetHandler|GetSummary)' -v
 
-# 🗄️ Solo repository tests (con Postgres, requieren Docker)
-go test ./internal/domain/pet/ -run 'TestGormRepo' -v
+# 🗄️ Solo repository tests (requieren build tag + Docker)
+go test -tags=integration ./internal/domain/pet/ -run 'TestGormRepo' -v
 
 # 🧬 Solo pure unit tests
 go test ./internal/domain/pet/ -run 'TestCalculate' -v
 ```
+
+> **Build tag `integration`:** los archivos `gorm_repo_test.go` llevan `//go:build integration`
+> en su primera línea. Sin `-tags=integration`, esos tests son invisibles para `go test` y `make test-api`.
+> Solo se ejecutan con `make test-api-integration` o `go test -tags=integration ./...`.
 
 ### Sin caché (forzar ejecución real)
 
@@ -182,12 +190,24 @@ go clean -testcache
 
 ### 📁 Nomenclatura de archivos
 
-| Sufijo | Contenido | Ejemplo |
-|---|---|---|
-| `handler_test.go` | Handler tests con mocks | `dashboard/handler_test.go` |
-| `gorm_repo_test.go` | Repository tests con testcontainers | `dashboard/gorm_repo_test.go` |
-| `lifestage_test.go` | Pure unit: cálculos de etapa de vida | `pet/lifestage_test.go` |
-| `xxx_test.go` | Otros pure unit tests | — |
+| Sufijo | Contenido | Build tag | Ejemplo |
+|---|---|---|---|---|
+| `handler_test.go` | Handler tests con mocks | — | `dashboard/handler_test.go` |
+| `gorm_repo_test.go` | Repository tests con testcontainers | `integration` | `dashboard/gorm_repo_test.go` |
+| `lifestage_test.go` | Pure unit: cálculos de etapa de vida | — | `pet/lifestage_test.go` |
+| `xxx_test.go` | Otros pure unit tests | — | `validation/validation_test.go` |
+
+### 🏷️ Build tags
+
+Los tests de repositorio requieren el build tag `integration` para ejecutarse:
+
+```go
+//go:build integration
+
+package dashboard
+```
+
+Esto asegura que `go test ./...` (sin flags) solo ejecute handler + unit tests, que son rápidos (~0.1s) y no requieren Docker. Los repo tests se ejecutan explícitamente con `go test -tags=integration ./...`.
 
 ### 🧪 Patrón de handler tests
 

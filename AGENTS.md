@@ -44,15 +44,16 @@ Esto evita depender de datos de entrenamiento que pueden estar desactualizados. 
 
 ### Backend (desde raíz, vía Makefile)
 
-| Comando | Descripción |
-|---|---|
-| `make dev-api` | Hot-reload con air |
-| `make test-api` | `go test ./... -v` |
-| `make lint-api` | `go vet ./...` |
-| `make swag` | Regenerar Swagger docs (tras cambios en handlers) |
-| `make tidy` | `go mod tidy` |
-| `make build-api` | Compilar binario `bin/server` |
-| `make docker-dev` | Levantar todo (Postgres + API + frontend) |
+| Comando | Descripción | Docker |
+|---|---|---|
+| `make dev-api` | Hot-reload con air | ❌ |
+| `make test-api` | Tests handler + unit (rápido, ~0.1s) | ❌ |
+| `make test-api-integration` | Tests handler + unit + repo (~5 min) | ✅ |
+| `make lint-api` | `go vet ./...` | ❌ |
+| `make swag` | Regenerar Swagger docs (tras cambios en handlers) | ❌ |
+| `make tidy` | `go mod tidy` | ❌ |
+| `make build-api` | Compilar binario `bin/server` | ❌ |
+| `make docker-dev` | Levantar todo (Postgres + API + frontend) | ✅ |
 
 ### Frontend (desde `apps/web/`)
 
@@ -104,6 +105,15 @@ Antes de agregar una dependencia (npm/pnpm/Go):
 
 Tras crear, modificar o eliminar tests de backend (`apps/api/internal/domain/<name>/*_test.go`), actualizar la tabla de cobertura y dominios pendientes en `docs/api/testing.md`.
 
+Después de cualquier cambio en backend, ejecutar:
+
+```bash
+make test-api       # handler + unit (rápido, ~0.1s)
+make lint-api       # go vet
+```
+
+**Los tests de repositorio (`make test-api-integration`) solo bajo pedido explícito del usuario o antes de mergear.**
+
 ## Arquitectura
 
 | Ruta | Contenido |
@@ -125,14 +135,14 @@ Tras crear, modificar o eliminar tests de backend (`apps/api/internal/domain/<na
 
 ### Backend (Go)
 
-| Tipo | Stack | Ubicación |
-|---|---|---|
-| Handler tests | `testify/mock` + `gin.CreateTestContext` | `internal/domain/<name>/handler_test.go` |
-| Pure unit | `testing` + `testify/require` | `internal/domain/<name>/xxx_test.go` |
-| Repository tests | `testcontainers-go` + Postgres 16 | `internal/domain/<name>/gorm_repo_test.go` |
+| Tipo | Stack | Ubicación | Build tag |
+|---|---|---|---|
+| Handler tests | `testify/mock` + `gin.CreateTestContext` | `internal/domain/<name>/handler_test.go` | — |
+| Pure unit | `testing` + `testify/require` | `internal/domain/<name>/xxx_test.go` | — |
+| Repository tests | `testcontainers-go` + Postgres 16 | `internal/domain/<name>/gorm_repo_test.go` | `integration` |
 
 No se usa DB en tests de handlers — los repositorios se mockean via interfaces.
-Los tests de repositorio levantan Postgres 16 real en contenedor Docker.
+Los tests de repositorio levantan Postgres 16 real en contenedor Docker, y solo se ejecutan con `go test -tags=integration`.
 Ver `docs/api/testing.md` para patrón detallado y cobertura.
 
 ### Frontend
@@ -144,4 +154,5 @@ Vitest no configurado.
 1. Leer `docs/architecture.md` si no se conoce la estructura
 2. Cargar el skill correspondiente (Vue, Zod, Turborepo, etc.)
 3. Usar Context7 MCP para documentación de librerías
-4. Tras cambios: `pnpm lint:oxlint` → `pnpm lint:eslint` → `pnpm type-check`
+4. Tras cambios backend: `make test-api` → `make lint-api`
+   Tras cambios frontend: `pnpm lint:oxlint` → `pnpm lint:eslint` → `pnpm type-check`
