@@ -93,23 +93,24 @@ Prueban los **queries reales** contra PostgreSQL usando `testcontainers-go`.
 
 | Dominio | 🧪 Handler | 🧬 Pure unit | 🗄️ Repo | 📊 Total |
 |---|---|---|---|---|
-| [`auth`](/apps/api/internal/domain/auth/) | 11 | — | — | **11** |
+| [`auth`](/apps/api/internal/domain/auth/) | 11 | 7 | — | **18** |
 | [`dashboard`](/apps/api/internal/domain/dashboard/) | 2 | — | 4 | **6** |
 | [`exam`](/apps/api/internal/domain/exam/) | 17 | — | — | **17** |
 | [`health`](/apps/api/internal/domain/health/) | 1 | — | — | **1** |
 | [`health_catalog`](/apps/api/internal/domain/health_catalog/) | 22 | — | — | **22** |
 | [`health_record`](/apps/api/internal/domain/health_record/) | 19 | — | — | **19** |
-| [`pet`](/apps/api/internal/domain/pet/) | 11 | 24 | 8 | **43** |
+| [`pet`](/apps/api/internal/domain/pet/) | 11 | 27 | 8 | **46** |
 | [`setup`](/apps/api/internal/domain/setup/) | 8 | — | — | **8** |
 | [`user`](/apps/api/internal/domain/user/) | 20 | — | — | **20** |
+| [`validation`](/apps/api/internal/validation/) | — | 9 | — | **9** |
 | [`vaccine_application`](/apps/api/internal/domain/vaccine_application/) | 19 | — | — | **19** |
-| **Total** | **130** | **24** | **12** | **166** |
+| **Total** | **130** | **43** | **12** | **185** |
 
 ```text
 📈 Cobertura por tipo:
   ████████████████████████████████████████████████████████░░  Handler  (130 tests)
-  █████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  Pure unit (24 tests)
-  ████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  Repo     (12 tests)
+  ██████████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  Pure unit (43 tests)
+  █████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  Repo     (12 tests)
 ```
 
 ### 🗺️ Dominios con cobertura completa
