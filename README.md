@@ -131,7 +131,18 @@ export TF_VAR_db_password="mi-clave-segura"
 export TF_VAR_jwt_secret="mi-jwt-secreto"
 
 terraform init
-terraform apply -auto-approve
+
+terraform validate
+
+# Genera un plan especulativo de ejecución y lo guarda con el nombre dado
+terraform plan -out plan.out
+
+terraform apply "plan.out"
+terraform apply "plan.out" -auto-approve
+
+# Destruir todos los recursos craedos
+terraform destroy
+terraform destroy -auto-approve
 ```
 
 > **Alternativa:** crear `terraform.tfvars` a partir de [`terraform.tfvars.example`](terraform/terraform.tfvars.example) con los valores y Terraform lo cargará automáticamente, sin necesidad de `export TF_VAR_`.

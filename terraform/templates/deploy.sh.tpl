@@ -29,8 +29,8 @@ DATABASE_URL=host=${rds_endpoint} user=${db_user} password=${db_password} dbname
 JWT_SECRET=${jwt_secret}
 PORT=8080
 GIN_MODE=release
-APP_URL=http://${EC2_IP}
-FRONTEND_URL=http://${EC2_IP}
+APP_URL=http://$${EC2_IP}
+FRONTEND_URL=http://$${EC2_IP}
 EOF
 
 # 5. Desplegar con Docker Compose

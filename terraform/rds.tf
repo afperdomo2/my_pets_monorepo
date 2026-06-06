@@ -1,7 +1,7 @@
 # Grupo de subredes para el RDS (usa la subred pública)
 resource "aws_db_subnet_group" "main" {
   name       = "${local.name_prefix}-rds-subnet"
-  subnet_ids = [aws_subnet.public.id]
+  subnet_ids = [aws_subnet.public.id, aws_subnet.public_az2.id]
 
   tags = merge({ Name = "${local.name_prefix}-rds-subnet" }, local.common_tags)
 }

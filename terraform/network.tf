@@ -35,8 +35,24 @@ resource "aws_route_table" "public" {
   tags = merge({ Name = "${local.name_prefix}-public-rt" }, local.common_tags)
 }
 
+# Segunda subred pública (RDS requiere mínimo 2 AZs)
+resource "aws_subnet" "public_az2" {
+  vpc_id                  = aws_vpc.main.id
+  cidr_block              = "10.0.2.0/24"
+  map_public_ip_on_launch = true
+  availability_zone       = "${var.aws_region}b"
+
+  tags = merge({ Name = "${local.name_prefix}-public-${var.aws_region}b" }, local.common_tags)
+}
+
 # Asocia la tabla de rutas a la subred pública
 resource "aws_route_table_association" "public" {
   subnet_id      = aws_subnet.public.id
+  route_table_id = aws_route_table.public.id
+}
+
+# Asocia la tabla de rutas a la segunda subred
+resource "aws_route_table_association" "public_az2" {
+  subnet_id      = aws_subnet.public_az2.id
   route_table_id = aws_route_table.public.id
 }
