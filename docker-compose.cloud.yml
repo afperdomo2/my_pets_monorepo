@@ -1,0 +1,18 @@
+# Versión para AWS Cloud (RDS externo, sin servicio db)
+services:
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile.prod
+    ports:
+      - "8080:8080"
+    env_file: .env
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile.prod
+    ports:
+      - "80:80"
+    restart: unless-stopped

@@ -1,0 +1,9 @@
+# ── Requeridas (sin valor por defecto) ─────────────────
+db_password = "mi-clave-segura"
+jwt_secret  = "mi-jwt-secreto"
+
+# ── Opcionales (tienen default en variables.tf) ───────
+aws_region   = "us-east-1"
+ssh_key_name = "pruebas-felipe-ssh"
+db_name      = "my_pets"
+db_user      = "my_pets_user"

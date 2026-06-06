@@ -17,11 +17,16 @@ my_pets_monorepo/
 │       ├── commands.md   # Comandos de backend
 │       ├── conventions.md# Convenciones de código
 │       └── testing.md    # Guía de testing (227 tests)
-├── docker-compose.prod.yml # Producción (build estático)
-├── lefthook.yml          # Pre-commit hooks
-├── Makefile              # Comandos del backend
-├── .env.example          # Variables de entorno
-└── turbo.json            # Turborepo config
+├── docker-compose.prod.yml  # Producción (build estático)
+├── docker-compose.cloud.yml # AWS Cloud (RDS externo)
+├── terraform/               # Infraestructura como código (AWS)
+│   ├── templates/
+│   └── ... *.tf
+├── TERRAFORM_AWS.md         # Guía completa de deploy en AWS
+├── lefthook.yml             # Pre-commit hooks
+├── Makefile                 # Comandos del backend
+├── .env.example             # Variables de entorno
+└── turbo.json               # Turborepo config
 ```
 
 ---
@@ -56,39 +61,119 @@ pnpm dev
 
 ## 🚢 Producción con Docker
 
+### 🖥️ Local (PostgreSQL en contenedor)
+
 ```bash
 # 1. Configurar variables de entorno
 cp .env.example .env
 # Editar JWT_SECRET, POSTGRES_PASSWORD y DATABASE_URL
 
 # 2. Build y despliegue
-
-# Buildear las imágenes
-docker compose -f docker-compose.prod.yml build
-
-# Desplegar (levantar servicios)
-docker compose -f docker-compose.prod.yml up -d
-
-# Alternativa — build + deploy en un solo paso
 docker compose -f docker-compose.prod.yml up --build -d
 
 # 3. Detener servicios
 docker compose -f docker-compose.prod.yml down
 ```
 
-> Las variables `POSTGRES_USER`, `POSTGRES_PASSWORD` y `POSTGRES_DB` se usan tanto en el contenedor de PostgreSQL como en `DATABASE_URL`. Si cambias las credenciales en `.env`, asegúrate de que `DATABASE_URL` refleje los mismos valores.
+### ☁️ AWS Cloud (Sin DB, usado para Terraform y AWS)
+
+```bash
+# 1. Configurar variables de entorno
+cp .env.example .env
+# Editar JWT_SECRET y DATABASE_URL con el endpoint de RDS
+
+# 2. Build y despliegue
+docker compose -f docker-compose.cloud.yml up --build -d
+```
+
+> `docker-compose.cloud.yml` no incluye servicio `db` — asume una base de datos externa vía `DATABASE_URL` en el `.env`.
 
 | Servicio | Tecnología | URL |
 |---|---|---|
-| `db` | PostgreSQL 16 | — (interno) |
 | `api` | Go + Gin (multi-stage) | `http://localhost:8080` |
 | `web` | Vue 3 + nginx | `http://localhost:80` |
 
 ---
 
+## 🏗️ Terraform — AWS (free tier)
+
+Infraestructura como código para desplegar en AWS usando la capa gratuita.
+
+> 📖 Guía completa y detallada en [`TERRAFORM_AWS.md`](TERRAFORM_AWS.md) — incluye arquitectura, cada recurso explicado, solución de problemas, costos y más.
+
+### 🏛️ Arquitectura
+
+```
+Internet → EC2 (t3.micro)
+           ├── nginx → SPA (Vue)
+           ├── nginx → proxy_pass → Go API (:8080)
+           └── Go API → RDS (PostgreSQL 16)
+```
+
+| Recurso | Tipo | Free tier |
+|---|---|---|
+| EC2 | t3.micro, Amazon Linux 2023 | ✅ 750h/mes |
+| RDS | db.t3.micro, PostgreSQL 16, 20GB | ✅ 750h/mes (12 meses) |
+| Elastic IP | 1 dirección IP fija | ✅ sin costo asociado |
+
+### 📋 Prerrequisitos
+
+- [Terraform](https://developer.hashicorp.com/terraform/install) instalado
+- AWS Access Key + Secret Key configurados
+- Key Pair EC2 creado en `us-east-1`
+
+### 🚀 Deploy
+
+```bash
+cd terraform
+
+export TF_VAR_db_password="mi-clave-segura"
+export TF_VAR_jwt_secret="mi-jwt-secreto"
+
+terraform init
+terraform apply -auto-approve
+```
+
+> **Alternativa:** crear `terraform.tfvars` a partir de [`terraform.tfvars.example`](terraform/terraform.tfvars.example) con los valores y Terraform lo cargará automáticamente, sin necesidad de `export TF_VAR_`.
+
+### 📤 Outputs
+
+```
+ec2_public_ip = "54.xx.xx.xx"
+rds_endpoint  = "my-pets-db.xxxx.rds.amazonaws.com:5432"
+url           = "http://54.xx.xx.xx"
+```
+
+### ✅ Verificar
+
+```bash
+curl http://$(terraform output -raw url)/api/v1/health
+```
+
+### 🗑️ Destruir
+
+```bash
+terraform destroy -auto-approve
+```
+
+> ⚠️ El RDS crea un volumen de 20GB. `terraform destroy` lo elimina por completo. Costo estimado: ~$0.50 por 24h si ya expiraron los 12 meses de free tier de RDS.
+
+### ⚙️ Variables
+
+| Variable | Default | Descripción |
+|---|---|---|
+| `aws_region` | `us-east-1` | Región de AWS |
+| `ssh_key_name` | `pruebas-felipe-ssh` | Key Pair EC2 |
+| `db_name` | `my_pets` | Nombre de la base de datos |
+| `db_user` | `my_pets_user` | Usuario de la base de datos |
+| `db_password` | *(sensible)* | Contraseña de la base de datos |
+| `jwt_secret` | *(sensible)* | Secreto para firmar JWT |
+
+---
+
 ## 🔨 Comandos disponibles
 
-### Backend (desde raíz, vía Makefile)
+### 🖥️ Backend (desde raíz, vía Makefile)
 
 | Comando | Descripción | Docker |
 |---|---|---|
@@ -103,7 +188,7 @@ docker compose -f docker-compose.prod.yml down
 
 Ver detalle en [`docs/api/commands.md`](docs/api/commands.md).
 
-### Frontend (desde `apps/web/`)
+### 🌐 Frontend (desde `apps/web/`)
 
 | Comando | Descripción |
 |---|---|
@@ -112,7 +197,7 @@ Ver detalle en [`docs/api/commands.md`](docs/api/commands.md).
 | `pnpm lint` | Oxlint + ESLint |
 | `pnpm type-check` | `vue-tsc --build` |
 
-### Raíz del monorepo
+### 📦 Raíz del monorepo
 
 | Comando | Descripción |
 |---|---|
@@ -172,6 +257,7 @@ Config: [`lefthook.yml`](lefthook.yml)
 | [`docs/api/commands.md`](docs/api/commands.md) | Comandos de desarrollo y testing |
 | [`docs/api/conventions.md`](docs/api/conventions.md) | Convenciones de código Go |
 | [`docs/api/testing.md`](docs/api/testing.md) | Guía completa de testing (227 tests) |
+| [`TERRAFORM_AWS.md`](TERRAFORM_AWS.md) | Deploy en AWS con Terraform (guía detallada) |
 | [`AGENTS.md`](AGENTS.md) | Guía para agentes IA |
 
 ---
