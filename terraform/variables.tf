@@ -3,6 +3,21 @@ variable "aws_region" {
   default     = "us-east-1"
 }
 
+variable "org_name" {
+  description = "Nombre de la organización"
+  default     = "felipecorp"
+}
+
+variable "project_name" {
+  description = "Nombre del proyecto"
+  default     = "my-pets-monorepo"
+}
+
+variable "environment" {
+  description = "Entorno (dev, staging, prod)"
+  default     = "prod"
+}
+
 variable "ssh_key_name" {
   description = "Nombre del Key Pair en EC2 para acceso SSH"
   default     = "pruebas-felipe-ssh"

@@ -1,24 +1,29 @@
+# Red aislada para todos los recursos
 resource "aws_vpc" "main" {
   cidr_block           = "10.0.0.0/16"
   enable_dns_hostnames = true
 
-  tags = { Name = "my-pets-vpc" }
+  tags = merge({ Name = "${local.name_prefix}-vpc" }, local.common_tags)
 }
 
+# Subred pública donde irá el EC2
 resource "aws_subnet" "public" {
   vpc_id                  = aws_vpc.main.id
   cidr_block              = "10.0.1.0/24"
-  map_public_ip_on_launch = true
+  map_public_ip_on_launch = true # Permite asignar IP pública automáticamente
   availability_zone       = "${var.aws_region}a"
 
-  tags = { Name = "my-pets-public" }
+  tags = merge({ Name = "${local.name_prefix}-public-${var.aws_region}a" }, local.common_tags)
 }
 
+# Puerta de enlace a Internet
 resource "aws_internet_gateway" "main" {
   vpc_id = aws_vpc.main.id
-  tags   = { Name = "my-pets-igw" }
+
+  tags = merge({ Name = "${local.name_prefix}-igw" }, local.common_tags)
 }
 
+# Tabla de rutas que envía tráfico público al IGW
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.main.id
 
@@ -27,9 +32,10 @@ resource "aws_route_table" "public" {
     gateway_id = aws_internet_gateway.main.id
   }
 
-  tags = { Name = "my-pets-public-rt" }
+  tags = merge({ Name = "${local.name_prefix}-public-rt" }, local.common_tags)
 }
 
+# Asocia la tabla de rutas a la subred pública
 resource "aws_route_table_association" "public" {
   subnet_id      = aws_subnet.public.id
   route_table_id = aws_route_table.public.id

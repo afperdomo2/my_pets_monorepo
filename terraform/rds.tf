@@ -1,12 +1,14 @@
+# Grupo de subredes para el RDS (usa la subred pública)
 resource "aws_db_subnet_group" "main" {
-  name       = "my-pets-rds-subnet"
+  name       = "${local.name_prefix}-rds-subnet"
   subnet_ids = [aws_subnet.public.id]
 
-  tags = { Name = "my-pets-rds-subnet" }
+  tags = merge({ Name = "${local.name_prefix}-rds-subnet" }, local.common_tags)
 }
 
+# Instancia PostgreSQL 16 administrada
 resource "aws_db_instance" "main" {
-  identifier        = "my-pets-db"
+  identifier        = "${local.name_prefix}-pg"
   engine            = "postgres"
   engine_version    = "16"
   instance_class    = "db.t3.micro"
@@ -22,7 +24,7 @@ resource "aws_db_instance" "main" {
 
   backup_retention_period = 0
   skip_final_snapshot     = true
-  publicly_accessible     = false
+  publicly_accessible     = false # No expone el RDS a Internet
 
-  tags = { Name = "my-pets-db" }
+  tags = merge({ Name = "${local.name_prefix}-pg" }, local.common_tags)
 }

@@ -1,5 +1,6 @@
+# Permite HTTP (80) y SSH (22) desde cualquier IP al EC2
 resource "aws_security_group" "ec2" {
-  name        = "my-pets-ec2-sg"
+  name        = "${local.name_prefix}-ec2-sg"
   description = "Permitir HTTP y SSH al EC2"
   vpc_id      = aws_vpc.main.id
 
@@ -24,11 +25,12 @@ resource "aws_security_group" "ec2" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags = { Name = "my-pets-ec2-sg" }
+  tags = merge({ Name = "${local.name_prefix}-ec2-sg" }, local.common_tags)
 }
 
+# Permite PostgreSQL (5432) solo desde el security group del EC2
 resource "aws_security_group" "rds" {
-  name        = "my-pets-rds-sg"
+  name        = "${local.name_prefix}-rds-sg"
   description = "Permitir PostgreSQL solo desde el EC2"
   vpc_id      = aws_vpc.main.id
 
@@ -46,5 +48,5 @@ resource "aws_security_group" "rds" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags = { Name = "my-pets-rds-sg" }
+  tags = merge({ Name = "${local.name_prefix}-rds-sg" }, local.common_tags)
 }

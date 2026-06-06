@@ -163,6 +163,9 @@ terraform destroy -auto-approve
 | Variable | Default | Descripción |
 |---|---|---|
 | `aws_region` | `us-east-1` | Región de AWS |
+| `org_name` | `my-pets` | Nombre de la organización |
+| `project_name` | `my-pets-monorepo` | Nombre del proyecto |
+| `environment` | `prod` | Entorno |
 | `ssh_key_name` | `pruebas-felipe-ssh` | Key Pair EC2 |
 | `db_name` | `my_pets` | Nombre de la base de datos |
 | `db_user` | `my_pets_user` | Usuario de la base de datos |

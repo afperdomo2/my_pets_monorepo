@@ -1,3 +1,4 @@
+# Busca la AMI más reciente de Amazon Linux 2023
 data "aws_ami" "amazon_linux_2023" {
   most_recent = true
   owners      = ["amazon"]
@@ -8,6 +9,7 @@ data "aws_ami" "amazon_linux_2023" {
   }
 }
 
+# Servidor EC2 con Docker Compose para la API y frontend
 resource "aws_instance" "main" {
   ami                    = data.aws_ami.amazon_linux_2023.id
   instance_type          = "t3.micro"
@@ -23,15 +25,17 @@ resource "aws_instance" "main" {
     jwt_secret   = var.jwt_secret
   })
 
-  tags = { Name = "my-pets-ec2" }
+  tags = merge({ Name = "${local.name_prefix}-api-01" }, local.common_tags)
 }
 
+# IP pública fija para el EC2
 resource "aws_eip" "main" {
   domain = "vpc"
 
-  tags = { Name = "my-pets-eip" }
+  tags = merge({ Name = "${local.name_prefix}-eip" }, local.common_tags)
 }
 
+# Asocia la IP pública al EC2
 resource "aws_eip_association" "main" {
   allocation_id = aws_eip.main.id
   instance_id   = aws_instance.main.id
