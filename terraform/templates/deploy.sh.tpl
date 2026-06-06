@@ -1,16 +1,16 @@
 #!/bin/bash
 set -e
 
-# 1. Instalar Docker Compose plugin si no existe
-if ! command -v docker compose &> /dev/null; then
-  dnf install -y docker-compose-plugin
-fi
+# 1. Actualizar caché e instalar dependencias
+apt-get update -y
+apt-get install -y git docker.io docker-compose-v2
 
 systemctl enable docker
 systemctl start docker
+usermod -aG docker ubuntu
 
 # 2. Clonar repositorio
-cd /home/ec2-user
+cd /home/ubuntu
 
 REPO_DIR="my_pets_monorepo"
 if [ ! -d "$REPO_DIR" ]; then

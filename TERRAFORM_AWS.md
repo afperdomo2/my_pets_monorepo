@@ -29,8 +29,8 @@
                         ▼
               ┌─────────────────┐
               │   EC2 t3.micro  │
-              │  (Amazon Linux  │
-              │     2023)       │
+               │    (Ubuntu      │
+               │     LTS)        │
               │                 │
               │  ┌───────────┐  │
               │  │  nginx    │  │  Puerto 80
@@ -85,7 +85,7 @@
 | **Route Table** | — | Enruta `0.0.0.0/0` → Internet Gateway |
 | **Security Group EC2** | — | Permite HTTP (80) y SSH (22) desde cualquier IP |
 | **Security Group RDS** | — | Permite PostgreSQL (5432) solo desde el EC2 |
-| **EC2** | `t3.micro` | Servidor principal: nginx + Go API + Docker |
+| **EC2** | `t3.micro` | Servidor principal: nginx + Go API + Docker (Ubuntu LTS) |
 | **Elastic IP** | — | IP pública fija asociada al EC2 |
 | **RDS** | `db.t3.micro` | PostgreSQL 16 administrado, 20GB gp2 |
 
@@ -238,7 +238,7 @@ Después de `terraform apply`, verás:
 ec2_public_ip = "54.198.xxx.xxx"
 rds_endpoint  = "my-pets-db.c9xxxxx.us-east-1.rds.amazonaws.com:5432"
 url           = "http://54.198.xxx.xxx"
-ssh_command   = "ssh -i pruebas-felipe-ssh.pem ec2-user@54.198.xxx.xxx"
+ssh_command   = "ssh -i pruebas-felipe-ssh.pem ubuntu@54.198.xxx.xxx"
 ```
 
 Para ver los outputs en cualquier momento:
@@ -281,7 +281,7 @@ Deberías ver la aplicación Vue cargando (puede tardar unos segundos si el fron
 ### Ver logs del servidor
 
 ```bash
-ssh -i ~/.ssh/pruebas-felipe-ssh.pem ec2-user@$(terraform output -raw ec2_public_ip)
+ssh -i ~/.ssh/pruebas-felipe-ssh.pem ubuntu@$(terraform output -raw ec2_public_ip)
 
 # Ver logs de Docker
 docker compose -f docker-compose.cloud.yml logs
@@ -301,7 +301,7 @@ docker compose -f docker-compose.cloud.yml logs web
 
 ```bash
 # El Go API puede estar arrancando todavía
-ssh -i ~/.ssh/pruebas-felipe-ssh.pem ec2-user@$(terraform output -raw ec2_public_ip)
+ssh -i ~/.ssh/pruebas-felipe-ssh.pem ubuntu@$(terraform output -raw ec2_public_ip)
 
 # Revisar si los contenedores están corriendo
 docker compose -f docker-compose.cloud.yml ps
@@ -324,7 +324,7 @@ docker compose -f docker-compose.cloud.yml exec web ls /usr/share/nginx/html/
 
 ```bash
 # Verificar que el RDS esté accesible desde el EC2
-ssh -i ~/.ssh/pruebas-felipe-ssh.pem ec2-user@$(terraform output -raw ec2_public_ip)
+ssh -i ~/.ssh/pruebas-felipe-ssh.pem ubuntu@$(terraform output -raw ec2_public_ip)
 
 # Probar conexión a PostgreSQL
 docker run --rm postgres:16-alpine psql -h $(terraform output -raw rds_endpoint | cut -d: -f1) -U my_pets_user -d my_pets
@@ -441,7 +441,7 @@ El RDS no es accesible desde Internet, solo desde el servidor.
 
 #### `ec2.tf`
 
-- Amazon Linux 2023 (viene con Docker instalado)
+- Ubuntu LTS (trae git preinstalado, Docker con apt-get sencillo)
 - `t3.micro` (free tier)
 - Asocia Elastic IP fija
 - Ejecuta `deploy.sh.tpl` al arrancar (bootstrap)
@@ -454,26 +454,26 @@ Script que se ejecuta en el EC2 cuando arranca por primera vez:
 #!/bin/bash
 set -e
 
-# 1. Instalar Docker Compose plugin
-dnf install -y docker-compose-plugin
+# 1. Instalar git, Docker y Docker Compose plugin
+apt-get update -y
+apt-get install -y git docker.io docker-compose-v2
 
-# 2. Iniciar Docker
 systemctl enable docker
 systemctl start docker
 
-# 3. Clonar el repositorio
-cd /home/ec2-user
+# 2. Clonar el repositorio
+cd /home/ubuntu
 git clone https://github.com/afperdomo2/my_pets_monorepo.git
 cd my_pets_monorepo
 
-# 4. Crear .env con los datos de RDS + JWT
+# 3. Crear .env con los datos de RDS + JWT
 cat > .env <<EOF
 DATABASE_URL=host=${rds_endpoint} user=${db_user} ...
 JWT_SECRET=${jwt_secret}
 ...
 EOF
 
-# 5. Desplegar con Docker Compose
+# 4. Desplegar con Docker Compose
 docker compose -f docker-compose.cloud.yml up -d --build
 ```
 

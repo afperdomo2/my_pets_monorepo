@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Guía compacta para agentes en este monorepo. El detalle por tema está en `docs/`.
+Guía compacta para agentes en este monorepo. Detalles por tema en `docs/`.
 
 ## Stack
 
@@ -14,15 +14,15 @@ Guía compacta para agentes en este monorepo. El detalle por tema está en `docs
 
 ## Skills disponibles (`.agents/skills/`)
 
-Carga el skill con `skill` tool según la tarea:
+Cargar con `skill` tool según la tarea:
 
 | Skill | Cuándo usarlo |
 |---|---|
 | `vue` | Componentes SFC, Composition API, macros, reactividad |
-| `vue-best-practices` | Cualquier tarea Vue (obligatorio leerlo) |
-| `vue-debug-guides` | Debugging de errores runtime/SSR/hidratación Vue |
+| `vue-best-practices` | **Obligatorio** para cualquier tarea Vue |
+| `vue-debug-guides` | Debugging runtime/SSR/hidratación Vue |
 | `vue-pinia-best-practices` | Stores Pinia, estado global |
-| `vite` | Configuración de Vite, plugins, SSR, Rolldown |
+| `vite` | Configuración Vite, plugins, SSR, Rolldown |
 | `zod` | Schemas Zod, validación, tipos inferidos |
 | `turborepo` | Pipeline tasks, turbo.json, caché, filtros |
 | `typescript-advanced-types` | Tipos complejos, genéricos, condicionales |
@@ -33,143 +33,117 @@ Carga el skill con `skill` tool según la tarea:
 
 ## Context7 MCP — documentación de librerías
 
-Usar **siempre** que se necesite instalar, consultar o investigar librerías nuevas:
+Usar **siempre** para librerías nuevas o dudas de API:
 
-1. `context7_resolve-library-id` con el nombre exacto y el contexto de uso
-2. `context7_query-docs` para obtener documentación actualizada
+1. `context7_resolve-library-id` con nombre exacto
+2. `context7_query-docs` con el ID y la pregunta
 
-Esto evita depender de datos de entrenamiento que pueden estar desactualizados. Aplica a cualquier librería (Vue, Zod, TanStack Query, Pinia, Vite, etc.).
+## Comandos
 
-## Comandos rápidos
-
-### Backend (desde raíz, vía Makefile)
+### Backend (raíz, vía Makefile)
 
 | Comando | Descripción | Docker |
 |---|---|---|
 | `make dev-api` | Hot-reload con air | ❌ |
-| `make test-api` | Tests handler + unit (rápido, ~0.1s) | ❌ |
-| `make test-api-integration` | Tests handler + unit + repo (~5 min) | ✅ |
+| `make test-api` | Tests handler + unit (~0.1s) | ❌ |
+| `make test-api-integration` | Handler + unit + repo (~5 min) | ✅ |
 | `make lint-api` | `go vet ./...` | ❌ |
-| `make swag` | Regenerar Swagger docs (tras cambios en handlers) | ❌ |
+| `make swag` | Regenerar Swagger docs | ❌ |
 | `make tidy` | `go mod tidy` | ❌ |
 | `make build-api` | Compilar binario `bin/server` | ❌ |
-| `make docker-dev` | Levantar todo (Postgres + API + frontend) | ✅ |
+| `make docker-dev` | Postgres + API + frontend | ✅ |
 
 ### Frontend (desde `apps/web/`)
 
 | Comando | Descripción |
 |---|---|
-| `pnpm dev` | Vite dev server `:3000` |
+| `pnpm dev` | Vite dev server `:3000` (proxy `/api/*` → `:8080`) |
 | `pnpm type-check` | `vue-tsc --build` (**obligatorio** tras cambios `.ts`/`.vue`) |
-| `pnpm lint:oxlint` | Ejecutar **primero** |
-| `pnpm lint:eslint` | Ejecutar **después** |
+| `pnpm lint` | `run-s lint:*` (oxlint primero, eslint después) |
 | `pnpm build` | `run-p type-check "build-only"` |
 
-### Raíz del monorepo
+### Raíz
 
 | Comando | Descripción |
 |---|---|
-| `pnpm dev` | Turborepo dev |
+| `pnpm dev` | Turborepo dev (frontend) |
 | `pnpm build` | Turborepo build |
 | `pnpm lint` | Turborepo lint |
 
-## Reglas importantes
+## Reglas
 
-### Generales
-
-- **No commits automáticos** — solo cuando el usuario lo pida explícitamente
+- **No commits automáticos** — solo cuando el usuario lo pida
 - **Documentación en español** — comentarios, docstrings, commits
-- Leer `docs/rules.md` para enums, paginación y lint del frontend
-- Leer `docs/web/pitfalls.md` para errores conocidos (doble request, servicios sin HTTP compartido)
-
-### Instalación de nuevas librerías
-
-Antes de agregar una dependencia (npm/pnpm/Go):
-
-1. **Verificar reputación**: npm trends, GitHub stars, maintenance status, download count
-2. **Confirmar que no sea legacy/obsoleta**: buscar alternativas más modernas; si la lib no se actualiza desde hace >1 año, cuestionar su uso
-3. **Preferir oficial/maintaineada**: dar prioridad a librerías mantenidas por la organización del framework (ej: `@tanstack/vue-query` sobre alternativas third-party)
-4. **Comparar bundle size**: para frontend, usar `bundlephobia.com` o similar
-5. **Usar Context7 MCP** para consultar documentación actualizada antes de integrar
-6. **Documentar la decisión**: agregar un comentario breve si la elección no es obvia
-
-### Type-check
-
-`vue-tsc --build` es obligatorio tras cualquier cambio en `.ts`/`.vue`. No confiar solo en el linter.
-
-### Swagger
-
-`make swag` tras crear, modificar o eliminar endpoints. Los archivos generados están en `apps/api/docs/`.
-
-### Testing
-
-Tras crear, modificar o eliminar tests de backend (`apps/api/internal/domain/<name>/*_test.go`), actualizar la tabla de cobertura y dominios pendientes en `docs/api/testing.md`.
-
-Después de cualquier cambio en backend, ejecutar:
-
-```bash
-make test-api       # handler + unit (rápido, ~0.1s)
-make lint-api       # go vet
-```
-
-**Los tests de repositorio (`make test-api-integration`) solo bajo pedido explícito del usuario o antes de mergear.**
-
-### Pre-commit hooks (Lefthook)
-
-El proyecto usa [Lefthook](https://github.com/evilmartians/lefthook) para ejecutar validaciones automáticas antes de cada `git commit`:
-
-| Trigger | Job | Glob (solo si cambian estos archivos) |
-|---|---|---|
-| `pre-commit` | `lint-api` | `apps/api/**/*.go` |
-| `pre-commit` | `test-api` | `apps/api/**/*.go` |
-| `pre-commit` | `test-api-integration` | `apps/api/**/gorm_repo.go` |
-| `pre-commit` | `lint-web` | `apps/web/**/*.{ts,vue}` |
-| `pre-commit` | `type-check` | `apps/web/**/*.{ts,vue}` |
-
-Los jobs se ejecutan en paralelo y cada uno solo corre si hay cambios en los archivos que le corresponden (según `glob`).  
-Los repo tests pesados solo se ejecutan si cambió algún `gorm_repo.go`.
-
-Configuración completa en [`lefthook.yml`](/lefthook.yml).
+- **Type-check obligatorio** tras cambios en `.ts`/`.vue` (no confiar solo en linter)
+- **Swagger**: `make swag` tras crear/modificar/eliminar endpoints
+- **GORM AutoMigrate** corre al iniciar (`internal/database/`)
+- **authStore.initSession()** se ejecuta **antes** de `app.mount()` en `main.ts`
+- Leer `docs/rules.md` — enums (const objects, no TS `enum`), paginación, lint
+- Leer `docs/web/pitfalls.md` — doble request al refrescar listas, servicios sin HTTP compartido
+- **Nuevas librerías**: seguir checklist en `docs/library-vetting.md` (reputación, bundle, licencia, Context7)
 
 ## Arquitectura
 
 | Ruta | Contenido |
 |---|---|
-| `apps/api/` | Backend Go — entrypoint `cmd/server/main.go`, dominios en `internal/domain/<name>/` |
-| `apps/web/` | Frontend Vue 3 — entrypoint `src/main.ts` |
-| `docs/` | Documentación detallada por tema |
-| `.agents/skills/` | Skills instalados (12 disponibles) |
+| `apps/api/cmd/server/main.go` | Entrypoint backend |
+| `apps/api/internal/domain/<name>/` | Cada dominio: handler, repository (interface + GORM), payload, routes |
+| `apps/api/internal/server/server.go` | Cableado: crea repos, instancia handlers, registra rutas |
+| `apps/web/src/main.ts` | Entrypoint frontend |
+| `apps/web/src/composables/` | TanStack Query hooks (CRUD + cache) |
+| `apps/web/src/services/` | Llamadas HTTP (`get/post/put/patch/del` desde `@/services/http`) |
+| `apps/web/src/schemas/` | Zod schemas para formularios (vee-validate) |
+| `apps/web/src/stores/` | Pinia (sesión, UI) |
 
-## Convenciones clave
+**Excepciones HTTP**: `healthCatalogService` y `setupService` tienen su propio `request()`, no usan `@/services/http`.
 
-- **Enums**: `const` objects, NO TypeScript `enum`
-- **Auth**: Cookies HttpOnly (`access_token` 20 min, `refresh_token` 20 días), no localStorage
-- **HTTP client**: `get/post/put/patch/del` desde `@/services/http` (excepción: `healthCatalogService` y `setupService` usan su propio `request()`)
-- **Zod**: schemas en `src/schemas/` para formularios (vee-validate + Zod)
-- **Contratos FE/BE**: los tipos TypeScript deben reflejar exactamente las structs Go
+## Pre-commit hooks (Lefthook)
 
-## Tests
+| Job | Se ejecuta si cambian |
+|---|---|
+| `lint-api` | `apps/api/**/*.go` |
+| `test-api` | `apps/api/**/*.go` |
+| `test-api-integration` | `apps/api/**/gorm_repo.go` |
+| `lint-web` | `apps/web/**/*.{ts,vue}` |
+| `type-check` | `apps/web/**/*.{ts,vue}` |
+
+Los repo tests solo se ejecutan si cambió algún `gorm_repo.go`. Config: `lefthook.yml`.
+
+## Testing
 
 ### Backend (Go)
 
-| Tipo | Stack | Ubicación | Build tag |
+| Tipo | Stack | Archivo | Build tag |
 |---|---|---|---|
-| Handler tests | `testify/mock` + `gin.CreateTestContext` | `internal/domain/<name>/handler_test.go` | — |
-| Pure unit | `testing` + `testify/require` | `internal/domain/<name>/xxx_test.go` | — |
-| Repository tests | `testcontainers-go` + Postgres 16 | `internal/domain/<name>/gorm_repo_test.go` | `integration` |
+| Handler | `testify/mock` + `gin.CreateTestContext` | `handler_test.go` | — |
+| Pure unit | `testing` + `testify/require` | `*_test.go` | — |
+| Repository | `testcontainers-go` + Postgres 16 | `gorm_repo_test.go` | `integration` |
 
-No se usa DB en tests de handlers — los repositorios se mockean via interfaces.
-Los tests de repositorio levantan Postgres 16 real en contenedor Docker, y solo se ejecutan con `go test -tags=integration`.
-Ver `docs/api/testing.md` para patrón detallado y cobertura.
+- Sin DB en handler tests (repos mockeados via interfaces)
+- Repo tests levantan Postgres real en Docker, solo con `-tags=integration`
+- Tras cambios backend: `make test-api` → `make lint-api`
+- Repo tests solo bajo pedido explícito o antes de mergear
+- Actualizar tabla de cobertura en `docs/api/testing.md` al crear/modificar tests
+- Seed de datos: UUIDs con helper `uid(n)`, fechas con `time.Now().UTC()`
 
 ### Frontend
 
 Vitest no configurado.
 
-## Para empezar a trabajar
+## Docker Compose
 
-1. Leer `docs/architecture.md` si no se conoce la estructura
-2. Cargar el skill correspondiente (Vue, Zod, Turborepo, etc.)
-3. Usar Context7 MCP para documentación de librerías
-4. Tras cambios backend: `make test-api` → `make lint-api`
-   Tras cambios frontend: `pnpm lint:oxlint` → `pnpm lint:eslint` → `pnpm type-check`
+| Archivo | Incluye DB | Uso |
+|---|---|---|
+| `docker-compose.prod.yml` | ✅ Postgres interno | Producción local, build multi-stage |
+| `docker-compose.cloud.yml` | ❌ RDS externo | AWS / Terraform |
+
+## Convenciones clave
+
+- **Enums**: `const` objects, NO TypeScript `enum`
+- **Auth**: Cookies HttpOnly (`access_token` 20 min, `refresh_token` 20 días), no localStorage
+- **Contratos FE/BE**: tipos TypeScript deben reflejar exactamente structs Go
+- **Redes restringidas**: `GONOSUMDB="*" go build ./...` si hay problemas
+
+## Datos de prueba
+
+`FAKE_DATA.md` contiene scripts SQL y Go para crear 20 usuarios con contraseña `Password123!`.

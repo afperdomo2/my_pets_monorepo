@@ -15,5 +15,5 @@ output "url" {
 
 output "ssh_command" {
   description = "Comando SSH para conectarse al EC2"
-  value       = "ssh -i ${var.ssh_key_name}.pem ec2-user@${aws_eip.main.public_ip}"
+  value       = "ssh -i ${var.ssh_key_name}.pem ubuntu@${aws_eip.main.public_ip}"
 }

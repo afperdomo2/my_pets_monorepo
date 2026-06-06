@@ -112,7 +112,7 @@ Internet → EC2 (t3.micro)
 
 | Recurso | Tipo | Free tier |
 |---|---|---|
-| EC2 | t3.micro, Amazon Linux 2023 | ✅ 750h/mes |
+| EC2 | t3.micro, Ubuntu LTS | ✅ 750h/mes |
 | RDS | db.t3.micro, PostgreSQL 16, 20GB | ✅ 750h/mes (12 meses) |
 | Elastic IP | 1 dirección IP fija | ✅ sin costo asociado |
 
