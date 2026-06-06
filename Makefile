@@ -1,4 +1,4 @@
-.PHONY: dev-api build-api test-api test-api-integration lint-api swag tidy clean docker-dev docker-down
+.PHONY: dev-api build-api test-api test-api-integration lint-api swag tidy clean help
 
 API_DIR=./apps/api
 BINARY=./apps/api/tmp/server
@@ -42,14 +42,6 @@ swag:
 ## clean: Remove built binaries
 clean:
 	@rm -rf bin/ apps/api/tmp/
-
-## docker-dev: Start all services with docker-compose (dev)
-docker-dev:
-	docker compose up --build
-
-## docker-down: Stop all services
-docker-down:
-	docker compose down
 
 ## help: Show this help
 help:
