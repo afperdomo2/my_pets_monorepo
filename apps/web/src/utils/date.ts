@@ -209,9 +209,16 @@ export function formatDateOnly(
   if (!dateStr) return emptyValue
   
   // Extraer solo la parte de fecha (YYYY-MM-DD) del string ISO
-  const datePart = dateStr.split('T')[0]
-  const [year, month, day] = datePart.split('-').map(Number)
-  
+  const datePart = dateStr.split('T')[0] ?? ''
+  if (!datePart) return emptyValue
+
+  const parts = datePart.split('-').map(Number)
+  const year = parts[0]
+  const month = parts[1]
+  const day = parts[2]
+
+  if (!year || month == null || !day) return emptyValue
+
   // Crear fecha usando UTC para evitar problemas de timezone
   // Los meses en JS son 0-indexados (0 = enero, 11 = diciembre)
   const date = new Date(Date.UTC(year, month - 1, day))

@@ -196,7 +196,8 @@ const speciesErrorMessage = computed(() => {
           <div class="field">
             <label class="field-label">Descripción <span class="field-label--optional">(opcional)</span></label>
             <textarea
-              v-model="(createDescription as string)"
+              :value="createDescription as unknown as string"
+              @input="createDescription = ($event.target as HTMLTextAreaElement).value"
               v-bind="createDescriptionAttrs"
               class="field-input field-textarea"
               :class="{ 'field-input--error': createErrors['description'] }"
@@ -295,7 +296,8 @@ const speciesErrorMessage = computed(() => {
           <div class="field">
             <label class="field-label">Descripción <span class="field-label--optional">(opcional)</span></label>
             <textarea
-              v-model="(editDescription as string)"
+              :value="editDescription as unknown as string"
+              @input="editDescription = ($event.target as HTMLTextAreaElement).value"
               v-bind="editDescriptionAttrs"
               class="field-input field-textarea"
               :class="{ 'field-input--error': editErrors['description'] }"
