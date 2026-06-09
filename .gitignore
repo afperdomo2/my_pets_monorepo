@@ -15,12 +15,6 @@ apps/web/dist/
 apps/web/.vite/
 .turbo/
 
-# Terraform
-terraform/.terraform/
-terraform/terraform.tfstate*
-terraform/*.tfplan
-terraform/terraform.tfvars
-
 # Environment
 .env
 .env.local

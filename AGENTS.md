@@ -135,7 +135,6 @@ Vitest no configurado.
 | Archivo | Incluye DB | Uso |
 |---|---|---|
 | `docker-compose.prod.yml` | ✅ Postgres interno | Producción local, build multi-stage |
-| `docker-compose.cloud.yml` | ❌ RDS externo | AWS / Terraform |
 
 ## Convenciones clave
 
