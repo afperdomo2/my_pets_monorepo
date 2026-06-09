@@ -40,7 +40,7 @@ jobs:
       - name: Build & push api
         uses: docker/build-push-action@v6
         with:
-          context: .
+          context: apps/api
           file: apps/api/Dockerfile.prod
           push: true
           tags: |

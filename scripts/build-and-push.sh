@@ -17,7 +17,7 @@ docker build \
   -f apps/api/Dockerfile.prod \
   -t "$ECR/my-pets-api:$IMAGE_TAG" \
   -t "$ECR/my-pets-api:latest" \
-  .
+  apps/api
 
 echo "=== Pusheando api ==="
 docker push "$ECR/my-pets-api:$IMAGE_TAG"
