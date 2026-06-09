@@ -17,7 +17,8 @@ my_pets_monorepo/
 │       ├── commands.md   # Comandos de backend
 │       ├── conventions.md# Convenciones de código
 │       └── testing.md    # Guía de testing (227 tests)
-├── docker-compose.prod.yml  # Producción (build estático)
+├── docker-compose.prod.yml  # Producción local (build estático)
+├── docker-compose.aws.yml   # AWS EC2 (imágenes desde ECR)
 ├── lefthook.yml             # Pre-commit hooks
 ├── Makefile                 # Comandos del backend
 ├── .env.example             # Variables de entorno
@@ -85,6 +86,83 @@ docker compose -f docker-compose.prod.yml up -d
 # 4. Detener servicios
 docker compose -f docker-compose.prod.yml down
 ```
+
+---
+
+## ☁️ AWS EC2 con ECR
+
+Deploy en un EC2 usando imágenes pre-construidas desde Amazon ECR.
+**No se compila en el servidor** — se evita el OOM por RAM limitada (t3.micro).
+
+### 📋 Prerrequisitos
+
+| Recurso | Descripción |
+|---|---|
+| Repos ECR | `my-pets-api` y `my-pets-web` creados en AWS |
+| GitHub Secrets | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION` |
+| EC2 | Docker instalado y autenticado contra ECR |
+
+**Ruta:** Settings → Secrets and variables → Actions → Repository secrets (la pestaña por defecto, no "Environment secrets").
+
+```bash
+# Crear repos en ECR (una vez)
+aws ecr create-repository --repository-name my-pets-api
+aws ecr create-repository --repository-name my-pets-web
+```
+
+### 🏗️ Build & push manual
+
+Desde tu máquina local (no en EC2):
+
+```bash
+export AWS_ACCOUNT_ID=123456789012
+export AWS_REGION=us-east-1
+export IMAGE_TAG=$(git rev-parse --short HEAD)
+
+bash scripts/build-and-push.sh
+```
+
+Esto construye las imágenes, las tagea con el SHA del commit + `latest`, y las sube a ECR.
+
+### 🤖 CI/CD automático
+
+El workflow [`deploy-ecr.yml`](.github/workflows/deploy-ecr.yml) se activa al pushear a `main` cuando hay cambios en `apps/api/`, `apps/web/`, `pnpm-lock.yaml` o `pnpm-workspace.yaml`.
+
+Build + push automáticos sin intervención manual.
+
+### 🚀 Deploy en EC2
+
+```bash
+# 1. Autenticar contra ECR (una vez por sesión)
+aws ecr get-login-password --region us-east-1 \
+  | docker login --username AWS --password-stdin $ACCOUNT.dkr.ecr.$REGION.amazonaws.com
+
+# 2. Configurar variables
+cp .env.example .env
+# Editar POSTGRES_PASSWORD, JWT_SECRET, APP_URL, FRONTEND_URL
+# APP_URL=http://<ip-publica-ec2>
+# FRONTEND_URL=http://<ip-publica-ec2>
+
+# 3. Descargar última versión y levantar
+docker compose -f docker-compose.aws.yml pull
+docker compose -f docker-compose.aws.yml up -d
+```
+
+### ⏪ Rollback
+
+Si una versión falla, volvés al SHA anterior:
+
+```bash
+IMAGE_TAG=sha-anterior docker compose -f docker-compose.aws.yml up -d
+```
+
+### 📦 Servicios
+
+| Servicio | Imagen | Expuesto |
+|---|---|---|
+| `db` | `postgres:16-alpine` (Docker Hub) | Solo red interna |
+| `api` | ECR `my-pets-api` | Solo red interna |
+| `web` | ECR `my-pets-web` | Puerto `80` en el host |
 
 ---
 
@@ -175,6 +253,9 @@ Config: [`lefthook.yml`](lefthook.yml)
 | [`docs/api/conventions.md`](docs/api/conventions.md) | Convenciones de código Go |
 | [`docs/api/testing.md`](docs/api/testing.md) | Guía completa de testing (227 tests) |
 | [`AGENTS.md`](AGENTS.md) | Guía para agentes IA |
+| [`docker-compose.aws.yml`](docker-compose.aws.yml) | Deploy EC2 con ECR |
+| [`scripts/build-and-push.sh`](scripts/build-and-push.sh) | Build + push local a ECR |
+| [`.github/workflows/deploy-ecr.yml`](.github/workflows/deploy-ecr.yml) | CI/CD automático a ECR |
 
 ---
 
