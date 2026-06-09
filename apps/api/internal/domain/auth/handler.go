@@ -315,7 +315,7 @@ func (h *Handler) issueTokensAndRespond(c *gin.Context, u models.User) {
 		return
 	}
 
-	secure := h.cfg.GinMode == "release"
+	secure := c.Request.TLS != nil
 	setAuthCookies(c, access, refresh, secure)
 
 	c.JSON(http.StatusOK, gin.H{
