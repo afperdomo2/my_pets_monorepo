@@ -61,12 +61,28 @@ pnpm dev
 ```bash
 # 1. Configurar variables de entorno
 cp .env.example .env
-# Editar JWT_SECRET, POSTGRES_PASSWORD y DATABASE_URL
 
-# 2. Build y despliegue
+# 2. Editar las variables obligatorias en .env
+```
+
+| Variable | Descripción | Ejemplo |
+|---|---|---|
+| `POSTGRES_PASSWORD` | Contraseña de PostgreSQL | `change-this-password-in-production` |
+| `DATABASE_URL` | DSN de conexión a la DB | `host=db user=my_pets_user password=... dbname=my_pets port=5432 sslmode=disable` |
+| `JWT_SECRET` | Secreto para firmar tokens JWT | `change-this-to-a-random-secret-in-production` |
+
+> `GOOGLE_CLIENT_ID` y `GOOGLE_CLIENT_SECRET` son opcionales (solo se necesitan para OAuth).
+
+```bash
+# 3. Build y despliegue
 docker compose -f docker-compose.prod.yml up --build -d
 
-# 3. Detener servicios
+# 3. Build y despliegue (separado)
+docker compose -f docker-compose.prod.yml build
+
+docker compose -f docker-compose.prod.yml up -d
+
+# 4. Detener servicios
 docker compose -f docker-compose.prod.yml down
 ```
 
