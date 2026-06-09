@@ -41,7 +41,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: apps/api
-          file: apps/api/Dockerfile.prod
+          file: Dockerfile.prod
           push: true
           tags: |
             ${{ steps.login-ecr.outputs.registry }}/my-pets-api:${{ env.IMAGE_TAG }}
