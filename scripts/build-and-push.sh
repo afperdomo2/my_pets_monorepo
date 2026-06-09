@@ -14,10 +14,10 @@ aws ecr get-login-password --region "$AWS_REGION" \
 
 echo "=== Construyendo api ==="
 docker build \
-  -f apps/api/Dockerfile.prod \
+  -f apps/api/Dockerfile.aws \
   -t "$ECR/my-pets-api:$IMAGE_TAG" \
   -t "$ECR/my-pets-api:latest" \
-  apps/api
+  .
 
 echo "=== Pusheando api ==="
 docker push "$ECR/my-pets-api:$IMAGE_TAG"
